@@ -16,8 +16,8 @@ type Order struct{
 	Order_image string
 	Order_note	string
 
-	Customer Customer `gorm:"foreignKey:customer_id"`
-	WashingMachine WashingMachine `gorm:"foreignKey:machine_id"`
-	Detergents []Detergent `gorm:"many2many:Order_detergents;"`
-	Address Address `gorm:"foreignKey:address_id"`
+	//Customer Customer `gorm:"foreignKey:customer_id"`
+	WashingMachine Machine `gorm:"foreignKey:machine_id"`
+	//Detergents []Detergent `gorm:"many2many:Order_detergents;"`
+	//Address Address `gorm:"foreignKey:address_id"`
 }
