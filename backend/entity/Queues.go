@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Queue struct {
-	Queue_id uint `gorm:"primaryKey;Queues"`
+	Queue_id uint `gorm:"primaryKey;autoIncrement"`
 	Updated_at time.Time
 	Created_at time.Time
 	Queue_type string

@@ -21,7 +21,7 @@ type History struct {
 	Customers  Customer  `gorm:"foreignKey:CustomerID"`
 	Detergents Detergent `gorm:"foreignKey:DetergentID"`
 	Payments   Payment   `gorm:"foreignKey:PaymentID"`
-	Processes   Process   `gorm:"foreignKey:ProcessID"`
+	LaundryProcess LaundryProcess `gorm:"foreignKey:ProcessID"`
 
 
 }

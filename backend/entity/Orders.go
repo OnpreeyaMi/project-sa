@@ -18,8 +18,8 @@ type Order struct{
 
 
 	Customers Customer `gorm:"foreignKey:customer_id"`
-	WashingMachine WashingMachine `gorm:"foreignKey:machine_id"`
+	WashingMachine Machine `gorm:"foreignKey:machine_id"`
 	Detergents []Detergent `gorm:"many2many:Order_detergents;"`
-	Address Address `gorm:"foreignKey:address_id"`
+	Addresses Address `gorm:"foreignKey:address_id"`
 
 }
