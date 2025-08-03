@@ -1,7 +1,9 @@
 package entity
 
 type Basket struct {
-	Basket_id uint `gorm:"primaryKey;autoIncrement"`
+	BasketID uint `gorm:"primaryKey;autoIncrement"`
 	Basket_status string
-	Orders Order `gorm:"foreignKey:Order_id"`
+
+	OrderID uint
+	Order Order `gorm:"foreignKey:OrderID;references:OrderID"`
 }

@@ -3,11 +3,11 @@ package entity
 import "time"
 
 type Queueassignment struct {
-	Assidn_id uint `gorm:"primaryKey;autoIncrement"`
+	AssidnID uint `gorm:"primaryKey;autoIncrement"`
 	Assigned_time time.Time
 
-
-	Queues Queue `gorm:"foreignKey:Queue_id"`
+	QueueID uint
+	Queues Queue `gorm:"foreignKey:QueueID"`
 	//Eemployee Employee `gorm:"foreignKey:emp_id""`
 	
 

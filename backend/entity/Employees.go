@@ -5,20 +5,20 @@ import (
 )
 
 type Employee struct {
-	Employee_id   uint      `gorm:"primaryKey;autoIncrement"`
+	EmployeeID   uint      `gorm:"primaryKey;autoIncrement"`
 	First_name    string   
 	Last_name     string
 	Phone_number  string
 	Gender        string
 	Start_date    time.Time 
 
-	Queue_id uint
-	Position_id uint
-	User_id uint
+	QueueID uint
+	PositionID uint
+	UserID uint
 
-	Queues Queue `gorm:"foreignKey:Queue_id"`
-	Position EmpPosition `gorm:"foreignKey:Position_id"`
-	Users User `gorm:"foreignKey:User_id"`
-	Reply_complaint_id uint
-	ReplyComplaints []ReplyComplaint `gorm:"foreignKey:Reply_complaint_id"`
+	Queue Queue `gorm:"foreignKey:QueueID"`
+	Position EmpPosition `gorm:"foreignKey:PositionID"`
+	User User `gorm:"foreignKey:UserID"`
+	ReplyComplaintID uint
+	ReplyComplaints []ReplyComplaint `gorm:"foreignKey:EmployeeID;references:EmployeeID"`
 }
