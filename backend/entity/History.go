@@ -1,28 +1,18 @@
 package entity
 
-import (
-	"gorm.io/gorm"
-
-)
-
 type History struct {
-	gorm.Model
+	HistoryID    uint      `gorm:"primaryKey;autoIncrement"`
  	OrderID      uint
 	BasketID     uint
 	CustomerID   uint
 	DetergentID  uint
-	Payment_id 	 uint
-	Process_id  uint
-
-
+	PaymentID 	 uint
+	ProcessID  uint
+	LaundryProcess LaundryProcess `gorm:"foreignKey:ProcessID;references:ProcessID"`
 
 	Orders     Order     `gorm:"foreignKey:OrderID"`
 	Baskets    Basket    `gorm:"foreignKey:BasketID"`
 	Customers  Customer  `gorm:"foreignKey:CustomerID"`
 	Detergents Detergent `gorm:"foreignKey:DetergentID"`
 	Payments   Payment   `gorm:"foreignKey:PaymentID"`
-	LaundryProcess LaundryProcess `gorm:"foreignKey:ProcessID"`
-
-
-
 }
