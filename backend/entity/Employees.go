@@ -19,4 +19,6 @@ type Employee struct {
 	Queues Queue `gorm:"foreignKey:Queue_id"`
 	Position EmpPosition `gorm:"foreignKey:Position_id"`
 	Users User `gorm:"foreignKey:User_id"`
+	Reply_complaint_id uint
+	ReplyComplaints []ReplyComplaint `gorm:"foreignKey:Reply_complaint_id"`
 }
