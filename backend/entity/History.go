@@ -2,7 +2,7 @@ package entity
 
 import (
 	"gorm.io/gorm"
-	//"time"
+
 )
 
 type History struct {
@@ -14,11 +14,14 @@ type History struct {
 	Payment_id 	 uint
 	Process_id  uint
 
-	//Order     Order     `gorm:"foreignKey:OrderID"`
-	//Basket    Basket    `gorm:"foreignKey:BasketID"`
-	//Customer  Customer  `gorm:"foreignKey:CustomerID"`
-	//Detergent Detergent `gorm:"foreignKey:DetergentID"`
-	//Payment   Payment   `gorm:"foreignKey:PaymentID"`
-	//Process   Process   `gorm:"foreignKey:ProcessID"`
+
+
+	Orders     Order     `gorm:"foreignKey:OrderID"`
+	Baskets    Basket    `gorm:"foreignKey:BasketID"`
+	Customers  Customer  `gorm:"foreignKey:CustomerID"`
+	Detergents Detergent `gorm:"foreignKey:DetergentID"`
+	Payments   Payment   `gorm:"foreignKey:PaymentID"`
+	Processes   Process   `gorm:"foreignKey:ProcessID"`
+
 
 }

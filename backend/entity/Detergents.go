@@ -5,12 +5,12 @@ import(
 	"time"
 )
 
-type Detegent struct {
+type Detergent struct {
 	gorm.Model
 	Name        string
 	Type		string
 	InStock		int
 	LastUpdated	time.Time
-
+	Order_id	uint
 	Orders []Order `gorm:"many2many:Order_detergents;"`
 }
