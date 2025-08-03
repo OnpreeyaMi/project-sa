@@ -18,4 +18,7 @@ type Customer struct {
 	Addresses []Address `gorm:"foreignKey:Address_id"` 
 	Token_id uint
 	Verifications []Verification `gorm:"foreignKey:Token_id"`
+	Complaint_id uint
+	Complaints []Complaint `gorm:"foreignKey:Customer_id"`
+
 }

@@ -24,4 +24,5 @@ type History struct {
 	LaundryProcess LaundryProcess `gorm:"foreignKey:ProcessID"`
 
 
+
 }
