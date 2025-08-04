@@ -22,6 +22,6 @@ type LaundryProcess struct {
 	WashingMachine *Machine `gorm:"foreignKey:MachineID;references:MachineID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
 	HistoryID uint
-	History   History `gorm:"foreignKey:HistoryID;references:HistoryID;constraint":OnUpdate:CASCADE,OnDelete:SET NULL;`
+	History   History `gorm:"foreignKey:HistoryID;references:HistoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
 }
