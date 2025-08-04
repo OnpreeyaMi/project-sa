@@ -1,16 +1,16 @@
 package entity
 
 import(
-	"gorm.io/gorm"
 	"time"
 )
 
-type Detegent struct {
-	gorm.Model
+type Detergent struct {
+	DetergentID uint `gorm:"primaryKey;autoIncrement"`
 	Name        string
 	Type		string
 	InStock		int
 	LastUpdated	time.Time
-
-	Orders []Order `gorm:"many2many:Order_detergents;"`
+	
+	OrderID	uint
+	Orders []Order `gorm:"many2many:OrderDetergents;"`
 }
