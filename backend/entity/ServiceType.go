@@ -1,7 +1,7 @@
 package entity
 
 type Servicetype struct {
-	ServiceType_id uint `gorm:"primaryKey;ServiceType"`
+	ServiceTypeID uint `gorm:"primaryKey;autoIncrement"`
 	Tempetature uint 
 	Name string
 	Description string

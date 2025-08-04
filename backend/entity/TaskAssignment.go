@@ -4,11 +4,11 @@ import (
 )
 
 type Assignment struct {
-	Task_id   uint      `gorm:"primaryKey;autoIncrement"`
+	TaskID   uint      `gorm:"primaryKey;autoIncrement"`
 	TaskType string
 	RefID   uint
 	AssignedDate time.Time
 
-	Employee_id uint
-	Employees []Employee `gorm:"foreignKey:Employee_id"`
+	EmployeeID uint
+	Employees []Employee `gorm:"foreignKey:EmployeeID"`
 }

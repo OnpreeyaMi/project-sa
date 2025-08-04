@@ -1,6 +1,6 @@
 package entity
 
 type RolePermission struct {
-	Role_id       uint `gorm:"primaryKey"`
-	Permission_id uint `gorm:"primaryKey"`
+	RoleID       uint `gorm:"primaryKey"`
+	PermissionID uint `gorm:"primaryKey"`
 }

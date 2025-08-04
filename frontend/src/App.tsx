@@ -1,15 +1,18 @@
-import Sidebar from "./component/sidebar";
-import OrderPage from "./pages/orders/create";
-import React from "react";
+import React, { useState } from "react";
+import AdminSidebar from "./component/layout/sidebar";
+import Background from "./component/background";
+
+
 const App: React.FC = () => {
-  //return <OrderPage />;
+  const [activeTab, setActiveTab] = useState<string>("");
+
   return (
     <>
-      <Sidebar activeTab={""} onTabChange={function (tab: string): void {
-        throw new Error("Function not implemented.");
-      } } />
+      {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
+      <AdminSidebar></AdminSidebar>
+      
     </>
   );
-}
+};
 
 export default App;
