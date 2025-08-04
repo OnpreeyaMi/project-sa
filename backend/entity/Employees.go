@@ -5,20 +5,25 @@ import (
 )
 
 type Employee struct {
-	EmployeeID   uint      `gorm:"primaryKey;autoIncrement"`
-	First_name    string   
-	Last_name     string
-	Phone_number  string
-	Gender        string
-	Start_date    time.Time 
+	EmployeeID   uint `gorm:"primaryKey;autoIncrement"`
+	First_name   string
+	Last_name    string
+	Phone_number string
+	Gender       string
+	Start_date   time.Time
 
 	QueueID uint
-	PositionID uint
-	UserID uint
+	Queue   *Queue `gorm:"foreignKey:QueueID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
-	Queue Queue `gorm:"foreignKey:QueueID"`
-	Position EmpPosition `gorm:"foreignKey:PositionID"`
-	User User `gorm:"foreignKey:UserID"`
-	ReplyComplaintID uint
-	ReplyComplaints []ReplyComplaint `gorm:"foreignKey:EmployeeID;references:EmployeeID"`
+	EmpPositionID uint
+	EmpPosition   *EmpPosition `gorm:"foreignKey:EmpPositionID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	UserID uint
+	User   *User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	ReplyComplaints  []ReplyComplaint `gorm:"foreignKey:EmployeeID;references:EmployeeID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	TaskAssignments []Assignment `gorm:"foreignKey:EmployeeID;references:EmployeeID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	LaundryProcesses []LaundryProcess `gorm:"foreignKey:EmployeeID;references:EmployeeID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

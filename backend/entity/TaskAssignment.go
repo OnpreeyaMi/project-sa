@@ -10,5 +10,5 @@ type Assignment struct {
 	AssignedDate time.Time
 
 	EmployeeID uint
-	Employees []Employee `gorm:"foreignKey:EmployeeID"`
+	Employees []Employee `gorm:"foreignKey:EmployeeID;references:EmployeeID"`
 }

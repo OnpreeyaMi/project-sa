@@ -6,7 +6,7 @@ type Role struct {
 
 	UserID uint
 	Users []User `gorm:"foreignKey:RoleID"`
-	PermissionID uint
+
 	Permission []Permission `gorm:"many2many:RolePermission"`
 
 }

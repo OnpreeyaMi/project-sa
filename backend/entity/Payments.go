@@ -15,4 +15,7 @@ type Payment struct {
 	PriceID uint
 	Prices Price  `gorm:"foreignKey:PriceID"`
 
+	HistoryID uint
+	History History `gorm:"foreignKey:HistoryID;references:HistoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
 }

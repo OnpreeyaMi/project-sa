@@ -7,4 +7,5 @@ type Servicetype struct {
 	Description string
 	Price uint 
 
+	LaundryProcesses []LaundryProcess `gorm:"foreignKey:ServiceTypeID;references:ServiceTypeID"`
 }

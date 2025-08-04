@@ -7,4 +7,6 @@ type Timeslot struct {
 	Start_time time.Time
 	End_time time.Time
 
+	QueueID uint
+	Queue Queue `gorm:"foreignKey:TimeslotID;references:QueueID"`
 }

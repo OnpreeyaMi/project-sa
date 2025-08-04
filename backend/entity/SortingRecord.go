@@ -9,7 +9,8 @@ type SortingRecord struct {
 	Sorting_status string
 
 	OrderID uint
-	Orders Order `gorm:"foreignKey:OrderID"`
+	Order *Order `gorm:"foreignKey:OrderID;references:OrderID"`
+
 	SortedID uint
-	SortedClothes []SortedCloth `gorm:"foreignKey:SortedID"`
+	SortedClothes []SortedCloth `gorm:"foreignKey:SortedID;references:SortedID"`
 }

@@ -13,16 +13,14 @@ type Customer struct {
 	Is_verified bool
 	Gender string
 
-	UserID uint
-	User User `gorm:"foreignKey:UserID"`
+	User User `gorm:"foreignKey:CustomerID"`
 
-	AddressID uint
-	Addresses []Address `gorm:"foreignKey:AddressID"`
+	Addresses []Address `gorm:"foreignKey:CustomerID"`
 
-	TokenID uint
-	Verifications []Verification `gorm:"foreignKey:TokenID"`
+	Verifications []Verification `gorm:"foreignKey:CustomerID"`
 
-	ComplaintID uint
 	Complaints []Complaint `gorm:"foreignKey:CustomerID"`
+
+	Order Order `gorm:"foreignKey:CustomerID"`
 
 }

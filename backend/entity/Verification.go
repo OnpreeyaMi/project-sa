@@ -11,5 +11,5 @@ type Verification struct {
 	Is_used bool
 	
 	CustomerID uint
-	Customers Customer `gorm:"foreignKey:CustomerID"`
+	Customer Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
 }

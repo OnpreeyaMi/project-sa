@@ -9,8 +9,15 @@ type Queue struct {
 	Queue_type string
 	Status string
 
+	Employee *Employee `gorm:"foreignKey:QueueID;references:QueueID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
 	OrderID uint
+	Order *Order `gorm:"foreignKey:OrderID"`
+
 	TimeslotID uint
-	Orders Order `gorm:"foreignKey:OrderID"`
-	TimeSlot Timeslot `gorm:"foreignKey:TimeSlotID"`
+	TimeSlots []Timeslot `gorm:"foreignKey:QueueID;references:QueueID"`
+
+	Queuehistory []Queuehistory `gorm:"foreignKey:QueueID;references:QueueID"`
+
+	QueueAssignments []QueueAssignment `gorm:"foreignKey:QueueID;references:QueueID"`
 }

@@ -7,4 +7,7 @@ type SortedCloth struct {
 
 	ClothTypeID uint
 	ClothType ClothType `gorm:"foreignKey:ClothTypeID"`
+
+	SortingRecord  []SortingRecord `gorm:"foreignKey:SortedID;references:SortedID"`
+	
 }

@@ -6,6 +6,10 @@ type User struct {
 	Password string
 	
 	RoleID uint
-	Roles Role `gorm:"foreignKey:RoleID"`
+	Role Role `gorm:"foreignKey:UserID"`
+
+	CustomerID uint
+	Customer *Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
 	
+	Employee Employee `gorm:"foreignKey:UserID;references:UserID"`
 }

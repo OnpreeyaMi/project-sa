@@ -13,8 +13,10 @@ type Complaint struct {
 
 	CustomerID       uint
 	Customer         Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
+
 	OrderID          uint
 	Order            Order `gorm:"foreignKey:OrderID;references:OrderID"`
-	ReplyComplaintID uint
+
+	//ReplyComplaintID uint
 	ReplyComplaints  []ReplyComplaint `gorm:"foreignKey:ComplaintID;references:ComplaintID"`
 }

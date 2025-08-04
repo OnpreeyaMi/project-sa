@@ -14,4 +14,7 @@ type Address struct {
 	
 	CustomerID uint
 	Customer Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
+
+	OrderID uint
+	Order Order `gorm:"foreignKey:OrderID;references:OrderID"`
 }

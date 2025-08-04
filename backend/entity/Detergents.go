@@ -11,6 +11,5 @@ type Detergent struct {
 	InStock		int
 	LastUpdated	time.Time
 	
-	OrderID	uint
-	Orders []Order `gorm:"many2many:OrderDetergents;"`
+	Orders []Order `gorm:"many2many:OrderDetergents;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
