@@ -3,6 +3,7 @@ import React, { useState } from "react";
 // import Background from "./component/background";
 // import EmpSidebar from "./component/layout/employee/empSidebar";
 import CustomerSidebar from "./component/layout/customer/CusSidebar";
+import OrderPage from "./pages/orders/create";
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("");
@@ -12,7 +13,9 @@ const App: React.FC = () => {
       {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
       {/* <AdminSidebar></AdminSidebar> */}
       {/* <EmpSidebar></EmpSidebar> */}
-      <CustomerSidebar></CustomerSidebar>
+      {/*<CustomerSidebar></CustomerSidebar>*/}
+      <OrderPage />
+
       
     </>
   );

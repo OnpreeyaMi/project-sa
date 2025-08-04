@@ -12,160 +12,152 @@ import {
   Image,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import "./OrderPage.css"; // ดึง CSS ออกมาแยกไฟล์
+import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
 
 const { Title, Text } = Typography;
 
 const OrderPage: React.FC = () => {
   return (
-    <div className="layout">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="logo-container">
-          <img src="/logo.png" alt="Logo" width={50} />
-        </div>
-        <ul className="menu">
-          <li>หน้าหลัก</li>
-          <li className="active">ซัก-อบ</li>
-          <li>ชำระเงิน</li>
-          <li>สถานะ</li>
-          <li>ประวัติ</li>
-          <li>แจ้งข้อร้องเรียน</li>
-          <li>โปรไฟล์</li>
-        </ul>
-      </aside>
+    <CustomerSidebar>
+      <Row gutter={[16, 16]} justify="center">
+        {/* ซ้าย: รายการออเดอร์ */}
+        <Col xs={24} lg={14}>
+          {/*<Card
+            style={{
+              borderRadius: 10,
+              height: "100%",
+              
+            }}
+          >*/}
+            <Title level={4}>เลือกถังอบที่ต้องการ</Title>
 
-      {/* Main Content */}
-      <main className="main-content">
-        <div className="grid-container">
-          {/* ฝั่งซ้าย */}
-          <Card style={{ borderRadius: 10, height: "100%" }}>
-            <Title level={4}>เลือกถังซักที่ต้องการ</Title>
-            <Row gutter={[20, 20]} justify={"center"} style={{ marginBottom: 30 }}>
-              {[10, 14, 18, 28].map((kg,index) => (
-                <Col key={index} xs={12} sm={12} md={6} lg={6}>
+            {/* น้ำหนักผ้า */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 30 }} justify="center">
+              {[10, 14, 18, 28].map((kg) => (
+                <Col key={kg}>
                   <Card
                     hoverable
                     style={{
-                      width: "100%",
+                      width: 90,
                       textAlign: "center",
                       borderRadius: 8,
                       background: "#F9FBFF",
-                      position: "relative",
                     }}
                   >
-                    <Image preview={false} src="/wash.png" height={100} />
-                    
-                    <Text style={{ display: "block", marginTop: 30 }}>{kg} KG</Text>
+                    <Image preview={false} src="/iconWashing.png" height={50} />
+                    <Text >{kg} KG</Text>
                   </Card>
                 </Col>
               ))}
             </Row>
 
+            {/* ถังอบ */}
             <Title level={4}>เลือกถังอบที่ต้องการ</Title>
-            <Row gutter={[20, 20]} justify={"center"} style={{ marginBottom: 30 }}>
+            <Row gutter={[16, 16]} style={{ marginBottom: 30 }} justify="center">
               <Col>
                 <Card
                   hoverable
                   style={{
-                    width: 150,
+                    width: 90,
                     textAlign: "center",
                     borderRadius: 8,
                     background: "#FFF5F5",
-                    position: "relative",
-                    height : 200,
-                    display: "flex",          // เปิด Flexbox
-                    alignItems: "center",     // จัดแนวตั้งตรงกลาง
-                    justifyContent: "center", // จัดแนวนอนตรงกลาง
                   }}
                 >
-                  <Text type="danger" >NO</Text>
+                  <Text type="danger">NO</Text>
                 </Card>
               </Col>
-              {[14, 25].map((kg,index) => (
-                <Col key={index} xs={12} sm={12} md={6} lg={6}>
+              {[14, 25].map((kg) => (
+                <Col key={kg}>
                   <Card
                     hoverable
                     style={{
-                      width: "100%",
+                      width: 90,
                       textAlign: "center",
                       borderRadius: 8,
                       background: "#F9FBFF",
                     }}
                   >
-                    <Image preview={false} src="/dry.png" height={100} />
-                    <Text style={{ display: "block", marginTop: 30 }}>{kg} KG</Text>
+                    <Image preview={false} src="/dry.png" height={50} />
+                    <Text>{kg} KG</Text>
                   </Card>
                 </Col>
               ))}
             </Row>
 
+            {/* น้ำยาซักผ้า */}
             <Title level={4}>เลือกน้ำยาซักผ้าที่ต้องการ</Title>
-            <Row gutter={[16, 16]}>
+            <Row gutter={[16, 16]} justify="center">
               <Col>
                 <Card
                   hoverable
                   style={{
-                    width: "100%",
+                    width: 90,
                     textAlign: "center",
                     borderRadius: 8,
                     background: "#F9FBFF",
-                    position: "relative",
                   }}
                 >
-                  <Image preview={false} src="/detergent1.png" height={100} />
-                  <Text>ของลูกค้า</Text>
+                  <Image preview={false} src="/detergent1.png" height={50} />
+                  <Text>น้ำเปล่า</Text>
                 </Card>
               </Col>
               <Col>
                 <Card
                   hoverable
                   style={{
-                    width: "100%",
+                    width: 90,
                     textAlign: "center",
                     borderRadius: 8,
                     background: "#F9FBFF",
                   }}
                 >
-                  <Image preview={false} src="/detergent2.png" height={100} />
+                  <Image preview={false} src="/detergent2.png" height={50} />
                   <Text>ทางร้าน</Text>
                 </Card>
               </Col>
             </Row>
-          </Card>
+          {/*</Card>*/}
+        </Col>
 
-          {/* ฝั่งขวา */}
+        {/* ขวา: ฟอร์มสร้างออเดอร์ */}
+        <Col xs={24} lg={10}>
           <Card style={{ borderRadius: 10 }}>
-            <Title level={4} style={{ textAlign: "center" }}>สร้างออเดอร์</Title>
+            <Title level={4}>สร้างออเดอร์</Title>
             <Divider />
-            <Title level={5} style={{marginBlock: 15}}>ที่อยู่</Title>
-            <Radio.Group style={{ display: "block", marginBottom: 20 }}>
-              <li><Radio value={1} style={{marginBlock: 5}}>ที่อยู่เดิม บ้านในเมือง</Radio></li>
-              <li><Radio value={2}>เลือกที่อยู่ใหม่ บ้านใหม่</Radio></li>
+
+            {/* ที่อยู่ */}
+            <Title level={5}>ที่อยู่</Title>
+            <Radio.Group style={{ display: "block", marginBottom: 15 }}>
+              <Radio value={1}>ที่อยู่เดิม บ้านในเมือง</Radio>
+              <Radio value={2}>เลือกที่อยู่ใหม่ บ้านใหม่</Radio>
             </Radio.Group>
 
-            <Title level={5} style={{marginBottom: 15}}>รูปภาพ</Title>
+            {/* รูปภาพ */}
+            <Title level={5}>รูปภาพ</Title>
             <Upload listType="picture-card" maxCount={1}>
               <div>
                 <UploadOutlined />
-                <div style={{ marginTop: 10 }}>อัปโหลด</div>
+                <div style={{ marginTop: 8 }}>อัปโหลด</div>
               </div>
             </Upload>
 
-            <Title level={5} style={{marginBottom: 15}}>หมายเหตุ</Title>
+            {/* หมายเหตุ */}
+            <Title level={5}>หมายเหตุ</Title>
             <Input.TextArea
               placeholder="หมายเหตุ"
               rows={2}
-              style={{ marginBottom: 50 }}
+              style={{ marginBottom: 20 }}
             />
 
+            {/* ปุ่มยืนยัน */}
             <Button type="primary" block style={{ height: 40, fontSize: 16 }}>
               ยืนยัน
             </Button>
           </Card>
-        </div>
-      </main>
-    </div>
+        </Col>
+      </Row>
+    </CustomerSidebar>
   );
 };
 

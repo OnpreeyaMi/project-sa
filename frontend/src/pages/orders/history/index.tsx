@@ -19,7 +19,7 @@ const OrderPage: React.FC = () => {
   return (
     <div style={{ display: "flex", height: "100vh", background: "#FFFFFF" }}>
       {/* Sidebar */}
-      <div
+      {/*<div
         style={{
           width: 180,
           background: "#0E4587",
@@ -41,7 +41,7 @@ const OrderPage: React.FC = () => {
           <li style={{ padding: "12px 20px" }}>แจ้งข้อร้องเรียน</li>
           <li style={{ padding: "12px 20px" }}>โปรไฟล์</li>
         </ul>
-      </div>
+      </div>*/}
 
       {/* Main Content */}
       <div style={{ flex: 1, padding: "30px 40px" }}>
@@ -142,34 +142,7 @@ const OrderPage: React.FC = () => {
           </Card>
 
           {/* ฝั่งขวา - ฟอร์มสร้างออเดอร์ */}
-          <Card style={{ borderRadius: 10 }}>
-            <Title level={4}>สร้างออเดอร์</Title>
-            <Divider />
-            <Title level={5}>ที่อยู่</Title>
-            <Radio.Group style={{ display: "block", marginBottom: 15 }}>
-              <Radio value={1}>ที่อยู่เดิม บ้านในเมือง</Radio>
-              <Radio value={2}>เลือกที่อยู่ใหม่ บ้านใหม่</Radio>
-            </Radio.Group>
-
-            <Title level={5}>รูปภาพ</Title>
-            <Upload listType="picture-card" maxCount={1}>
-              <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>อัปโหลด</div>
-              </div>
-            </Upload>
-
-            <Title level={5}>หมายเหตุ</Title>
-            <Input.TextArea
-              placeholder="หมายเหตุ"
-              rows={2}
-              style={{ marginBottom: 20 }}
-            />
-
-            <Button type="primary" block style={{ height: 40, fontSize: 16 }}>
-              ยืนยัน
-            </Button>
-          </Card>
+          
         </div>
       </div>
     </div>
