@@ -6,30 +6,30 @@ import (
 
 type Order struct {
 	gorm.Model
-	CustomerID uint
-	Customer   *Customer `gorm:"foreignKey:CustomerID;"`
-
-	// MachineID uint
-	Machine   []Machine `gorm:"many2many:OrderMachine;"`
-
+	// CustomerID uint
+	// Customer   *Customer `gorm:"foreignKey:CustomerID;"`
+	Servicetypes   []Servicetype `gorm:"many2many:OrderServicetypes;"`
+	Detergents []Detergent `gorm:"many2many:OrderDetergents;"`
+	OrderImage string
+	OrderNote string
+	//Process []Process `gorm:"many2many:OrderProcess;"`
+	OrderHistory []OrderHistory `gorm:"foreignKey:OrderID;"`
 	AddressID uint
-	Address *Address `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-
-	Order_image string
-	Order_note  string
-
-	// Queue *Queue `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-
-	// Complaint *Complaint `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-
-	// Detergents []Detergent `gorm:"many2many:OrderDetergents"`
-
-	// LaundryProcesses []LaundryProcess `gorm:"foreignKey:OrderID;references:OrderID"`
-
-	// SortingRecord SortingRecord `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	// Basket        Basket        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-
-	// History []History `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-
-	// Payment *Payment `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	//Address *Address `gorm:"foreignKey:OrderID;"`
+}
+//ประเภทของเครื่องซัก-อบ ผูกราคา
+type Servicetype struct {
+	gorm.Model
+	Type string
+	Price float64
+	Capacity int
+	Orders []Order `gorm:"many2many:OrderServicetypes;"`
+}
+//ประวัติการสร้างออเดอร์
+type OrderHistory struct {
+	gorm.Model
+	OrderID uint
+	Order   *Order `gorm:"foreignKey:OrderID;"`
+	Status  string
+	
 }
