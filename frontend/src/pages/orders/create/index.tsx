@@ -1,5 +1,4 @@
-import React from "react";
-import {
+import React, { useState } from 'react';import {
   Card,
   Row,
   Col,
@@ -9,127 +8,219 @@ import {
   Radio,
   Typography,
   Divider,
-  Image,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import { Modal } from "antd";
+import {Tooltip} from "antd";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
+import { BiSolidWasher } from "react-icons/bi";
+import { BiSolidDryer } from "react-icons/bi";
+import { FaJugDetergent } from "react-icons/fa6";
+// import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+
+const descriptionsWashing : Record<number, string> =  {
+  10: `เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น`,
+  14: "เสื้อยืด ผ้าบาง 20 ชิ้น\n ผ้าหนา ยีนส์ 10 ชิ้น\n ชุดเครื่องนอน 3 ฟุต",
+  18: "เสื้อยืด ผ้าบาง 25 ชิ้น\n ผ้าหนา ยีนส์ 15 ชิ้น\n ชุดเครื่องนอน 5 ฟุต",
+  28: "เสื้อยืด ผ้าบาง 35 ชิ้น\n ผ้าหนา ยีนส์ 20 ชิ้น\n ชุดเครื่องนอน 6 ฟุต",
+};
+const pricesWashing: Record<number, string> = {
+  10: "฿ 50",
+  14: "฿ 70",
+  18: "฿ 90",
+  28: "฿ 120",
+};
+
+const descriptionsDryer: Record<number, string> = {
+  14: "อบแห้งได้ประมาณ 20 ชิ้น \nหรือผ้าหนา 10 ชิ้น",
+  25: "อบแห้งได้ประมาณ 30 ชิ้น \nหรือผ้าหนา 15 ชิ้น",
+};
+const pricesDryer: Record<number, string> = {
+  14: "฿ 50",
+  25: "฿ 70",
+};
 
 const { Title, Text } = Typography;
 
 const OrderPage: React.FC = () => {
+  const [selectedWasher, setSelectedWasher] = useState<number | null>(null);
+  const [selectedDryer, setSelectedDryer] = useState<number | null>(null);
+  const [selectDetergent, setSelectDetergent] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const handleConfirm = () => {
+    setIsModalVisible(true);
+  };
+  // // Modal เลือกที่อยู่ใหม่บน Google Map
+  // const [isMapModal, setIsMapModal] = useState(false);
+  // const [markerPosition, setMarkerPosition] = useState({ lat: 13.736717, lng: 100.523186 });
+  // const [newAddress, setNewAddress] = useState("");
+
+  // // โหลด Google Maps API
+  // const { isLoaded } = useJsApiLoader({
+  //   googleMapsApiKey: "YOUR_API_KEY_HERE", // ✅ ใส่ API Key ของคุณ
+  // });
   return (
     <CustomerSidebar>
       <Row gutter={[16, 16]} justify="center">
         {/* ซ้าย: รายการออเดอร์ */}
-        <Col xs={24} lg={14}>
-          {/*<Card
-            style={{
-              borderRadius: 10,
-              height: "100%",
-              
-            }}
-          >*/}
-            <Title level={4}>เลือกถังอบที่ต้องการ</Title>
-
+        <Col xs={24} lg={16}>
+            <Title level={4}>เลือกถังซักที่ต้องการ</Title>
             {/* น้ำหนักผ้า */}
             <Row gutter={[16, 16]} style={{ marginBottom: 30 }} justify="center">
-              {[10, 14, 18, 28].map((kg) => (
-                <Col key={kg}>
+              {[10, 14, 18, 28].map((kg) => {
+              const iconSize =
+                kg === 10 ? 50 :
+                kg === 14 ? 60 :
+                kg === 18 ? 80 :
+                90; // 28kg ใหญ่สุด
+
+                return (
+                <Col xs={12} sm={12} md={6} lg={6} key={kg}>
+                  <Tooltip title={pricesWashing[kg]} placement="bottom">
                   <Card
                     hoverable
+                    onClick={() => setSelectedWasher(kg)}
                     style={{
-                      width: 90,
                       textAlign: "center",
                       borderRadius: 8,
-                      background: "#F9FBFF",
-                    }}
-                  >
-                    <Image preview={false} src="/iconWashing.png" height={50} />
-                    <Text >{kg} KG</Text>
+                      background: selectedWasher === kg ? "#F9FBFF" : "#D9D9D9",
+                      width: "auto",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      
+                    }}                    
+                  ><div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                    <BiSolidWasher size={iconSize} style={{ color: selectedWasher === kg ? "#ED553B" : "#6DA3D3" }} />
+                  </div>
+                    <Text style={{ display: "block", fontSize: 16 }} >{kg} KG</Text>
+                    {/* ✅ ข้อความเฉพาะแต่ละการ์ด */}
+                    <Text type="secondary" style={{ fontSize: 14, marginTop: 6 ,whiteSpace: "pre-line" ,minHeight: "50px"}} >
+                      {descriptionsWashing[kg]}
+                    </Text>
                   </Card>
+                  </Tooltip>
                 </Col>
-              ))}
+              );
+            })}
             </Row>
 
             {/* ถังอบ */}
             <Title level={4}>เลือกถังอบที่ต้องการ</Title>
             <Row gutter={[16, 16]} style={{ marginBottom: 30 }} justify="center">
-              <Col>
+              <Col xs={12} sm={12} md={6} lg={6}>
                 <Card
                   hoverable
+                  onClick={() => setSelectedDryer(null)}
                   style={{
-                    width: 90,
+                    width: "100%",
+                    maxWidth: "200px",
+                    height: 'auto',
                     textAlign: "center",
                     borderRadius: 8,
-                    background: "#FFF5F5",
+                    background: selectedDryer === null ? "#F9FBFF" : "#D9D9D9",
+                    display: "flex",  
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
-                  <Text type="danger">NO</Text>
+                  <Text type="danger" style={{ display: "block", fontSize: 16 }}  >NO</Text>
                 </Card>
               </Col>
-              {[14, 25].map((kg) => (
-                <Col key={kg}>
+              {[14, 25].map((kg) => {
+                const iconSize =
+                kg === 14 ? 60 :
+                80;
+                return (
+                <Col xs={12} sm={12} md={6} lg={6} key={kg}>
+                  <Tooltip title={pricesDryer[kg]} placement="bottom">
                   <Card
                     hoverable
+                    onClick={() => setSelectedDryer(kg)}
                     style={{
-                      width: 90,
+                      width: "100%",
+                      maxWidth: "200px",
                       textAlign: "center",
                       borderRadius: 8,
-                      background: "#F9FBFF",
+                      background: selectedDryer === kg ? "#F9FBFF" : "#D9D9D9",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
                     }}
-                  >
-                    <Image preview={false} src="/dry.png" height={50} />
-                    <Text>{kg} KG</Text>
+                  ><div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                    <BiSolidDryer size={iconSize} style={{ color: selectedDryer === kg ? "#F6D55C" : "#6DA3D3" }} />
+                  </div>
+                    <Text style={{ display: "block", fontSize: 16 }}>{kg} KG</Text>
+                    <Text type="secondary" style={{ fontSize: 14, marginTop: 6 ,whiteSpace: "pre-line" ,minHeight: "50px"}} >{descriptionsDryer[kg]}
+                    </Text>
                   </Card>
+                  </Tooltip>
                 </Col>
-              ))}
+              );
+            })}
             </Row>
 
             {/* น้ำยาซักผ้า */}
             <Title level={4}>เลือกน้ำยาซักผ้าที่ต้องการ</Title>
             <Row gutter={[16, 16]} justify="center">
-              <Col>
+              <Col xs={24} sm={12} md={8} lg={6}>
                 <Card
                   hoverable
+                  onClick={() => setSelectDetergent("home")}
                   style={{
-                    width: 90,
+                    width: "100%",
+                    maxWidth: "200px",
                     textAlign: "center",
                     borderRadius: 8,
-                    background: "#F9FBFF",
+                    background: selectDetergent === "home" ? "#F9FBFF" : "#D9D9D9",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
-                  <Image preview={false} src="/detergent1.png" height={50} />
-                  <Text>น้ำเปล่า</Text>
+                  <FaJugDetergent size={75} style={{ color:  selectDetergent === "home" ? "#3CAEA3" : "#6DA3D3" }} />
+                  <Text style={{ display: "block", fontSize: 16 }}>ทางบ้าน</Text>
                 </Card>
               </Col>
-              <Col>
+              <Col xs={24} sm={12} md={8} lg={6}>
                 <Card
                   hoverable
+                  onClick={() => setSelectDetergent("shop")}
                   style={{
-                    width: 90,
+                    width: "100%",
+                    maxWidth: "200px",
                     textAlign: "center",
                     borderRadius: 8,
-                    background: "#F9FBFF",
+                    background: selectDetergent === "shop" ? "#F9FBFF" : "#D9D9D9",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
-                  <Image preview={false} src="/detergent2.png" height={50} />
-                  <Text>ทางร้าน</Text>
+                  <FaJugDetergent size={75} style={{ color: selectDetergent === "shop" ? "#ED553B" : "#6DA3D3" }} />
+                  <Text style={{ display: "block", fontSize: 16 }}>ทางร้าน</Text>
                 </Card>
               </Col>
             </Row>
-          {/*</Card>*/}
         </Col>
 
         {/* ขวา: ฟอร์มสร้างออเดอร์ */}
-        <Col xs={24} lg={10}>
-          <Card style={{ borderRadius: 10 }}>
-            <Title level={4}>สร้างออเดอร์</Title>
+        <Col xs={24} lg={8}>
+          <Card style={{ borderRadius: 10}}>
+            <Title level={4} style={{ textAlign: "center" }}>สร้างออเดอร์</Title>
             <Divider />
+
+            {/* ชื่อผู้รับ {receiverName} */}
+            <Title level={5}>คุณ สมใจ</Title>
+            {/*<Text style={{ display: "block", marginBottom: 15 }}>สมใจ</Text>*/}
 
             {/* ที่อยู่ */}
             <Title level={5}>ที่อยู่</Title>
             <Radio.Group style={{ display: "block", marginBottom: 15 }}>
-              <Radio value={1}>ที่อยู่เดิม บ้านในเมือง</Radio>
+              <Radio value={1}>ที่อยู่เดิมบ้าน</Radio>
               <Radio value={2}>เลือกที่อยู่ใหม่ บ้านใหม่</Radio>
             </Radio.Group>
 
@@ -151,12 +242,67 @@ const OrderPage: React.FC = () => {
             />
 
             {/* ปุ่มยืนยัน */}
-            <Button type="primary" block style={{ height: 40, fontSize: 16 }}>
+            <Button type="primary" block style={{ height: 40, fontSize: 16 }} onClick={handleConfirm}>
               ยืนยัน
             </Button>
           </Card>
         </Col>
       </Row>
+      {/* Modal แสดงสรุป */}
+      <Modal
+        title="สรุปรายการออเดอร์"
+        open={isModalVisible}
+        onOk={() => setIsModalVisible(false)}
+        onCancel={() => setIsModalVisible(false)}
+        okText="ยืนยัน"
+        cancelText="แก้ไข"
+        style={{ top:  "20%" ,textAlign: "center" }}
+        width={400}
+      >
+        <div style={{ textAlign: "left" }}>
+          <p><b>คุณ:</b> สมใจ</p>
+          <p><b>ที่อยู่:</b> บ้านในเมือง (สมมติ)</p>
+          <p><b>ถังซัก:</b> {selectedWasher ? `${selectedWasher} KG` : "ไม่ได้เลือก"}</p>
+          <p><b>ถังอบ:</b> {selectedDryer ? `${selectedDryer} KG` : "NO"}</p>
+          <p><b>น้ำยาซักผ้า:</b> {selectDetergent === "home" ? "ทางบ้าน" : selectDetergent === "shop" ? "ทางร้าน" : "ไม่ได้เลือก"}</p>
+          <p><b>หมายเหตุ:</b> … (TextArea)</p>
+        </div>
+      </Modal>
+      {/* Modal เลือกที่อยู่บน Google Map
+      <Modal
+        title="เลือกตำแหน่งบนแผนที่"
+        open={isMapModal}
+        onOk={() => setIsMapModal(false)}
+        onCancel={() => setIsMapModal(false)}
+        okText="บันทึก"
+        cancelText="ยกเลิก"
+        width={800}
+        centered
+      >
+        {isLoaded ? (
+          <GoogleMap
+            center={markerPosition}
+            zoom={15}
+            mapContainerStyle={{ width: "100%", height: "400px" }}
+            onClick={(e) => {
+              if (e.latLng) {
+                setMarkerPosition({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+              } 
+            }}
+          >
+            <Marker position={markerPosition} />
+          </GoogleMap>
+        ) : (
+          <p>Loading map...</p>
+        )}
+        <Input.TextArea
+          rows={2}
+          placeholder="รายละเอียดที่อยู่ (เช่น ซอย ถนน)"
+          value={newAddress}
+          onChange={(e) => setNewAddress(e.target.value)}
+          style={{ marginTop: 10 }}
+        />
+      </Modal> */}
     </CustomerSidebar>
   );
 };
