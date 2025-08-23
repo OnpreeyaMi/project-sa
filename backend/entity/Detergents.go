@@ -11,8 +11,8 @@ type Detergent struct {
 	InStock int
 	Orders []Order `gorm:"many2many:OrderDetergents;"`
 	PurchaseDetergents []PurchaseDetergent `gorm:"foreignKey:DetergentID"`
-	UserID uint
-	User User `gorm:"foreignKey:UserID;"`
+	// UserID uint
+	// User User `gorm:"foreignKey:UserID;"`
 	CategoryID uint
 	DetergentCategory DetergentCategory `gorm:"foreignKey:CategoryID;"`
 }
@@ -24,8 +24,8 @@ type PurchaseDetergent struct {
 	Quantity int
 	Price float64
 	Supplier string
-	UserID uint
-	User User `gorm:"foreignKey:UserID;"`
+	// UserID uint
+	// User User `gorm:"foreignKey:UserID;"`
 	
 }
 
