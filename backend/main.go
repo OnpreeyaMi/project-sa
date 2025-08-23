@@ -15,6 +15,7 @@ func main() {
 		// &entity.Address{},
         // &entity.AuditLog{},
         // &entity.Basket{},
+        &entity.DetergentCategory{},
         // &entity.ClothType{},
         // &entity.Complaint{},
         // &entity.Customer{},
