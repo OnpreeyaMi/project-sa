@@ -1,11 +1,14 @@
 package entity
 
+import "gorm.io/gorm"
+
 type Servicetype struct {
-	ServiceTypeID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//ServiceTypeID uint `gorm:"primaryKey;autoIncrement"`
 	Tempetature uint 
 	Name string
 	Description string
 	Price uint 
 
-	LaundryProcesses []LaundryProcess `gorm:"foreignKey:ServiceTypeID;references:ServiceTypeID"`
+	LaundryProcesses []LaundryProcess `gorm:"foreignKey:ServiceTypeID;references:ID"`
 }

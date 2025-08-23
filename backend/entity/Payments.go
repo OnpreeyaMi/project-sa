@@ -1,9 +1,14 @@
 package entity
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Payment struct {
-	PaymentID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//PaymentID uint `gorm:"primaryKey;autoIncrement"`
 	Bill uint
 	Payment string
 	CreateDate time.Time
@@ -16,6 +21,6 @@ type Payment struct {
 	Prices Price  `gorm:"foreignKey:PriceID"`
 
 	HistoryID uint
-	History History `gorm:"foreignKey:HistoryID;references:HistoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	History History `gorm:"foreignKey:HistoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
 }

@@ -1,7 +1,10 @@
 package entity
 
+import "gorm.io/gorm"
+
 type Role struct {
-	RoleID   uint   `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//RoleID   uint   `gorm:"primaryKey;autoIncrement"`
 	Role_name string
 
 	UserID uint

@@ -1,15 +1,14 @@
 package entity
 
-import(
-	"time"
+import (
+	"gorm.io/gorm"
 )
 
 type Detergent struct {
-	DetergentID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
 	Name        string
-	Type		string
-	InStock		int
-	LastUpdated	time.Time
+	Type        string
+	InStock     int
 	
 	Orders []Order `gorm:"many2many:OrderDetergents;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

@@ -1,14 +1,17 @@
 package entity
 
-import "time"
+import ("gorm.io/gorm" 
+		"time"
+)
 type ReplyComplaint struct {
-	Reply_complaintID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//Reply_complaintID uint `gorm:"primaryKey;autoIncrement"`
 	Created_at time.Time
 	Reply string
 	
 	EmployeeID uint
-	Employee *Employee `gorm:"foreignKey:EmployeeID;references:EmployeeID"`
+	Employee *Employee `gorm:"foreignKey:EmployeeID;references:ID"`
 
 	ComplaintID uint
-	Complaint *Complaint `gorm:"foreignKey:ComplaintID;references:ComplaintID"`
+	Complaint *Complaint `gorm:"foreignKey:ComplaintID;references:ID"`
 }

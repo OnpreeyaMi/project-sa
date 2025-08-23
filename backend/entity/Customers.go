@@ -2,10 +2,13 @@ package entity
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Customer struct {
-	CustomerID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model 
+	//CustomerID uint `gorm:"primaryKey;autoIncrement"`
 	First_name string
 	Last_name string
 	Phone_number string
@@ -21,6 +24,6 @@ type Customer struct {
 
 	Complaints []Complaint `gorm:"foreignKey:CustomerID"`
 
-	Order Order `gorm:"foreignKey:CustomerID"`
+	Order []Order `gorm:"foreignKey:CustomerID"`
 
 }

@@ -1,8 +1,11 @@
 package entity
 
+import "gorm.io/gorm"
+
 type EmpPosition struct {
-	EmpPositionID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//EmpPositionID uint `gorm:"primaryKey;autoIncrement"`
 	EmpPosition_name string
 
-	Employees []Employee `gorm:"foreignKey:EmpPositionID;references:EmpPositionID"`
+	Employees []Employee `gorm:"foreignKey:EmpPositionID;references:ID"`
 }

@@ -1,7 +1,10 @@
 package entity
 
+import "gorm.io/gorm"
+
 type Price struct {
-	PriceMachinrID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//PriceMachinrID uint `gorm:"primaryKey;autoIncrement"`
 	Price uint
 	
 	MachineID uint

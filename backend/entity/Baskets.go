@@ -1,12 +1,15 @@
 package entity
 
+import "gorm.io/gorm"
+
 type Basket struct {
-	BasketID      uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//BasketID      uint `gorm:"primaryKey;autoIncrement"`
 	Basket_status string
 
 	OrderID uint
-	Order   *Order `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Order   *Order `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
 	HistoryID uint
-	History *History `gorm:"foreignKey:HistoryID;references:HistoryID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	History *History `gorm:"foreignKey:HistoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

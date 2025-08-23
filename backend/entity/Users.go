@@ -1,7 +1,10 @@
 package entity
 
+import "gorm.io/gorm"
+
 type User struct {
-	UserID    uint   `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//UserID    uint   `gorm:"primaryKey;autoIncrement"`
 	Email    string
 	Password string
 	
@@ -9,7 +12,7 @@ type User struct {
 	Role Role `gorm:"foreignKey:UserID"`
 
 	CustomerID uint
-	Customer *Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
+	Customer *Customer `gorm:"foreignKey:CustomerID;references:ID"`
 	
-	Employee Employee `gorm:"foreignKey:UserID;references:UserID"`
+	Employee Employee `gorm:"foreignKey:UserID;references:ID"`
 }

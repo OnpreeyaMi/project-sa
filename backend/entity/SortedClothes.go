@@ -1,13 +1,16 @@
 package entity
 
+import "gorm.io/gorm"
+
 type SortedCloth struct {
-	SortedID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//SortedID uint `gorm:"primaryKey;autoIncrement"`
 	Sorted_quantity int
 	Sorted_basketCode uint
 
 	ClothTypeID uint
 	ClothType ClothType `gorm:"foreignKey:ClothTypeID"`
 
-	SortingRecord  []SortingRecord `gorm:"foreignKey:SortedID;references:SortedID"`
+	SortingRecord  []SortingRecord `gorm:"many2many:sorted_clothes;"`
 	
 }

@@ -1,9 +1,15 @@
 package entity
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
 
 type Queuehistory struct {
-	HistoryID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//HistoryID uint `gorm:"primaryKey;autoIncrement"`
 	Status     string
 	TimeStamp   time.Time
 

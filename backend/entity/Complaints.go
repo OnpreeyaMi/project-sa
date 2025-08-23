@@ -2,21 +2,24 @@ package entity
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Complaint struct {
-	ComplaintID      uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	//ComplaintID      uint `gorm:"primaryKey;autoIncrement"`
 	Status_complaint string
 	Title            string
 	Description      string
 	Created_at       time.Time
 
 	CustomerID       uint
-	Customer         Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
+	Customer         Customer `gorm:"foreignKey:CustomerID;references:ID"`
 
 	OrderID          uint
-	Order            Order `gorm:"foreignKey:OrderID;references:OrderID"`
+	Order            Order `gorm:"foreignKey:OrderID;references:ID"`
 
 	//ReplyComplaintID uint
-	ReplyComplaints  []ReplyComplaint `gorm:"foreignKey:ComplaintID;references:ComplaintID"`
+	ReplyComplaints  []ReplyComplaint `gorm:"foreignKey:ComplaintID;references:ID"`
 }

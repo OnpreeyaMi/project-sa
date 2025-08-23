@@ -22,7 +22,7 @@ func main() {
         &entity.Employee{},
         &entity.History{},
         &entity.LaundryProcess{},
-        &entity.OrderDetergents{},
+        //&entity.OrderDetergents{},
         &entity.Order{},
         &entity.Payment{},
         &entity.Permission{},

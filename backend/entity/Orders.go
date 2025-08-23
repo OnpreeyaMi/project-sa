@@ -1,35 +1,35 @@
 package entity
 
 import (
-	"time"
+	"gorm.io/gorm"
 )
 
 type Order struct {
-	OrderID        uint `gorm:"primaryKey;autoIncrement"`
-	PickupDate     time.Time
-	CustomerID     uint
-	Customer       *Customer `gorm:"foreignKey:CustomerID;references:CustomerID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	gorm.Model
+	CustomerID uint
+	Customer   *Customer `gorm:"foreignKey:CustomerID;"`
 
-	Machine *Machine `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	
-	Address        *Address `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	// MachineID uint
+	Machine   []Machine `gorm:"many2many:OrderMachine;"`
 
-	Order_image    string
-	Order_note     string
+	AddressID uint
+	Address *Address `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
-	Queue *Queue `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Order_image string
+	Order_note  string
 
-	Complaint      *Complaint `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	// Queue *Queue `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
-	Detergents []Detergent `gorm:"many2many:OrderDetergents"`
+	// Complaint *Complaint `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
-	LaundryProcesses []LaundryProcess `gorm:"foreignKey:OrderID;references:OrderID"`
+	// Detergents []Detergent `gorm:"many2many:OrderDetergents"`
 
-	SortingRecord SortingRecord `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Basket Basket `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	// LaundryProcesses []LaundryProcess `gorm:"foreignKey:OrderID;references:OrderID"`
 
-	History []History `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	// SortingRecord SortingRecord `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	// Basket        Basket        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
-	Payment *Payment `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	
+	// History []History `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	// Payment *Payment `gorm:"foreignKey:OrderID;references:OrderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
