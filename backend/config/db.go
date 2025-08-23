@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+
+	"github.com/OnpreeyaMi/project-sa/entity"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -17,4 +19,27 @@ func ConnectDatabase() {
 
 	DB = database
 	fmt.Println("เชื่อมต่อ SQLite สำเร็จ!")
+}
+
+
+func SetupDatabase() {
+
+	// AutoMigrate สำหรับทุก entity
+	err := DB.AutoMigrate(
+		&entity.Customer{},
+		&entity.Address{},
+		&entity.Order{},
+		&entity.ServiceType{},
+		&entity.Detergent{},
+		&entity.Payment{},
+		&entity.History{},
+		&entity.LaundryProcess{},
+		
+	)
+	if err != nil {
+		fmt.Println("Error in AutoMigrate:", err)
+	} else {
+		fmt.Println("AutoMigrate completed successfully.")
+	}
+
 }
