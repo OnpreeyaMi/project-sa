@@ -1,6 +1,6 @@
 package entity
 
-import "grm.io/gorm"
+import "gorm.io/gorm"
 
 type Queuehistory struct {
 	gorm.Model
