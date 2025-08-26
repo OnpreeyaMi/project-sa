@@ -20,5 +20,6 @@ type Order struct {
 	SortingRecord SortingRecord `gorm:"foreignKey:OrderID;"`
 	PromotionUsage PromotionUsage `gorm:"foreignKey:OrderID;"`
 	Payment Payment `gorm:"foreignKey:OrderID;"`
+	
 }
 
