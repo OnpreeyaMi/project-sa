@@ -8,7 +8,6 @@ import (
 type Timeslot struct {
 	gorm.Model
 
-
 	Start_time time.Time
 	End_time   time.Time
 
