@@ -57,7 +57,7 @@ func CreateOrder(c *gin.Context) {
 	}
 
 	// map addresses
-	if req.AddressID > 0 {
+	if len(req.AddressIDs) > 0 {
 		var addresses []entity.Address
 		if err := config.DB.Find(&addresses, req.AddressIDs).Error; err == nil {
 			config.DB.Model(&order).Association("Address").Append(addresses)
