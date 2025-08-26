@@ -5,12 +5,12 @@ import (
 )
 type PurchaseDetergent struct {
 	gorm.Model
-	DetergentID uint
+	//DetergentID uint
 	Detergent   *Detergent `gorm:"foreignKey:DetergentID;"`
 	Quantity int
 	Price float64
 	Supplier string
-	UserID uint
+	//UserID uint
 	User User `gorm:"foreignKey:UserID;"`
 	
 }

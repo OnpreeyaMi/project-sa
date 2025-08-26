@@ -23,14 +23,20 @@ func ConnectDatabase() {
 func SetupDatabase() {
 	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
-		&entity.Customer{},
 		&entity.Address{},
-		&entity.Order{},
-		&entity.ServiceType{},
+		&entity.Customer{},
 		&entity.Detergent{},
-		//&entity.Payment{},
-		&entity.OrderHistory{},
+		&entity.DetergentCategory{},
 		&entity.LaundryProcess{},
+		&entity.Machine{},
+		&entity.Order{},
+		&entity.OrderHistory{},
+		&entity.PurchaseDetergent{},
+		&entity.Queue{},
+		&entity.Queueassignment{},
+		&entity.Queuehistory{},
+		&entity.ServiceType{},
+		&entity.Timeslot{},	
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
