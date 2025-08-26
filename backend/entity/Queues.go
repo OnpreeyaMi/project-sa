@@ -1,8 +1,8 @@
 package entity
 
 import (
-
-		"gorm.io/gorm" )	
+		"gorm.io/gorm" 
+)	
 
 type Queue struct {
 	gorm.Model

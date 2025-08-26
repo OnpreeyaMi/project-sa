@@ -6,7 +6,7 @@ import (
 //ประวัติการสร้างออเดอร์
 type OrderHistory struct {
 	gorm.Model
-	OrderID uint
+	//OrderID uint
 	Order   *Order `gorm:"foreignKey:OrderID;"`
 	Status  string
 	
