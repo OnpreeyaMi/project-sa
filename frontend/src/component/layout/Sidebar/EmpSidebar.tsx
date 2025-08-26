@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import React, { useState } from 'react';
 import { FaHome,FaUserFriends,FaUserCircle } from "react-icons/fa";
 import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
-import { MdLocalLaundryService } from "react-icons/md";
+// import { MdLocalLaundryService } from "react-icons/md"; 
 import { TbTruckDelivery } from "react-icons/tb";
 
 import {
@@ -12,8 +12,8 @@ import {
 
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-import { LiaUserCogSolid } from "react-icons/lia";
-import { TbSettings } from "react-icons/tb";
+// import { LiaUserCogSolid } from "react-icons/lia";
+// import { TbSettings } from "react-icons/tb";
 
 
 const { Header, Sider, Content } = Layout;
@@ -84,25 +84,20 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
               onClick: () => {
                 navigate('/order'); //ออเดอร์
               }},
+            
             { key: '3', 
-              icon: <MdLocalLaundryService  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
-              label: <span style={{ color: '#6da3d3' }}>สถานะ</span>,
-              onClick: () => {
-                navigate('/statusupdate'); //สถานะ
-              }},
-            { key: '4', 
               icon: <TbTruckDelivery  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
               label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span>,
               onClick: () => {
                 navigate('/TransportQueuePage'); //คิวขนส่ง
               }},
-            { key: '5', 
+            { key: '4', 
               icon: <IoStorefrontSharp  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
               label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
               onClick: () => {
                 navigate('/store'); //คลัง
               }},
-            { key: '6', 
+            { key: '5', 
               icon: <FaUserCircle  
               style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
               label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span>,
