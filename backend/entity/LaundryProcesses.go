@@ -21,6 +21,7 @@ type LaundryProcess struct {
 	//many to one กับ Sorting
 	SortingID  uint
 	SortingRecord    SortingRecord `gorm:"foreignKey:SortingID"`
+	// Sorting    Sorting `gorm:"foreignKey:SortingID"`
 	//many to many กับ Machine
 	Machine []Machine `gorm:"foreignKey:MachineID"`
 }
