@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { FaHome,FaUserFriends,FaUserCircle } from "react-icons/fa";
-import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
+import React, { useState, type ReactNode } from 'react';
+import { FaHome, FaUserCircle } from "react-icons/fa";
+import { IoNewspaper, IoStorefrontSharp } from "react-icons/io5";
 import { MdLocalLaundryService } from "react-icons/md";
 import { TbTruckDelivery } from "react-icons/tb";
+import { FaShirt } from "react-icons/fa6";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -12,57 +13,87 @@ import iconWashing from '../../../assets/iconwashing.png';
 import { LiaUserCogSolid } from "react-icons/lia";
 import { TbSettings } from "react-icons/tb";
 import { RiUserVoiceFill } from "react-icons/ri";
-import { useNavigate } from 'react-router-dom';  //korn
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 
 interface SidebarProps {
-  children?: React.ReactNode;
+  children: ReactNode;
 }
 
-const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
+const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const {
-    token: { colorBgContainer, borderRadiusLG },
+    token: { colorBgContainer, borderRadiusLG }
   } = theme.useToken();
-  const navigate = useNavigate(); // เพิ่มบรรทัดนี้
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    {
+      key: "/employee/dashboard",
+      icon: <FaHome style={{ fontSize: 18 }} />,
+      label: "หน้าหลัก",
+      onClick: () => navigate("/employee")
+    },
+    {
+      key: "/employee/orders",
+      icon: <IoNewspaper style={{ fontSize: 18 }} />,
+      label: "ออเดอร์",
+      onClick: () => navigate("/employee/orders")
+    },
+    {
+      key: "/employee/status",
+      icon: <MdLocalLaundryService style={{ fontSize: 18 }} />,
+      label: "สถานะ",
+      onClick: () => navigate("/employee/status")
+    },
+    {
+      key: "/employee/delivery",
+      icon: <TbTruckDelivery style={{ fontSize: 18 }} />,
+      label: "คิวขนส่ง",
+      onClick: () => navigate("/employee/delivery")
+    },
+    {
+      key: "/employee/check",
+      icon: <FaShirt style={{ fontSize: 18 }} />,
+      label: "รับผ้า",
+      onClick: () => navigate("/employee/check")
+    },
+    {
+      key: "/employee/inventory",
+      icon: <IoStorefrontSharp style={{ fontSize: 18 }} />,
+      label: "คลัง",
+      onClick: () => navigate("/employee/inventory")
+    },
+    {
+      key: "/employee/profile",
+      icon: <FaUserCircle style={{ fontSize: 18 }} />,
+      label: "โปรไฟล์",
+      onClick: () => navigate("/employee/profile")
+    }
+  ];
 
   return (
-    <Layout style={{ minHeight: '100vh', margin: 0 }}>
+    <Layout>
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
-        style={{
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          backgroundColor: '#0E4587',
-        }}
+        style={{ backgroundColor: "#0E4587", minHeight: "100vh" }}
       >
-        <div className="demo-logo-vertical" />
-         {!collapsed && (
-          <Col style={{ marginBottom: '20px',display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {!collapsed && (
+          <Col style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 16 }}>
             <img src={iconWashing} alt="Washing Icon" width={100} height={100} />
-            <h1
-            style={{
-              color: "white",
-              margin: "3px",
-              fontSize: "18px",
-              textAlign: "center",
-            }}
-          >
-            พนักงาน
-    
-          </h1>
-        </Col>
-          
-          
+            <h1 style={{ color: "white", margin: "8px 0", fontSize: 18, textAlign: "center" }}>
+              NEATII.
+            </h1>
+          </Col>
         )}
+
         <Menu
-        //   theme="#0E4587"
-          style={{ backgroundColor: '#0E4587', color: 'white' }}  
+          theme="dark"
           mode="inline"
           defaultSelectedKeys={['1']}
           onClick={({ key }) => {
@@ -84,29 +115,33 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
         
       </Sider>
 
-      <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
+      <Layout>
         <Header style={{ padding: 0, background: colorBgContainer }}>
           <Button
             type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            icon={
+              collapsed ? (
+                <MenuUnfoldOutlined style={{ fontSize: 20 }} />
+              ) : (
+                <MenuFoldOutlined style={{ fontSize: 20 }} />
+              )
+            }
             onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-            }}
+            style={{ fontSize: 16, width: 64, height: 64 }}
           />
-            <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>Employee Dashboard</span>
+          <span style={{ color: "#0E4587", fontSize: 20, marginLeft: 16 }}>
+            Employee Dashboard
+          </span>
         </Header>
+
         <Content
           style={{
-            margin: '24px 16px',
+            margin: "24px 16px",
             padding: 24,
-            minHeight: 280,
+            minHeight: 617,
             background: colorBgContainer,
-            borderRadius: borderRadiusLG,
+            borderRadius: borderRadiusLG
           }}
-          
         >
           {children}
         </Content>
@@ -115,4 +150,4 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
   );
 };
 
-export default EmpSidebar;
+export default EmployeeSidebar;

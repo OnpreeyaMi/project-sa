@@ -6,11 +6,8 @@ import {
 
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-
 import { FaHome,FaUserCircle,FaHistory  } from "react-icons/fa";
-
 import { MdLocalLaundryService,MdOutlinePayment  } from "react-icons/md";
-
 import { GiClothes } from "react-icons/gi";
 import { RiUserVoiceFill } from "react-icons/ri";
 import { useNavigate } from 'react-router-dom';
