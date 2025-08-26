@@ -1,0 +1,34 @@
+.status-card{
+    text-align: center; /* จัดตัวอักษรตรงกลาง */
+    width: 100%; /* ให้กินความกว้างเต็มพื้นที่ของพ่อ parent element */
+    max-Width: 250px; /* กําหนดความกว้างสูงสุด */
+    aspect-ratio: "4/5"; /* กำหนดสัดส่วน*/
+    display: "flex"; /* ใช้ flexbox เพื่อจัดวางองค์ประกอบภายใน */
+    flex-direction: "column"; /* เรียงองค์ประกอบในแนวตั้ง */
+    align-items: "center"; /* จัดเรียงองค์ประกอบในแนวนอนตรงกลาง */
+    justify-Content: "center"; /* จัดเรียงองค์ประกอบในแนวตั้งตรงกลาง */
+    margin: "auto"; /* จัดให้ element อยู่กลางแนวแกนหลัก */
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+    font-family: 'Courier New', Courier, monospace ;
+}
+
+.status-card.selected {
+    background-color: #3DB1AE; /* เปลี่ยนสีพื้นหลังเมื่อเลือก */
+    color: white; /* เปลี่ยนสีตัวอักษรเมื่อเลือก */
+}
+
+.status-card.unselected {
+    background-color: #f0f0f0; /* เปลี่ยนสีพื้นหลังเมื่อไม่เลือก */
+    color: black; /* เปลี่ยนสีตัวอักษรเมื่อไม่เลือก */
+}
+
+.status-card.icon {
+    font-Size: "40px"; /* กําหนดขนาดของไอคอน */
+}
+
+.status-card-label {
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    word-break: keep-all;
+}

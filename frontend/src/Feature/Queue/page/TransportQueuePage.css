@@ -1,0 +1,20 @@
+/* TransportQueuePage.css */
+
+.transport-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.transport-content {
+  flex: 1;
+  padding: 24px;
+  background-color: #fff;
+}
+
+.transport-employee {
+  margin-bottom: 24px;
+  background-color: #fdfdfd;
+  padding: 16px;
+  border-radius: 8px;
+}
