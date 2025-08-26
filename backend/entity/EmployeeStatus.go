@@ -4,11 +4,12 @@ import (
 )
 
 
+import (
+	"gorm.io/gorm"
+)
+
 type EmployeeStatus struct {
 	gorm.Model
-	StatusName 			string
-	StatusDescription 	string 
-
-	Employees []*Employee `gorm:"foreignKey:EmployeeStatusID"`
-	
+	StatusID    uint     `json:"status_id"`
+	EmpID       uint     `json:"emp_id"`
 }

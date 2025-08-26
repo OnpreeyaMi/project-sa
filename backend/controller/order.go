@@ -1,22 +1,21 @@
 package controller
 
 import (
-	"net/http"
-	"github.com/OnpreeyaMi/project-sa/backend/config"
-	"github.com/OnpreeyaMi/project-sa/backend/entity" // ดูmodule at go.mod
+	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
 	"github.com/gin-gonic/gin"
-
+	"net/http"
+	"github.com/OnpreeyaMi/project-sa/config"
 )
 
 // CreateOrder รับข้อมูลจาก frontend แล้วบันทึกลง DB
 func CreateOrder(c *gin.Context) {
 	var req struct {
-		CustomerID     uint   `json:"customer_id"`
-		ServicetypeIDs []uint `json:"servicetype_ids"`
-		DetergentIDs   []uint `json:"detergent_ids"`
-		OrderImage     string `json:"order_image"`
-		OrderNote      string `json:"order_note"`
-		AddressIDs     []uint `json:"address_ids"`
+		CustomerID   uint               `json:"customer_id"`
+		ServicetypeIDs []uint 			`json:"servicetype_ids"`
+		DetergentIDs   []uint			`json:"detergent_ids"`
+		OrderImage   string             `json:"order_image"`
+		OrderNote    string             `json:"order_note"`
+		AddressID    uint               `json:"address_id"`
 	}
 
 	// Bind JSON จาก request body
@@ -32,7 +31,7 @@ func CreateOrder(c *gin.Context) {
 		//Detergent:   req.DetergentID,
 		OrderImage:   req.OrderImage,
 		OrderNote:    req.OrderNote,
-		//AddressID:    req.AddressID,
+		AddressID:    req.AddressID,
 	}
 
 	// บันทึกลง DB
@@ -56,25 +55,6 @@ func CreateOrder(c *gin.Context) {
 			config.DB.Model(&order).Association("Detergents").Append(detergents)
 		}
 	}
-
-	// map addresses
-	if len(req.AddressIDs) > 0 {
-		var addresses []entity.Address
-		if err := config.DB.Find(&addresses, req.AddressIDs).Error; err == nil {
-			config.DB.Model(&order).Association("Address").Append(addresses)
-		}
-	}
 	// ส่ง response กลับ frontend
 	c.JSON(http.StatusOK, order)
-}
-
-func GetOrders(c *gin.Context) {
-	var orders []entity.Order
-	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	// order = SELECT orders.* FROM orders LEFT JOIN customers ON orders.customer_id = customers.id
-
-	c.JSON(http.StatusOK, orders)
 }

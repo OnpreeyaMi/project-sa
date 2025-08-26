@@ -7,14 +7,14 @@ import (
 
 type SortingRecord struct {
 	gorm.Model
-
-	SortingDate time.Time
-	SortingNote string
+	Sorting_ID uint `gorm:"primaryKey;autoIncrement"`
+	Sorting_Date time.Time
+	Sorting_note string
 
 	OrderID uint
-	Order *Order `gorm:"foreignKey:OrderID"`
-
-	SortedClothes []*SortedClothes `gorm:"foreignKey:SortingRecordID"`
-
-	
+	Sorted_ID uint
+	His_ID uint
+	SortedClothes []SortedClothes `gorm:"foreignKey:SortedID"`
+	Order []Order `gorm:"foreignKey:OrderID"`
+	SortingHistory []SortingHistory `gorm:"foreignKey:His_ID"`
 }

@@ -5,16 +5,11 @@ import (
 
 type SortedClothes struct {
 	gorm.Model
-	SortedQuantity 		int
-	SortedCount 		int
+	Sorted_ID uint `gorm:"primaryKey;autoIncrement"`
+	Sorted_quantity int
 
-	SortingHistory *SortingHistory `gorm:"foreignKey:SortedClothesID"`
-
-	ClothTypeID uint
-	ClothType   *ClothType `gorm:"foreignKey:ClothTypeID"`	
-
-	SortingRecordID uint
-	SortingRecord   *SortingRecord `gorm:"foreignKey:SortingRecordID"`
-
-
+	Sorting_ID uint
+	ClothType_ID uint
+	SortingRecord SortingRecord `gorm:"foreignKey:SortingID"`
+	ClothType []ClothType `gorm:"foreignKey:ClothTypeID"`
 }
