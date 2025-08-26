@@ -1,14 +1,20 @@
 package entity
 
-import "time"
+import (
+	"gorm.io/gorm"
+    "time"
+)
 
 type SortingRecord struct {
-	SortingID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	Sorting_ID uint `gorm:"primaryKey;autoIncrement"`
 	Sorting_Date time.Time
 	Sorting_note string
-	Sorting_status string
 
 	OrderID uint
-	SortedID uint
-	SortedClothes []SortedCloth `gorm:"foreignKey:SortedID"`
+	Sorted_ID uint
+	His_ID uint
+	SortedClothes []SortedClothes `gorm:"foreignKey:SortedID"`
+	Order []Order `gorm:"foreignKey:OrderID"`
+	SortingHistory []SortingHistory `gorm:"foreignKey:His_ID"`
 }

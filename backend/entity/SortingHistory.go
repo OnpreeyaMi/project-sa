@@ -1,11 +1,17 @@
 package entity
 
-import "time"
+
+import (
+	"gorm.io/gorm"
+    "time"
+)
 
 type SortingHistory struct {
+    gorm.Model
     HisID       uint      `gorm:"primaryKey" json:"his_id"`
     HisQuantity int       
     RecordedAt  time.Time 
 
-    SortingID uint  // FK → SortingRecord
+    Sorting_ID uint  // FK → SortingRecord
+    SortingRecord []SortingRecord `gorm:"foreignKey:SortingID"`
 }

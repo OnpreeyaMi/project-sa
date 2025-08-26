@@ -3,46 +3,40 @@ package main
 import (
     "fmt"
 	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/entity"
+    "github.com/gin-gonic/gin"
+    "github.com/OnpreeyaMi/project-sa/controller"
+
 )
 
+const port = 8080
 func main() {
 	// เชื่อมต่อฐานข้อมูล
 	config.ConnectDatabase()
 
-	// สร้างตารางตาม entity ที่เรามี
-	config.DB.AutoMigrate(
-		&entity.Address{},
-        &entity.AuditLog{},
-        &entity.Basket{},
-        &entity.ClothType{},
-        &entity.Complaint{},
-        &entity.Customer{},
-        &entity.Detergent{},
-        &entity.Employee{},
-        &entity.History{},
-        &entity.LaundryProcess{},
-        &entity.OrderDetergents{},
-        &entity.Order{},
-        &entity.Payment{},
-        &entity.Permission{},
-        &entity.EmpPosition{},
-        &entity.Price{},
-        &entity.Queueassignment{},
-        &entity.Queuehistory{},
-        &entity.Queue{},
-        &entity.ReplyComplaint{},
-        &entity.RolePermission{},
-        &entity.Role{},
-        &entity.Servicetype{},
-        &entity.SortedCloth{},
-        &entity.SortingRecord{},
-        &entity.Assignment{},
-        &entity.Timeslot{},
-        &entity.User{},
-        &entity.Verification{},
-        &entity.Machine{},
-	)
+    // สร้าง table สำหรับ entity
+    config.SetupDatabase()
 
-	fmt.Println("สร้างตารางเรียบร้อย!")
+    //สร้าง router
+    router := gin.Default()
+	router.Use(CORSMiddleware())
+
+    //ตั้งค่า route
+    router.POST("/order", controller.CreateOrder)
+
+    // รัน server
+    router.Run(fmt.Sprintf(":%d", port))
+
+}
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE,PATCH")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
 }

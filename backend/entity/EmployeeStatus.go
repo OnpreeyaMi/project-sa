@@ -1,6 +1,11 @@
 package entity
 
+import (
+	"gorm.io/gorm"
+)
+
 type EmployeeStatus struct {
-StatusID    uint     `json:"status_id"`
-EmpID       uint     `json:"emp_id"`
+	gorm.Model
+	StatusID    uint     `json:"status_id"`
+	EmpID       uint     `json:"emp_id"`
 }

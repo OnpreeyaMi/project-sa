@@ -1,10 +1,13 @@
 package entity
-
-import "time"
+import (
+	"gorm.io/gorm"
+)
 
 type PositionCount struct {
-PositionCountID    uint `gorm:"primaryKey" json:"position_count_id"`
-TotalEmployee      int 
-DateRecorded       time.Time 
-PositionID         uint 
+	gorm.Model
+	PositionCount_ID    uint `gorm:"primaryKey" json:"position_count_id"`
+	TotalEmployee      int 
+
+	Position_ID         uint 
+	EmpPosition []EmpPosition `gorm:"foreignKey:Position_ID"`
 }
