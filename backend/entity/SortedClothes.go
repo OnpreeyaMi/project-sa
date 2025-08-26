@@ -5,6 +5,6 @@ type SortedCloth struct {
 	Sorted_quantity int
 	Sorted_basketCode uint
 
-	ClothTypeID uint
+	SortingID uint
 	ClothType ClothType `gorm:"foreignKey:ClothTypeID"`
 }

@@ -9,7 +9,6 @@ type SortingRecord struct {
 	Sorting_status string
 
 	OrderID uint
-	Orders Order `gorm:"foreignKey:OrderID"`
 	SortedID uint
 	SortedClothes []SortedCloth `gorm:"foreignKey:SortedID"`
 }
