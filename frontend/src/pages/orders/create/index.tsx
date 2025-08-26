@@ -111,7 +111,6 @@ const OrderPage: React.FC = () => {
                       flexDirection: "column",
                       alignItems: "center",
                       cursor: "pointer",
-                        height: "100%",
                     }}                    
                     >
                       <div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
