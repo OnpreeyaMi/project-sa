@@ -170,18 +170,7 @@ export default function CustomerComplaintPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">ความสำคัญ</label>
-              <select
-                className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                value={form.priority}
-                onChange={(e) => setForm({ ...form, priority: e.target.value as any })}
-              >
-                <option value="low">ต่ำ</option>
-                <option value="medium">กลาง</option>
-                <option value="high">สูง</option>
-              </select>
-            </div>
+            
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">แนบไฟล์ (ไม่เกิน 5 ไฟล์)</label>
               <div className="mt-1 flex items-center gap-2">
