@@ -14,8 +14,8 @@ type Order struct {
 	OrderNote string
 	Process []Process `gorm:"many2many:OrderProcess;"`
 	OrderHistory []OrderHistory `gorm:"foreignKey:OrderID;"`
-	AddressID uint
 	Address []Address `gorm:"foreignKey:OrderID;"`
 	Usages []Usage `gorm:"foreignKey:OrderID;"`
+	Queues []Queue `gorm:"foreignKey:OrderID;"`
 }
 

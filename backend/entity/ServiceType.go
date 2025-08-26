@@ -11,3 +11,4 @@ type ServiceType struct {
 	Capacity int
 	Orders []Order `gorm:"many2many:OrderServicetypes;"`
 }
+//must add mock data
