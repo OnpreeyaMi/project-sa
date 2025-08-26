@@ -17,4 +17,5 @@ type Complaint struct {
 	HistoryID []HistoryComplain `gorm:"foreignKey:ComplaintID"`
 }
 
+
 func (Complaint) TableName() string { return "complaints" }
