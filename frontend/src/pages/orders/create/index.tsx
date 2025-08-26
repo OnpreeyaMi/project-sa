@@ -1,4 +1,5 @@
-import React, { useState } from 'react';import {
+import React, { useState } from 'react';
+import {
   Card,
   Row,
   Col,
@@ -8,17 +9,16 @@ import React, { useState } from 'react';import {
   Radio,
   Typography,
   Divider,
+  Modal,
+  Tooltip,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { Modal } from "antd";
-import {Tooltip} from "antd";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
-import { BiSolidWasher } from "react-icons/bi";
-import { BiSolidDryer } from "react-icons/bi";
+import { BiSolidWasher, BiSolidDryer } from "react-icons/bi";
 import { FaJugDetergent } from "react-icons/fa6";
-// import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { createOrder } from '../../../services/orderService';
 
-const descriptionsWashing : Record<number, string> =  {
+const descriptionsWashing: Record<number, string> =  {
   10: `เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น`,
   14: "เสื้อยืด ผ้าบาง 20 ชิ้น\n ผ้าหนา ยีนส์ 10 ชิ้น\n ชุดเครื่องนอน 3 ฟุต",
   18: "เสื้อยืด ผ้าบาง 25 ชิ้น\n ผ้าหนา ยีนส์ 15 ชิ้น\n ชุดเครื่องนอน 5 ฟุต",
@@ -47,19 +47,39 @@ const OrderPage: React.FC = () => {
   const [selectedDryer, setSelectedDryer] = useState<number | null>(null);
   const [selectDetergent, setSelectDetergent] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [orderNote, setOrderNote] = useState("");
+  const [orderImage, setOrderImage] = useState<string | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
 
-  const handleConfirm = () => {
-    setIsModalVisible(true);
+  // ปุ่มกดยืนยันหลัก
+  const handleConfirm = () => setIsModalVisible(true);
+
+  // ปุ่ม OK ใน Modal
+  const handleModalOk = async () => {
+    setIsModalVisible(false);
+
+    const orderData = {
+      customer_id: 1,
+      servicetype_ids: selectedWasher ? [selectedWasher] : [],
+      detergent_ids: selectDetergent === "home" ? [1] : selectDetergent === "shop" ? [2] : [],
+      order_image: orderImage,
+      order_note: orderNote,
+      address_id: 1,
+    };
+
+    try {
+      await createOrder(orderData);
+      console.log(orderData, "Order created successfully");
+      Modal.success({ title: "สร้างออเดอร์สำเร็จ!" });
+      
+    } catch (err) {
+      console.error(err);
+      Modal.error({ title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์" });
+    } finally {
+      setIsModalVisible(false);
+    }
   };
-  // // Modal เลือกที่อยู่ใหม่บน Google Map
-  // const [isMapModal, setIsMapModal] = useState(false);
-  // const [markerPosition, setMarkerPosition] = useState({ lat: 13.736717, lng: 100.523186 });
-  // const [newAddress, setNewAddress] = useState("");
 
-  // // โหลด Google Maps API
-  // const { isLoaded } = useJsApiLoader({
-  //   googleMapsApiKey: "YOUR_API_KEY_HERE", // ✅ ใส่ API Key ของคุณ
-  // });
   return (
     <CustomerSidebar>
       <Row gutter={[16, 16]} justify="center">
@@ -76,7 +96,7 @@ const OrderPage: React.FC = () => {
                 90; // 28kg ใหญ่สุด
 
                 return (
-                <Col xs={12} sm={12} md={6} lg={6} key={kg}>
+                <Col key={kg} xs={12} sm={12} md={6} lg={6}>
                   <Tooltip title={pricesWashing[kg]} placement="bottom">
                   <Card
                     hoverable
@@ -91,14 +111,14 @@ const OrderPage: React.FC = () => {
                       flexDirection: "column",
                       alignItems: "center",
                       cursor: "pointer",
-                      
+                        height: "100%",
                     }}                    
-                  ><div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                    >
+                      <div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                     <BiSolidWasher size={iconSize} style={{ color: selectedWasher === kg ? "#ED553B" : "#6DA3D3" }} />
                   </div>
-                    <Text style={{ display: "block", fontSize: 16 }} >{kg} KG</Text>
-                    {/* ✅ ข้อความเฉพาะแต่ละการ์ด */}
-                    <Text type="secondary" style={{ fontSize: 14, marginTop: 6 ,whiteSpace: "pre-line" ,minHeight: "50px"}} >
+                      <Text style={{ display: "block", fontSize: 16 }}>{kg} KG</Text>
+                      <Text type="secondary" style={{ fontSize: 14, marginTop: 6, whiteSpace: "pre-line", minHeight: "50px" }}>
                       {descriptionsWashing[kg]}
                     </Text>
                   </Card>
@@ -127,15 +147,11 @@ const OrderPage: React.FC = () => {
                     alignItems: "center",
                   }}
                 >
-                  <Text type="danger" style={{ display: "block", fontSize: 16 }}  >NO</Text>
+                <Text type="danger" style={{ fontSize: 16 }}>NO</Text>
                 </Card>
               </Col>
-              {[14, 25].map((kg) => {
-                const iconSize =
-                kg === 14 ? 60 :
-                80;
-                return (
-                <Col xs={12} sm={12} md={6} lg={6} key={kg}>
+            {[14, 25].map((kg) => (
+              <Col key={kg} xs={12} sm={12} md={6} lg={6}>
                   <Tooltip title={pricesDryer[kg]} placement="bottom">
                   <Card
                     hoverable
@@ -150,17 +166,18 @@ const OrderPage: React.FC = () => {
                       flexDirection: "column",
                       alignItems: "center",
                     }}
-                  ><div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                    <BiSolidDryer size={iconSize} style={{ color: selectedDryer === kg ? "#F6D55C" : "#6DA3D3" }} />
+                  >
+                    <div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                      <BiSolidDryer size={kg === 14 ? 60 : 80} style={{ color: selectedDryer === kg ? "#F6D55C" : "#6DA3D3" }} />
                   </div>
                     <Text style={{ display: "block", fontSize: 16 }}>{kg} KG</Text>
-                    <Text type="secondary" style={{ fontSize: 14, marginTop: 6 ,whiteSpace: "pre-line" ,minHeight: "50px"}} >{descriptionsDryer[kg]}
+                    <Text type="secondary" style={{ fontSize: 14, marginTop: 6, whiteSpace: "pre-line", minHeight: "50px" }}>
+                      {descriptionsDryer[kg]}
                     </Text>
                   </Card>
                   </Tooltip>
                 </Col>
-              );
-            })}
+            ))}
             </Row>
 
             {/* น้ำยาซักผ้า */}
@@ -179,10 +196,12 @@ const OrderPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 16,
                   }}
                 >
-                  <FaJugDetergent size={75} style={{ color:  selectDetergent === "home" ? "#3CAEA3" : "#6DA3D3" }} />
-                  <Text style={{ display: "block", fontSize: 16 }}>ทางบ้าน</Text>
+                <FaJugDetergent size={75} style={{ color: selectDetergent === "home" ? "#3CAEA3" : "#6DA3D3" }} />
+                <Text style={{ fontSize: 16 }}>ทางบ้าน</Text>
                 </Card>
               </Col>
               <Col xs={24} sm={12} md={8} lg={6}>
@@ -198,10 +217,12 @@ const OrderPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 16,
                   }}
                 >
                   <FaJugDetergent size={75} style={{ color: selectDetergent === "shop" ? "#ED553B" : "#6DA3D3" }} />
-                  <Text style={{ display: "block", fontSize: 16 }}>ทางร้าน</Text>
+                <Text style={{ fontSize: 16 }}>ทางร้าน</Text>
                 </Card>
               </Col>
             </Row>
@@ -209,7 +230,7 @@ const OrderPage: React.FC = () => {
 
         {/* ขวา: ฟอร์มสร้างออเดอร์ */}
         <Col xs={24} lg={8}>
-          <Card style={{ borderRadius: 10}}>
+          <Card style={{ borderRadius: 10 }}>
             <Title level={4} style={{ textAlign: "center" }}>สร้างออเดอร์</Title>
             <Divider />
 
@@ -219,18 +240,36 @@ const OrderPage: React.FC = () => {
 
             {/* ที่อยู่ */}
             <Title level={5}>ที่อยู่</Title>
-            <Radio.Group style={{ display: "block", marginBottom: 15 }}>
+            <Radio.Group
+              style={{ display: "block", marginBottom: 15 }}
+              onChange={(e) => setSelectedAddress(e.target.value)}
+              value={selectedAddress}
+            >
               <Radio value={1}>ที่อยู่เดิมบ้าน</Radio>
               <Radio value={2}>เลือกที่อยู่ใหม่ บ้านใหม่</Radio>
             </Radio.Group>
 
             {/* รูปภาพ */}
             <Title level={5}>รูปภาพ</Title>
-            <Upload listType="picture-card" maxCount={1}>
+            <Upload
+              listType="picture-card"
+              maxCount={1}
+              beforeUpload={(file) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                  setOrderImage(reader.result as string); // เก็บ Base64 ใน state
+                };
+                return false; // ป้องกัน Upload อัตโนมัติ
+              }}
+              onRemove={() => setOrderImage(null)}
+            >
+              {!orderImage && (
               <div>
                 <UploadOutlined />
                 <div style={{ marginTop: 8 }}>อัปโหลด</div>
               </div>
+              )}
             </Upload>
 
             {/* หมายเหตุ */}
@@ -239,6 +278,8 @@ const OrderPage: React.FC = () => {
               placeholder="หมายเหตุ"
               rows={2}
               style={{ marginBottom: 20 }}
+              value={orderNote}
+              onChange={(e) => setOrderNote(e.target.value)}
             />
 
             {/* ปุ่มยืนยัน */}
@@ -250,22 +291,30 @@ const OrderPage: React.FC = () => {
       </Row>
       {/* Modal แสดงสรุป */}
       <Modal
-        title="สรุปรายการออเดอร์"
+        title={<span style={{ color: "#20639B", fontWeight: "bold", fontSize: "20px" }}>สรุปรายการออเดอร์</span>}
         open={isModalVisible}
-        onOk={() => setIsModalVisible(false)}
+        onOk={handleModalOk}
         onCancel={() => setIsModalVisible(false)}
         okText="ยืนยัน"
         cancelText="แก้ไข"
-        style={{ top:  "20%" ,textAlign: "center" }}
+        footer={
+          <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+            <Button onClick={() => setIsModalVisible(false)}>แก้ไข</Button>
+            <Button type="primary" onClick={handleModalOk}>
+              ยืนยัน
+            </Button>
+          </div>
+        }
+        style={{ top: "20%", textAlign: "center" }}
         width={400}
       >
         <div style={{ textAlign: "left" }}>
           <p><b>คุณ:</b> สมใจ</p>
-          <p><b>ที่อยู่:</b> บ้านในเมือง (สมมติ)</p>
+          <p><b>ที่อยู่:</b> {selectedAddress || "ไม่ได้เลือก"}</p>
           <p><b>ถังซัก:</b> {selectedWasher ? `${selectedWasher} KG` : "ไม่ได้เลือก"}</p>
           <p><b>ถังอบ:</b> {selectedDryer ? `${selectedDryer} KG` : "NO"}</p>
           <p><b>น้ำยาซักผ้า:</b> {selectDetergent === "home" ? "ทางบ้าน" : selectDetergent === "shop" ? "ทางร้าน" : "ไม่ได้เลือก"}</p>
-          <p><b>หมายเหตุ:</b> … (TextArea)</p>
+          <p><b>หมายเหตุ:</b> {orderNote || "ไม่มีหมายเหตุ"}</p>
         </div>
       </Modal>
       {/* Modal เลือกที่อยู่บน Google Map
