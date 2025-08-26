@@ -1,16 +1,26 @@
 package entity
 
-import "time"
+import ("time" 
+
+		"gorm.io/gorm" )	
 
 type Queue struct {
-	QueueID uint `gorm:"primaryKey;autoIncrement"`
-	Updated_at time.Time
-	Created_at time.Time
+	gorm.Model
+	
 	Queue_type string
 	Status string
 
+	
+	TimeslotID  uint
+	Timeslot Timeslot `gorm:"foreignKey:TimeslotID"`
+
 	OrderID uint
-	TimeslotID uint
-	Orders Order `gorm:"foreignKey:OrderID"`
-	TimeSlot Timeslot `gorm:"foreignKey:TimeSlotID"`
+	Order Order `gorm:"foreignKey:OrderID"`
+
+	AssingID uint
+	Queueassignment Queueassignment `gorm:"foreignKey:AssingID"`
+
+	Queuehistory []Queuehistory `gorm:"foreignKey:QueueID"`
+	
+	
 }

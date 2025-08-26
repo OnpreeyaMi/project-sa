@@ -1,22 +1,26 @@
 package entity
 
-import "time"
+import (
+	"time"
+	 
+	"gorm.io/gorm")
 
 type LaundryProcess struct {
-	ProcessID uint `gorm:"primaryKey;autoIncrement"`
-	Step       string
+	gorm.Model
+
 	Status     string
 	End_time   time.Time
 	Start_time time.Time
+	description string
 
-	OrderID uint
-	Orders Order `gorm:"foreignKey:OrderID"`
+	//many to many เชื่อกับ Order
+	Order []Order `gorm:"many2many:process_orders"`
+	//many to one กับ Employee
 	EmployeeID uint
-	Employees Employee `gorm:"foreignKey:EmployeeID"`
-	ServiceTypeID uint
-	ServiceType Servicetype `gorm:"foreignKey:ServiceTypeID"`
-	MachineID uint
-	WashingMachine Machine `gorm:"foreignKey:MachineID;references:MacchineID"`
-
-
+	Employee   Employee `gorm:"foreignKey:EmployeeID"`
+	//many to one กับ Sorting
+	SortingID  uint
+	Sorting    Sorting `gorm:"foreignKey:SortingID"`
+	//many to many กับ Machine
+	Machine []Machine `gorm:"foreignKey:MachineID"`
 }

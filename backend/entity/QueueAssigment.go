@@ -1,14 +1,15 @@
 package entity
 
-import "time"
+import ("time"
+	"gorm.io/gorm")
 
 type Queueassignment struct {
-	AssidnID uint `gorm:"primaryKey;autoIncrement"`
+	gorm.Model
 	Assigned_time time.Time
 
 	QueueID uint
 	Queues Queue `gorm:"foreignKey:QueueID"`
-	//Eemployee Employee `gorm:"foreignKey:emp_id""`
 	
-
+	EmployeeID uint
+	Employee Employee `gorm:"foreignKey:EmployeeID"`
 }
