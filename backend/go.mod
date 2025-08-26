@@ -1,10 +1,11 @@
-module github.com/OnpreeyaMi/project-sa
+module project-sa
 
 go 1.24.4
 
 require (
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.1
+
 )
 
 require (

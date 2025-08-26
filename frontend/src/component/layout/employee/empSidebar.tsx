@@ -11,6 +11,9 @@ import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { LiaUserCogSolid } from "react-icons/lia";
 import { TbSettings } from "react-icons/tb";
+import { RiUserVoiceFill } from "react-icons/ri";
+import { useNavigate } from 'react-router-dom';  //korn
+
 const { Header, Sider, Content } = Layout;
 
 interface SidebarProps {
@@ -22,6 +25,7 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const navigate = useNavigate(); // เพิ่มบรรทัดนี้
 
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
@@ -61,6 +65,11 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
           style={{ backgroundColor: '#0E4587', color: 'white' }}  
           mode="inline"
           defaultSelectedKeys={['1']}
+          onClick={({ key }) => {
+            if (key === '7') {
+              navigate('/complaint/reply');
+            }
+          }}
           items={[
             { key: '1', icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>},
             { key: '2', icon: <IoNewspaper style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span> },
@@ -68,8 +77,11 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
             { key: '4', icon: <TbTruckDelivery  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span> },
             { key: '5', icon: <IoStorefrontSharp  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>คลัง</span> },
             { key: '6', icon: <FaUserCircle  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span> },
+            { key: '7', icon: <RiUserVoiceFill   style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ตอบกลับข้อร้องเรียน</span> },
+            
           ]}
         />
+        
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>

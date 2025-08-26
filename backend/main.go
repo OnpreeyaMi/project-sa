@@ -1,9 +1,14 @@
 package main
 
+
 import (
-    "fmt"
-	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/entity"
+	"fmt"
+	"project-sa/config"
+	"project-sa/entity"
+	
+
+
+
 )
 
 func main() {
@@ -12,36 +17,18 @@ func main() {
 
 	// สร้างตารางตาม entity ที่เรามี
 	config.DB.AutoMigrate(
-		&entity.Address{},
-        &entity.AuditLog{},
-        &entity.Basket{},
-        &entity.ClothType{},
-        &entity.Complaint{},
-        &entity.Customer{},
-        &entity.Detergent{},
-        &entity.Employee{},
-        &entity.History{},
-        &entity.LaundryProcess{},
-        &entity.OrderDetergents{},
-        &entity.Order{},
+		//payment table
         &entity.Payment{},
-        &entity.Permission{},
-        &entity.EmpPosition{},
-        &entity.Price{},
-        &entity.Queueassignment{},
-        &entity.Queuehistory{},
-        &entity.Queue{},
-        &entity.ReplyComplaint{},
-        &entity.RolePermission{},
-        &entity.Role{},
-        &entity.Servicetype{},
-        &entity.SortedCloth{},
-        &entity.SortingRecord{},
-        &entity.Assignment{},
-        &entity.Timeslot{},
-        &entity.User{},
-        &entity.Verification{},
-        &entity.Machine{},
+        &entity.Bill{},
+        &entity.History{},
+        &entity.Orders{},
+		//complaint table
+		&entity.Customer{},
+		&entity.Employee{},
+		&entity.Complaint{},
+		&entity.ReplyComplaint{},
+		&entity.HistoryComplain{},
+        
 	)
 
 	fmt.Println("สร้างตารางเรียบร้อย!")
