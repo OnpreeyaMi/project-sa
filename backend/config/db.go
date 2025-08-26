@@ -30,7 +30,7 @@ func SetupDatabase() {
 		&entity.Detergent{},
 		//&entity.Payment{},
 		&entity.OrderHistory{},
-		&entity.Process{},
+		&entity.LaundryProcess{},
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)

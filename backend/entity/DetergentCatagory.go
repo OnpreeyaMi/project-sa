@@ -9,4 +9,3 @@ type DetergentCategory struct {
 	Description string
 	Detergents  []Detergent `gorm:"foreignKey:CategoryID"`
 }
-//must add mock data
