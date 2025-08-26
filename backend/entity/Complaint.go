@@ -1,21 +1,25 @@
 package entity
 
-import "time"
+import (
+	"time"
+	"gorm.io/gorm"
+)
 
 type Complaint struct {
-	ComplaintID     uint      `gorm:"column:complaint_id;primaryKey;autoIncrement"`
+	gorm.Model
+
 	StatusComplaint string    `gorm:"column:status_complaint"`
 	Title           string    `gorm:"column:title"`
 	Description     string    `gorm:"column:description"`
 	CreateDate      time.Time `gorm:"column:createdate"`
 
-	CustomerID uint     `gorm:"column:customer_id"` // FK -> customers.customer_id
-	Customer   Customer `gorm:"foreignKey:CustomerID;references:CustomerID"`
+	// FK ไป Customer.ID (เพราะ Customer ใช้ gorm.Model)
+	CustomerID uint     `gorm:"column:customer_id;not null"`
+	Customer   Customer `gorm:"foreignKey:CustomerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 
-	// Relations
-	Replies  []ReplyComplaint  `gorm:"foreignKey:ComplaintID"`
-	HistoryID []HistoryComplain `gorm:"foreignKey:ComplaintID"`
+	// ความสัมพันธ์ย่อย
+	Replies   []ReplyComplaint  `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
+	Histories []HistoryComplain `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
 }
-
 
 func (Complaint) TableName() string { return "complaints" }

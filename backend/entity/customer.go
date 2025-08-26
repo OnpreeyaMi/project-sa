@@ -1,9 +1,13 @@
 package entity
 
-import "time"
+import(
+	"time"
+	"gorm.io/gorm"
+) 	
 
 type Customer struct {
-	CustomerID  uint      `gorm:"column:customer_id;primaryKey;autoIncrement"`
+	// CustomerID  uint      `gorm:"column:customer_id;primaryKey;autoIncrement"`
+	gorm.Model
 	FirstName   string    `gorm:"column:first_name"`
 	LastName    string    `gorm:"column:last_name"`
 	PhoneNumber string    `gorm:"column:phone_number"` // เก็บเป็น string ปลอดภัยกว่า
@@ -14,7 +18,8 @@ type Customer struct {
 	AddressID   *uint     `gorm:"column:address_id"` // FK (ตาราง address ไม่แสดงใน ERD)
 
 	// Relations
-	Complaints []Complaint `gorm:"foreignKey:CustomerID"`
+	
+	Complaints []Complaint `gorm:"foreignKey:CustomerID;references:ID"`
 }
 
 func (Customer) TableName() string { return "customers" }

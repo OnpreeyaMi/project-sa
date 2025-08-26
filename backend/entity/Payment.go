@@ -3,11 +3,13 @@ package entity
 import (
     
     "time"
+    "gorm.io/gorm"
     
 )
 
 type Payment struct {
-    PaymentID    uint      `gorm:"primaryKey;autoIncrement"`
+    // PaymentID    uint      `gorm:"primaryKey;autoIncrement"`
+    gorm.Model
     PaymentType  string
     CreatedDate  time.Time
     CheckPayment []byte
@@ -17,7 +19,7 @@ type Payment struct {
     OrderID      uint
 
 
-    Bills        []Bill        `gorm:"foreignKey:PaymentID"`
+    Bills []Bill `gorm:"foreignKey:PaymentID;references:ID"`
     Histories    []History     `gorm:"foreignKey:PaymentID"`
     
 

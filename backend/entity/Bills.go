@@ -1,7 +1,9 @@
 package entity
 
+import "gorm.io/gorm"
+
 type Bill struct {
-    BillID    uint `gorm:"primaryKey;autoIncrement"`
+    gorm.Model
     PaymentID uint
-    Payment   Payment `gorm:"foreignKey:PaymentID"`
+    Payment   Payment `gorm:"foreignKey:PaymentID;references:ID"`
 }

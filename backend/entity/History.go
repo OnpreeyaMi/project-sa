@@ -1,8 +1,11 @@
 package entity
 
+import "gorm.io/gorm"
+
+// History.go
 type History struct {
-    PaymentHistoryID uint   `gorm:"primaryKey;autoIncrement"`
-    PaymentStatus    string
-    PaymentID        uint
-    Payment          Payment `gorm:"foreignKey:PaymentID"`
+    gorm.Model
+    PaymentStatus string
+    PaymentID     uint
+    Payment       Payment `gorm:"foreignKey:PaymentID;references:ID"` // <-- ใส่ให้ชัด
 }

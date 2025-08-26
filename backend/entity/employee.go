@@ -1,9 +1,13 @@
 package entity
 
-import "time"
+import (
+	"time"
+	"gorm.io/gorm"
+)
 
 type Employee struct {
-	EmpID     uint      `gorm:"column:emp_id;primaryKey;autoIncrement"`
+	// EmpID     uint      `gorm:"column:emp_id;primaryKey;autoIncrement"`
+	gorm.Model
 	FirstName string    `gorm:"column:first_name"`
 	LastName  string    `gorm:"column:last_name"`
 	Phone     string    `gorm:"column:phone_number"`
