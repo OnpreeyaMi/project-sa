@@ -17,5 +17,7 @@ type Order struct {
 	Address []Address `gorm:"foreignKey:OrderID;"`
 	Usages []Usage `gorm:"foreignKey:OrderID;"`
 	Queues []Queue `gorm:"foreignKey:OrderID;"`
+	SortingRecord SortingRecord `gorm:"foreignKey:OrderID;"`
+	Payment Payment `gorm:"foreignKey:OrderID;"`
 }
 
