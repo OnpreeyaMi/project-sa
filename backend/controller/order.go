@@ -15,7 +15,7 @@ func CreateOrder(c *gin.Context) {
 		DetergentIDs   []uint			`json:"detergent_ids"`
 		OrderImage   string             `json:"order_image"`
 		OrderNote    string             `json:"order_note"`
-		AddressID    uint               `json:"address_id"`
+		AddressIDs    []uint            `json:"address_ids"`
 	}
 
 	// Bind JSON จาก request body
@@ -31,7 +31,7 @@ func CreateOrder(c *gin.Context) {
 		//Detergent:   req.DetergentID,
 		OrderImage:   req.OrderImage,
 		OrderNote:    req.OrderNote,
-		AddressID:    req.AddressID,
+		//AddressID:    req.AddressID,
 	}
 
 	// บันทึกลง DB
@@ -53,6 +53,14 @@ func CreateOrder(c *gin.Context) {
 		var detergents []entity.Detergent
 		if err := config.DB.Find(&detergents, req.DetergentIDs).Error; err == nil {
 			config.DB.Model(&order).Association("Detergents").Append(detergents)
+		}
+	}
+
+	// map addresses
+	if req.AddressID > 0 {
+		var addresses []entity.Address
+		if err := config.DB.Find(&addresses, req.AddressIDs).Error; err == nil {
+			config.DB.Model(&order).Association("Address").Append(addresses)
 		}
 	}
 	// ส่ง response กลับ frontend
