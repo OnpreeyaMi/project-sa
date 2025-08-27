@@ -11,8 +11,9 @@ type Detergent struct {
 	InStock int
 	Orders []Order `gorm:"many2many:OrderDetergents;"`
 	PurchaseDetergents []PurchaseDetergent `gorm:"foreignKey:DetergentID"`
-	//UserID uint
+	UserID uint
 	User User `gorm:"foreignKey:UserID;"`
-	//CategoryID uint
-	DetergentCategory DetergentCategory `gorm:"foreignKey:CategoryID;"`
+	CategoryID uint
+
+	DetergentCategory *DetergentCategory `gorm:"foreignKey:CategoryID;"`
 }
