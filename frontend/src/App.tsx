@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 
-import Background from "./component/background";
 
 
 const App: React.FC = () => {
