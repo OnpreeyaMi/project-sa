@@ -21,3 +21,15 @@ export interface Detergent {
   type: "Liquid" | "Powder";
   inStock: number;
 }
+
+export interface OrderHistory {
+  id: number;
+  customer_id: number;
+  servicetype_ids: number[];
+  detergent_ids: number[];
+  order_image?: string | null;
+  order_note?: string;
+  address_id: number;
+  created_at: string;
+  updated_at: string;
+}

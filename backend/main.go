@@ -22,7 +22,7 @@ func main() {
 
     //ตั้งค่า route
     router.POST("/order", controller.CreateOrder)
-
+	router.GET("/order-histories", controller.GetOrderHistories)
     // รัน server
     router.Run(fmt.Sprintf(":%d", port))
 

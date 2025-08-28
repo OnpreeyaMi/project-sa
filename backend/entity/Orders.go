@@ -9,7 +9,7 @@ type Order struct {
 	CustomerID 			uint
 	Customer   			*Customer `gorm:"foreignKey:CustomerID;"`
 
-	Servicetypes   		[]*ServiceType `gorm:"many2many:OrderServicetypes;"`
+	Servicetypes   		[]*ServiceType `gorm:"many2many:OrderServicetype;"`
 	Detergents 			[]*Detergent `gorm:"many2many:OrderDetergents;"`
 	OrderImage 			string
 	OrderNote 			string

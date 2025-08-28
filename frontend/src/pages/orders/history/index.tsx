@@ -1,91 +1,79 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
-import { Card } from "antd";
-import {Table ,Tag} from 'antd';
+import { Card, Table, Tag, Spin, message } from "antd";
+// import axios from "axios";
+import { fetchOrderHistories } from "../../../services/orderService";
+
 
 const columns = [
   {
     title: "วันที่",
-    dataIndex: "date",
+    dataIndex: ["order", "created_at"], // ดึงจาก order.created_at
     key: "date",
   },
   {
-    title: "ขนาดถังซัก",
-    dataIndex: "sizewashing",
-    key: "sizewashing",
-  },
-  {
-    title: "ขนาดถังอบ",
-    dataIndex: "sizedrying",
-    key: "sizedrying",
-  },
-  {
     title: "ราคา",
-    dataIndex: "price",
+    dataIndex: ["order", "price"],
     key: "price",
-    render: (price: number) => `${price} บาท`,
+    render: (price: number) => (price ? `${price} บาท` : "-"),
   },
   {
-    title:"status",
+    title: "สถานะ",
     dataIndex: "status",
+    key: "status",
   },
   {
     title: "สถานะการจ่ายเงิน",
     dataIndex: "payment_status",
     key: "payment_status",
     render: (payment_status: string) => {
+      if (!payment_status) return "-";
       let color = payment_status === "ชำระเงินแล้ว" ? "green" : "orange";
       return <Tag color={color}>{payment_status}</Tag>;
     },
   },
 ];
 
-const data = [
-  {
-    date: "2025-08-06 14:30",
-    sizewashing: "10 KG",
-    sizedrying: "14 KG",
-    price: 60,
-    status: "กำลังดำเนินการ",
-    payment_status: "ชำระเงินแล้ว",
-  },
-  {
-    date: "2025-08-05 18:10",
-    sizewashing: "14 KG",
-    sizedrying: "25 KG",
-    price: 80,
-    status: "กำลังดำเนินการ",
-    payment_status: "ยังไม่จ่าย",
-  },
-  {
-    date: "2025-08-03 10:05",
-    sizewashing: "28 KG",
-    sizedrying: "18 KG",
-    price: 120,
-    status: "เสร็จสิ้น",
-    payment_status: "ชำระเงินแล้ว",
-  },
-];
-
-
-
 const HistoryPage: React.FC = () => {
+  const [data, setData] = useState<OrderHistory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchHistories = async () => {
+      try {
+        const histories = await fetchOrderHistories();
+        setData(histories);
+      } catch (error) {
+        console.error(error);
+        message.error("โหลดข้อมูลไม่สำเร็จ");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistories();
+  }, []);
+
   return (
-    <>
-      <CustomerSidebar>
-        <h1>History</h1>
-        <Card
-          hoverable
-          style={{
-            width: "100%",
-            height: 'auto',
-            textAlign: "center",
-            borderRadius: 8,
-            background: "#F9FBFF",
-          }}
-        ><Table columns={columns} dataSource={data} /></Card>
-      </CustomerSidebar>
-    </>
+    <CustomerSidebar>
+      <h1>History</h1>
+      <Card
+        hoverable
+        style={{
+          width: "100%",
+          height: "auto",
+          textAlign: "center",
+          borderRadius: 8,
+          background: "#F9FBFF",
+        }}
+      >
+        {loading ? (
+          <Spin tip="กำลังโหลด..." />
+        ) : (
+          <Table columns={columns} dataSource={data} rowKey="id" />
+        )}
+      </Card>
+    </CustomerSidebar>
   );
 };
 
