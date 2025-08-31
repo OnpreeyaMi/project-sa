@@ -1,165 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Select, Button, Modal, Table as AntTable, Space, Popconfirm, message } from 'antd';
+import React, { useState } from 'react';
+import { Form, Input, Select, Button, Modal, Table, Tag, Space, Popconfirm } from 'antd';
 import AdminSidebar from '../../component/layout/admin/AdminSidebar';
-import axios from 'axios';
-
-interface Customer {
-    ID: number;
-    FirstName: string;
-    LastName: string;
-    PhoneNumber: string;
-    Gender: { ID: number; name: string };
-    User: { Email: string };
-    CreatedAt: string;
-}
 
 interface Order {
-    ID: number;
-    CreatedAt: string;
-    OrderNote: string;
-    Address?: { AddressDetails: string };
-    // เพิ่ม field ตาม backend ที่ส่งมา
+    id: number;
+    customerId: number;
+    orderNumber: string;
+    item: string;
+    quantity: number;
+    price: number;
+    status: string;
+    createdAt: string;
 }
 
 const CustomerManagement: React.FC = () => {
-    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [customers, setCustomers] = useState([
+        { id: 1, firstName: 'สมชาย', lastName: 'ใจดี', phone: '0812345678', gender: 'ชาย', email: 'somchai@example.com', status: 'ใช้งาน', createdAt: '2024-01-15' },
+        { id: 2, firstName: 'สมหญิง', lastName: 'รักงาน', phone: '0898765432', gender: 'หญิง', email: 'somying@example.com', status: 'ใช้งาน', createdAt: '2024-02-10' },
+        { id: 3, firstName: 'วิชัย', lastName: 'ขยันทำ', phone: '0865432198', gender: 'ชาย', email: 'wichai@example.com', status: 'ไม่ใช้งาน', createdAt: '2024-03-05' },
+    ]);
+
+    const [orders] = useState<Order[]>([
+        { id: 1, customerId: 1, orderNumber: 'ORD001', item: 'เสื้อ', quantity: 2, price: 200, status: 'รอรับ', createdAt: '2024-08-26' },
+        { id: 2, customerId: 1, orderNumber: 'ORD002', item: 'กางเกง', quantity: 1, price: 150, status: 'ซักแล้ว', createdAt: '2024-08-25' },
+        { id: 3, customerId: 2, orderNumber: 'ORD003', item: 'ชุดชั้นใน', quantity: 3, price: 300, status: 'รอส่ง', createdAt: '2024-08-24' },
+    ]);
+
     const [addModalVisible, setAddModalVisible] = useState(false);
     const [editModalVisible, setEditModalVisible] = useState(false);
-    const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+    const [editingCustomer, setEditingCustomer] = useState<any>(null);
+    const [orderModalVisible, setOrderModalVisible] = useState(false);
+    const [selectedCustomerOrders, setSelectedCustomerOrders] = useState<Order[]>([]);
     const [form] = Form.useForm();
     const [searchText, setSearchText] = useState('');
-    const [orderHistoryModalVisible, setOrderHistoryModalVisible] = useState(false);
-    const [orderHistory, setOrderHistory] = useState<Order[]>([]);
-    const [orderHistoryLoading, setOrderHistoryLoading] = useState(false);
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-
-    const API_URL = 'http://localhost:8080/customers'; // backend URL
-
-    // ----------------- FETCH -----------------
-    const fetchCustomers = async () => {
-        try {
-            const response = await axios.get(API_URL);
-            setCustomers(response.data); // backend return array directly
-        } catch (err) {
-            console.error(err);
-            message.error('ไม่สามารถดึงข้อมูลลูกค้าได้');
-        }
-    };
-
-    useEffect(() => {
-        fetchCustomers();
-    }, []);
 
     const filteredCustomers = customers.filter(c =>
-        c.FirstName.toLowerCase().includes(searchText.toLowerCase()) ||
-        c.LastName.toLowerCase().includes(searchText.toLowerCase()) ||
-        c.PhoneNumber.includes(searchText) ||
-        c.User.Email.toLowerCase().includes(searchText.toLowerCase())
+        c.firstName.toLowerCase().includes(searchText.toLowerCase()) ||
+        c.lastName.toLowerCase().includes(searchText.toLowerCase()) ||
+        c.phone.includes(searchText) ||
+        c.email.toLowerCase().includes(searchText.toLowerCase())
     );
 
-    // ----------------- CRUD -----------------
-    const handleAddCustomer = async () => {
-        try {
-            const values = await form.validateFields();
-            const response = await axios.post(API_URL, {
-                firstName: values.firstName,
-                lastName: values.lastName,
-                phone: values.phone,
-                genderId: values.genderId,
-                email: values.email,
-                password: values.password,
-            });
-            setCustomers(prev => [...prev, response.data.data]);
-            setAddModalVisible(false);
+    const handleAddCustomer = () => {
+        form.validateFields().then(values => {
+            const newCustomer = {
+                id: Date.now(),
+                ...values,
+                status: 'ไม่ใช้งาน',
+                createdAt: new Date().toISOString().slice(0, 10),
+            };
+            setCustomers(prev => [...prev, newCustomer]);
             form.resetFields();
-            message.success('เพิ่มลูกค้าสำเร็จ');
-        } catch (err: any) {
-            message.error(err.response?.data?.error || 'เกิดข้อผิดพลาด');
-        }
+            setAddModalVisible(false);
+        });
     };
 
-    const handleEdit = (customer: Customer) => {
-        setEditingCustomer(customer);
-        form.setFieldsValue({
-            firstName: customer.FirstName,
-            lastName: customer.LastName,
-            phone: customer.PhoneNumber,
-            email: customer.User.Email,
-            genderId: customer.Gender.ID,
-        });
+    const handleEdit = (record: any) => {
+        setEditingCustomer(record);
+        form.setFieldsValue(record);
         setEditModalVisible(true);
     };
 
-    const handleEditCustomer = async () => {
-        if (!editingCustomer) return;
-        try {
-            const values = await form.validateFields();
-            await axios.put(`${API_URL}/${editingCustomer.ID}`, {
-                firstName: values.firstName,
-                lastName: values.lastName,
-                phone: values.phone,
-                genderId: values.genderId,
-            });
-            message.success('แก้ไขลูกค้าสำเร็จ');
-            setEditModalVisible(false);
+    const handleEditCustomer = () => {
+        form.validateFields().then(values => {
+            setCustomers(prev =>
+                prev.map(c => (c.id === editingCustomer.id ? { ...c, ...values } : c))
+            );
             setEditingCustomer(null);
-            fetchCustomers();
-        } catch (err: any) {
-            message.error(err.response?.data?.error || 'เกิดข้อผิดพลาด');
-        }
+            setEditModalVisible(false);
+        });
     };
 
-    const handleDeleteCustomer = async (id: number) => {
-        try {
-            await axios.delete(`${API_URL}/${id}`);
-            message.success('ลบลูกค้าสำเร็จ');
-            fetchCustomers();
-        } catch (err: any) {
-            message.error(err.response?.data?.error || 'เกิดข้อผิดพลาด');
-        }
+    const handleViewOrders = (customerId: number) => {
+        const customerOrders = orders.filter(o => o.customerId === customerId);
+        setSelectedCustomerOrders(customerOrders);
+        setOrderModalVisible(true);
     };
 
-    // ----------------- ORDER HISTORY -----------------
-    const handleShowOrderHistory = async (customer: Customer) => {
-        setSelectedCustomer(customer);
-        setOrderHistory([]);
-        setOrderHistoryLoading(true);
-        setOrderHistoryModalVisible(true);
-        try {
-            const res = await axios.get(`http://localhost:8080/orders?customerId=${customer.ID}`);
-            setOrderHistory(res.data);
-        } catch (err) {
-            message.error("ไม่สามารถดึงประวัติออเดอร์ได้");
-        }
-        setOrderHistoryLoading(false);
-    };
-
-    // ----------------- TABLE -----------------
     const columns = [
-        { title: 'ID', dataIndex: 'ID', key: 'ID' },
-        { title: 'ชื่อ', dataIndex: 'FirstName', key: 'FirstName' },
-        { title: 'สกุล', dataIndex: 'LastName', key: 'LastName' },
-        { title: 'อีเมล', dataIndex: ['User', 'Email'], key: 'Email' },
-        { title: 'เบอร์โทร', dataIndex: 'PhoneNumber', key: 'PhoneNumber' },
-        { title: 'เพศ', dataIndex: ['Gender', 'name'], key: 'Gender' },
+        { title: 'เลขที่ลูกค้า', dataIndex: 'id', key: 'id' },
+        { title: 'ชื่อ', dataIndex: 'firstName', key: 'firstName' },
+        { title: 'สกุล', dataIndex: 'lastName', key: 'lastName' },
+        { title: 'อีเมล', dataIndex: 'email', key: 'email' },
+        { title: 'เบอร์โทร', dataIndex: 'phone', key: 'phone' },
+        { title: 'เพศ', dataIndex: 'gender', key: 'gender' },
+        { title: 'วันที่สมัคร', dataIndex: 'createdAt', key: 'createdAt' },
         {
-            title: 'วันที่สมัคร',
-            dataIndex: 'CreatedAt',
-            key: 'CreatedAt',
-            render: (date: string) => new Date(date).toLocaleDateString(),
+            title: 'สถานะ',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status: string) => (
+                <Tag color={status === 'ใช้งาน' ? 'green' : 'red'}>{status}</Tag>
+            )
         },
         {
             title: 'จัดการ',
             key: 'action',
-            render: (_: any, record: Customer) => (
+            render: (_: any, record: any) => (
                 <Space>
-                    <Button onClick={() => handleShowOrderHistory(record)}>ประวัติออเดอร์</Button>
-                    <Button type="primary" onClick={() => handleEdit(record)}>แก้ไข</Button>
+                    <Button type="primary" onClick={() => handleEdit(record)} style={{ backgroundColor: '#F6D55C', color: 'white' }}>แก้ไข</Button>
+                    <Button onClick={() => handleViewOrders(record.id)} style={{ backgroundColor: '#3CAEA3', color: 'white' }}>ดูออเดอร์</Button>
                     <Popconfirm
                         title="คุณแน่ใจว่าจะลบลูกค้าคนนี้?"
                         okText="ลบ"
                         cancelText="ยกเลิก"
-                        onConfirm={() => handleDeleteCustomer(record.ID)}
+                        onConfirm={() =>
+                            setCustomers((prev) => prev.filter((c) => c.id !== record.id))
+                        }
                     >
                         <Button danger>ลบ</Button>
                     </Popconfirm>
@@ -168,30 +115,43 @@ const CustomerManagement: React.FC = () => {
         },
     ];
 
-    // ตารางประวัติออเดอร์
     const orderColumns = [
-        { title: "Order ID", dataIndex: "ID", key: "ID" },
-        { title: "วันที่สร้าง", dataIndex: "CreatedAt", key: "CreatedAt", render: (d: string) => new Date(d).toLocaleString() },
-        { title: "รายละเอียดที่อยู่", dataIndex: ["Address", "AddressDetails"], key: "AddressDetails", render: (_: any, rec: Order) => rec.Address?.AddressDetails || "-" },
-        { title: "หมายเหตุ", dataIndex: "OrderNote", key: "OrderNote" },
+        { title: 'เลขที่ออเดอร์', dataIndex: 'orderNumber', key: 'orderNumber' },
+        { title: 'สินค้า', dataIndex: 'item', key: 'item' },
+        { title: 'จำนวน', dataIndex: 'quantity', key: 'quantity' },
+        { title: 'ราคา', dataIndex: 'price', key: 'price' },
+        { title: 'สถานะ', dataIndex: 'status', key: 'status' },
+        { title: 'วันที่สร้าง', dataIndex: 'createdAt', key: 'createdAt' },
     ];
 
     return (
         <AdminSidebar>
-            <div className="p-8">
-                <div className="flex justify-between mb-6">
-                    <h1 className="text-2xl font-bold">จัดการข้อมูลลูกค้า</h1>
-                    <Button type="primary" onClick={() => { form.resetFields(); setAddModalVisible(true); }}>+ เพิ่มลูกค้า</Button>
+            <div className="min-h-screen p-8 font-sans bg-gray-50">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <h1 className="text-2xl font-bold text-blue-900">จัดการข้อมูลลูกค้า</h1>
+                    <Button
+                        type="primary"
+                        style={{ backgroundColor: "#0E4587" }}
+                        onClick={() => { form.resetFields(); setAddModalVisible(true); }}
+                    >
+                        + เพิ่มผู้ใช้งาน
+                    </Button>
                 </div>
 
-                <Input.Search
-                    placeholder="ค้นหาชื่อ / เบอร์โทร / อีเมล"
-                    value={searchText}
-                    onChange={e => setSearchText(e.target.value)}
-                    style={{ marginBottom: 16, width: 400 }}
-                />
+                {/* Search Bar */}
+                <div className="mb-6">
+                    <Input.Search
+                        placeholder="ค้นหาชื่อ / เบอร์โทร / อีเมล"
+                        size="large"
+                        style={{ width: 400 }}
+                        value={searchText}
+                        onChange={e => setSearchText(e.target.value)}
+                    />
+                </div>
 
-                <AntTable columns={columns} dataSource={filteredCustomers} rowKey="ID" />
+                {/* Customer Table */}
+                <Table columns={columns} dataSource={filteredCustomers} rowKey="id" />
 
                 {/* Modal เพิ่มลูกค้า */}
                 <Modal
@@ -199,17 +159,29 @@ const CustomerManagement: React.FC = () => {
                     open={addModalVisible}
                     onCancel={() => setAddModalVisible(false)}
                     onOk={handleAddCustomer}
+                    okText="เพิ่ม"
+                    cancelText="ยกเลิก"
                 >
                     <Form form={form} layout="vertical">
-                        <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}><Input.Password /></Form.Item>
-                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="genderId" label="เพศ" rules={[{ required: true }]}>
+                        <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}>
+                            <Input.Password />
+                        </Form.Item>
+                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="gender" label="เพศ" rules={[{ required: true }]}>
                             <Select>
-                                <Select.Option value={1}>ชาย</Select.Option>
-                                <Select.Option value={2}>หญิง</Select.Option>
+                                <Select.Option value="ชาย">ชาย</Select.Option>
+                                <Select.Option value="หญิง">หญิง</Select.Option>
                             </Select>
                         </Form.Item>
                     </Form>
@@ -217,40 +189,51 @@ const CustomerManagement: React.FC = () => {
 
                 {/* Modal แก้ไขลูกค้า */}
                 <Modal
-                    title="แก้ไขลูกค้า"
+                    title="แก้ไขข้อมูลลูกค้า"
                     open={editModalVisible}
                     onCancel={() => setEditModalVisible(false)}
                     onOk={handleEditCustomer}
+                    okText="บันทึก"
+                    cancelText="ยกเลิก"
                 >
                     <Form form={form} layout="vertical">
-                        <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="genderId" label="เพศ" rules={[{ required: true }]}>
+                        <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}>
+                            <Input.Password />
+                        </Form.Item>
+                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="gender" label="เพศ" rules={[{ required: true }]}>
                             <Select>
-                                <Select.Option value={1}>ชาย</Select.Option>
-                                <Select.Option value={2}>หญิง</Select.Option>
-                                <Select.Option value={2}>อื่นๆ</Select.Option>
+                                <Select.Option value="ชาย">ชาย</Select.Option>
+                                <Select.Option value="หญิง">หญิง</Select.Option>
                             </Select>
                         </Form.Item>
                     </Form>
                 </Modal>
 
-                {/* Modal ประวัติออเดอร์ */}
+                {/* Modal ดูออเดอร์ */}
                 <Modal
-                    title={`ประวัติออเดอร์: ${selectedCustomer?.FirstName || ""} ${selectedCustomer?.LastName || ""}`}
-                    open={orderHistoryModalVisible}
-                    onCancel={() => setOrderHistoryModalVisible(false)}
+                    title="ประวัติออเดอร์"
+                    open={orderModalVisible}
                     footer={null}
+                    onCancel={() => setOrderModalVisible(false)}
                     width={700}
                 >
-                    <AntTable
+                    <Table
                         columns={orderColumns}
-                        dataSource={orderHistory}
-                        rowKey="ID"
-                        loading={orderHistoryLoading}
+                        dataSource={selectedCustomerOrders}
+                        rowKey="id"
                         pagination={false}
-                        locale={{ emptyText: "ไม่มีประวัติออเดอร์" }}
                     />
                 </Modal>
             </div>

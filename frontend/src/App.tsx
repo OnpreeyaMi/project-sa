@@ -1,33 +1,41 @@
 import React, { useState } from "react";
 // import AdminSidebar from "./component/layout/admin/AdminSidebar";
 // import Background from "./component/background";
-import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
-import { BrowserRouter , Routes, Route } from "react-router-dom";
-import EmployeeHome from "./pages/Home/EmployeeHome";
-import TransportQueuePage from "./pages/Queue/TransportQueuePage";
-import OrderDetail from "./pages/LaundryProcess/OrderDetail";
-import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; 
-import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; 
-import StatusPage from "./pages/LaundryProcess/StatusPage";
 // import EmpSidebar from "./component/layout/employee/empSidebar";
-//import CustomerSidebar from "./component/layout/customer/CusSidebar";
-
+// import CustomerSidebar from "./component/layout/customer/CusSidebar";
+import { BrowserRouter, Route, Router, Routes } from "react-router-dom";
+import EmployeeSidebar from "./pages/laundryCheck";
+import EmpSidebar from "./component/layout/employee/empSidebar";
+import CustomerSidebar from "./component/layout/customer/CusSidebar";
+import EmployeePage from "./pages/employee";
+import LaundryCheckPage from "./pages/laundryCheck";
+import CustomerManagement from "./pages/customer/CustomerMangement";
+import PromotionManagement from "./pages/promotion/PromotionManagement";
+{
+  /* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */
+}
+{
+  /* <AdminSidebar></AdminSidebar> */
+}
+{
+  /* <EmpSidebar></EmpSidebar> */
+}
+{
+  /* <CustomerSidebar></CustomerSidebar> */
+}
 const App: React.FC = () => {
-  return (
+  // const [activeTab, setActiveTab] = useState<string>("");
 
-          <Routes>
-           
-            <Route path="/Home" element={<EmployeeHome />} />
-            <Route path="/order" element={<StatusUpdate/>} />
-            <Route path="/orders/:orderId" element={<OrderDetail />} />
-            <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
-            <Route path="/store" element={<EmployeeHome />} />
-            {/* <Route path="/profile" element={<StatusPage />} />
-            <Route path="/OrderPage" element={<OrderPage />} />
-            <Route path="/HistoryPage" element={<HistoryPage />} />
-            <Route path="/StockEmpPage" element={<StockEmpPage />} />
-            <Route path="/StockAdminPage" element={<StockAdminPage />} /> */}
-            </Routes>
+  return (
+    <>
+      <Routes>
+        <Route path="/employee/check" element={<LaundryCheckPage />} />
+        <Route path="/admin/employees" element={<EmployeePage />} />
+        <Route path="/admin/customers" element={<CustomerManagement />} />
+        <Route path="/admin/promotions" element={<PromotionManagement />} />
+      </Routes>
+    </>
+
   );
 
 };
