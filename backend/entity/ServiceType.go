@@ -9,6 +9,6 @@ type ServiceType struct {
 	Type 		string
 	Price 		float64
 	Capacity 	int
-	Orders 		[]*Order `gorm:"many2many:OrderServicetypes;"`
+	Orders 		[]*Order `gorm:"many2many:OrderServicetype;"`
 }
 //must add mock data
