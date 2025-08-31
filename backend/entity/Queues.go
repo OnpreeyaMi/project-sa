@@ -1,8 +1,8 @@
 package entity
 
-import ("time" 
-
-		"gorm.io/gorm" )	
+import (
+		"gorm.io/gorm" 
+)	
 
 type Queue struct {
 	gorm.Model
@@ -18,7 +18,7 @@ type Queue struct {
 	Order Order `gorm:"foreignKey:OrderID"`
 
 	AssingID uint
-	Queueassignment Queueassignment `gorm:"foreignKey:AssingID"`
+	Queueassignment *Queueassignment `gorm:"foreignKey:AssingID"`
 
 	Queuehistory []Queuehistory `gorm:"foreignKey:QueueID"`
 	

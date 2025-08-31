@@ -24,24 +24,31 @@ func SetupDatabase() {
 	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
+		&entity.Bill{},
+		&entity.ClothType{},
+		&entity.Complaint{},
 		&entity.Customer{},
 		&entity.Detergent{},
 		&entity.DetergentCategory{},
+		&entity.Employee{},
+		&entity.EmployeeStatus{},
+		&entity.EmpPosition{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
 		&entity.OrderHistory{},
+		&entity.Payment{},
+		&entity.PositionCount{},
 		&entity.PurchaseDetergent{},
 		&entity.Queue{},
 		&entity.Queueassignment{},
 		&entity.Queuehistory{},
-		
+		&entity.ReplyComplaint{},
 		&entity.ServiceType{},
-		
-		&entity.Payment{},
-		
-		
-
+		&entity.SortedClothes{},
+		&entity.SortingRecord{},
+		&entity.SortingHistory{},
+		&entity.Timeslot{},	
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
