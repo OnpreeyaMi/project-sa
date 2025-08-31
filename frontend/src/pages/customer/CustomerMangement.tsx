@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Select, Button, Modal, Table, Tag, Space, Popconfirm } from 'antd';
+import AdminSidebar from '../../component/layout/admin/AdminSidebar';
 
 interface Order {
     id: number;
@@ -70,8 +71,6 @@ const CustomerManagement: React.FC = () => {
         });
     };
 
-
-
     const handleViewOrders = (customerId: number) => {
         const customerOrders = orders.filter(o => o.customerId === customerId);
         setSelectedCustomerOrders(customerOrders);
@@ -126,118 +125,119 @@ const CustomerManagement: React.FC = () => {
     ];
 
     return (
-        <>
-            <h1 style={{ fontSize: '24px', marginBottom: '16px', color: '#0E4587' }}>
-                จัดการข้อมูลลูกค้า
-            </h1>
+        <AdminSidebar>
+            <div className="min-h-screen p-8 font-sans bg-gray-50">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                    <h1 className="text-2xl font-bold text-blue-900">จัดการข้อมูลลูกค้า</h1>
+                    <Button
+                        type="primary"
+                        style={{ backgroundColor: "#0E4587" }}
+                        onClick={() => { form.resetFields(); setAddModalVisible(true); }}
+                    >
+                        + เพิ่มผู้ใช้งาน
+                    </Button>
+                </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <Input.Search
-                    placeholder="ค้นหาชื่อ / เบอร์โทร / อีเมล"
-                    size='large'
-                    style={{ width: 400 }}
-                    value={searchText}
-                    onChange={e => setSearchText(e.target.value)}
-                />
-                <Button
-                    type="primary"
-                    style={{ backgroundColor: '#0E4587' }}
-                    onClick={() => {
-                        form.resetFields();
-                        setAddModalVisible(true);
-                    }}
+                {/* Search Bar */}
+                <div className="mb-6">
+                    <Input.Search
+                        placeholder="ค้นหาชื่อ / เบอร์โทร / อีเมล"
+                        size="large"
+                        style={{ width: 400 }}
+                        value={searchText}
+                        onChange={e => setSearchText(e.target.value)}
+                    />
+                </div>
+
+                {/* Customer Table */}
+                <Table columns={columns} dataSource={filteredCustomers} rowKey="id" />
+
+                {/* Modal เพิ่มลูกค้า */}
+                <Modal
+                    title="เพิ่มลูกค้าใหม่"
+                    open={addModalVisible}
+                    onCancel={() => setAddModalVisible(false)}
+                    onOk={handleAddCustomer}
+                    okText="เพิ่ม"
+                    cancelText="ยกเลิก"
                 >
-                    + เพิ่มผู้ใช้งาน
-                </Button>
+                    <Form form={form} layout="vertical">
+                        <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}>
+                            <Input.Password />
+                        </Form.Item>
+                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="gender" label="เพศ" rules={[{ required: true }]}>
+                            <Select>
+                                <Select.Option value="ชาย">ชาย</Select.Option>
+                                <Select.Option value="หญิง">หญิง</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+
+                {/* Modal แก้ไขลูกค้า */}
+                <Modal
+                    title="แก้ไขข้อมูลลูกค้า"
+                    open={editModalVisible}
+                    onCancel={() => setEditModalVisible(false)}
+                    onOk={handleEditCustomer}
+                    okText="บันทึก"
+                    cancelText="ยกเลิก"
+                >
+                    <Form form={form} layout="vertical">
+                        <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}>
+                            <Input.Password />
+                        </Form.Item>
+                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="gender" label="เพศ" rules={[{ required: true }]}>
+                            <Select>
+                                <Select.Option value="ชาย">ชาย</Select.Option>
+                                <Select.Option value="หญิง">หญิง</Select.Option>
+                            </Select>
+                        </Form.Item>
+                    </Form>
+                </Modal>
+
+                {/* Modal ดูออเดอร์ */}
+                <Modal
+                    title="ประวัติออเดอร์"
+                    open={orderModalVisible}
+                    footer={null}
+                    onCancel={() => setOrderModalVisible(false)}
+                    width={700}
+                >
+                    <Table
+                        columns={orderColumns}
+                        dataSource={selectedCustomerOrders}
+                        rowKey="id"
+                        pagination={false}
+                    />
+                </Modal>
             </div>
-
-            <Table columns={columns} dataSource={filteredCustomers} rowKey={(record) => record.id} />
-
-
-            {/* Modal เพิ่มลูกค้า */}
-            <Modal
-                title="เพิ่มลูกค้าใหม่"
-                open={addModalVisible}
-                onCancel={() => setAddModalVisible(false)}
-                onOk={handleAddCustomer}
-                okText="เพิ่ม"
-                cancelText="ยกเลิก"
-            >
-                <Form form={form} layout="vertical">
-                    <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}>
-                        <Input.Password />
-                    </Form.Item>
-                    <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="gender" label="เพศ" rules={[{ required: true }]}>
-                        <Select>
-                            <Select.Option value="ชาย">ชาย</Select.Option>
-                            <Select.Option value="หญิง">หญิง</Select.Option>
-                        </Select>
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            {/* Modal แก้ไขลูกค้า */}
-            <Modal
-                title="แก้ไขข้อมูลลูกค้า"
-                open={editModalVisible}
-                onCancel={() => setEditModalVisible(false)}
-                onOk={handleEditCustomer}
-                okText="บันทึก"
-                cancelText="ยกเลิก"
-            >
-                <Form form={form} layout="vertical">
-                    <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}>
-                        <Input.Password />
-                    </Form.Item>
-                    <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="gender" label="เพศ" rules={[{ required: true }]}>
-                        <Select>
-                            <Select.Option value="ชาย">ชาย</Select.Option>
-                            <Select.Option value="หญิง">หญิง</Select.Option>
-                        </Select>
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            {/* Modal ดูออเดอร์ */}
-            <Modal
-                title="ประวัติออเดอร์"
-                open={orderModalVisible}
-                footer={null}
-                onCancel={() => setOrderModalVisible(false)}
-                width={700}
-            >
-                <Table
-                    columns={orderColumns}
-                    dataSource={selectedCustomerOrders}
-                    rowKey="id"
-                    pagination={false}
-                />
-            </Modal>
-        </>
+        </AdminSidebar>
     );
 };
 
