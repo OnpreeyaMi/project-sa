@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { FaHome } from "react-icons/fa";
+import { LiaUserCogSolid } from "react-icons/lia";
+import { RiUserSmileFill } from "react-icons/ri";
+import { HiSpeakerphone } from "react-icons/hi";
+import { RiArchive2Fill } from "react-icons/ri";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { Button, Col, Layout, Menu, theme } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom'; // ✅ นำเข้า
 import iconWashing from '../../../assets/iconwashing.png';
-import { LiaUserCogSolid } from "react-icons/lia";
-import { RiUserSmileFill } from "react-icons/ri";
-import { HiSpeakerphone } from "react-icons/hi";
-import { RiArchive2Fill } from "react-icons/ri";
-import { useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 
@@ -20,11 +20,46 @@ interface SidebarProps {
 
 const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate(); // ใช้ useNavigate สำหรับการเปลี่ยน route
+  const navigate = useNavigate(); // ✅ ใช้งาน useNavigate
+  const location = useLocation(); // ✅ ใช้งาน useLocation
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // ✅ เมนูพร้อม navigate
+  const menuItems = [
+    {
+      key: "/admin/dashboard",
+      icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
+      onClick: () => navigate("/admin/dashboard"),
+    },
+    {
+      key: "/admin/employees",
+      icon: <LiaUserCogSolid style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>พนักงาน</span>,
+      onClick: () => navigate("/admin/employees"),
+    },
+    {
+      key: "/admin/customers",
+      icon: <RiUserSmileFill style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ข้อมูลลูกค้า</span>,
+      onClick: () => navigate("/admin/customers"),
+    },
+        {
+      key: "/admin/promotions",
+      icon: <HiSpeakerphone style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>โปรโมชั่น</span>,
+      onClick: () => navigate("/admin/promotions"),
+    },
+        {
+      key: "/admin/detergents",
+      icon: <RiArchive2Fill style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>อุปกรณ์</span>,
+      onClick: () => navigate("/admin/detergents"),
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
@@ -42,24 +77,17 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
       >
         <div className="demo-logo-vertical" />
         {!collapsed && (
-          <Col
-            style={{
-              marginBottom: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
+          <Col style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={iconWashing} alt="Washing Icon" width={100} height={100} />
             <h1
               style={{
-                color: 'white',
-                margin: '-5px',
-                fontSize: '18px',
-                textAlign: 'center',
+                color: "white",
+                margin: "-5px",
+                fontSize: "18px",
+                textAlign: "center",
               }}
             >
-              Admin
+              NEATII.
             </h1>
           </Col>
         )}
@@ -67,39 +95,12 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
         <Menu
           style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          defaultSelectedKeys={['1']}
-          items={[
-            {
-              key: '1',
-              icon: <FaHome style={{ fontSize: '18px', color: '#6da3d3' }} />,
-              label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-              onClick: () => navigate('/dashboard'), // เปลี่ยน route ไปยังหน้าหลัก
-            },
-            {
-              key: '2',
-              icon: <LiaUserCogSolid style={{ fontSize: '18px', color: '#6da3d3' }} />,
-              label: <span style={{ color: '#6da3d3' }}>พนักงาน</span>,
-              onClick: () => navigate('/employees'), // เปลี่ยน route ไปยังหน้าพนักงาน
-            },
-            {
-              key: '3',
-              icon: <RiUserSmileFill style={{ fontSize: '18px', color: '#6da3d3' }} />,
-              label: <span style={{ color: '#6da3d3' }}>ข้อมูลลูกค้า</span>,
-              onClick: () => navigate('/customer-management'), // เปลี่ยน route ไปยังหน้า Customer Management
-            },
-            {
-              key: '4',
-              icon: <HiSpeakerphone style={{ fontSize: '18px', color: '#6da3d3' }} />,
-              label: <span style={{ color: '#6da3d3' }}>โปรโมชั่น</span>,
-              onClick: () => navigate('/promotion'), // เปลี่ยน route ไปยังหน้า Customer Management
-            },
-                        {
-              key: '5',
-              icon: < RiArchive2Fill style={{ fontSize: '18px', color: '#6da3d3' }} />,
-              label: <span style={{ color: '#6da3d3' }}>อุปกรณ์</span>,
-              onClick: () => navigate('/promotion'), // เปลี่ยน route ไปยังหน้า Customer Management
-            }
-          ]}
+          selectedKeys={[location.pathname]} // ✅ highlight ตาม path ปัจจุบัน
+          items={menuItems}
+          onClick={({ key }) => {
+            const selected = menuItems.find(item => item.key === key);
+            if (selected?.onClick) selected.onClick();
+          }}
         />
       </Sider>
 
@@ -116,7 +117,6 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
             }}
           />
           <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>
-            Admin Dashboard
           </span>
         </Header>
         <Content
