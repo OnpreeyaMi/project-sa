@@ -62,6 +62,7 @@ func SetupDatabase() {
 
 func MockData() {
 	// --- Mock Customers ---
+
 	// customers := []entity.Customer{
 	// 	{FirstName: "Nuntawut", LastName: "K.", Email: "nuntawut@example.com", PhoneNumber: "0812345678", Gender: "Male", IsVerified: true},
 	// 	{FirstName: "Alice", LastName: "B.", Email: "alice@example.com", PhoneNumber: "0898765432", Gender: "Female", IsVerified: false},
@@ -78,6 +79,7 @@ func MockData() {
 	// for _, a := range addresses {
 	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetail: a.AddressDetail})
 	// }
+
 
 	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
@@ -119,6 +121,7 @@ func MockData() {
 			Type:  "Liquid",
 			InStock: 30,
 			// UserID: 2,
+			UserID: 2,
 			CategoryID: 1,
 		},
 		{
