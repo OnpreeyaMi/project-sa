@@ -15,7 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const { Header, Sider, Content } = Layout;
 
 interface SidebarProps {
-  children?: React.ReactNode;
+  children: ReactNode;
 }
 
 const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
@@ -62,19 +62,61 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 
   ];
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    {
+      key: "/employee/dashboard",
+      icon: <FaHome style={{ fontSize: 18 }} />,
+      label: "หน้าหลัก",
+      onClick: () => navigate("/employee")
+    },
+    {
+      key: "/employee/orders",
+      icon: <IoNewspaper style={{ fontSize: 18 }} />,
+      label: "ออเดอร์",
+      onClick: () => navigate("/employee/orders")
+    },
+    {
+      key: "/employee/status",
+      icon: <MdLocalLaundryService style={{ fontSize: 18 }} />,
+      label: "สถานะ",
+      onClick: () => navigate("/employee/status")
+    },
+    {
+      key: "/employee/delivery",
+      icon: <TbTruckDelivery style={{ fontSize: 18 }} />,
+      label: "คิวขนส่ง",
+      onClick: () => navigate("/employee/delivery")
+    },
+    {
+      key: "/employee/check",
+      icon: <FaShirt style={{ fontSize: 18 }} />,
+      label: "รับผ้า",
+      onClick: () => navigate("/employee/check")
+    },
+    {
+      key: "/employee/inventory",
+      icon: <IoStorefrontSharp style={{ fontSize: 18 }} />,
+      label: "คลัง",
+      onClick: () => navigate("/employee/inventory")
+    },
+    {
+      key: "/employee/profile",
+      icon: <FaUserCircle style={{ fontSize: 18 }} />,
+      label: "โปรไฟล์",
+      onClick: () => navigate("/employee/profile")
+    }
+  ];
+
   return (
-    <Layout style={{ minHeight: '100vh', margin: 0 }}>
+    <Layout>
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
-        style={{
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          backgroundColor: '#0E4587',
-        }}
+        style={{ backgroundColor: "#0E4587", minHeight: "100vh" }}
       >
         <div className="demo-logo-vertical" />
         {!collapsed && (
@@ -105,28 +147,31 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
         />
       </Sider>
 
-      <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
+      <Layout>
         <Header style={{ padding: 0, background: colorBgContainer }}>
           <Button
             type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            icon={
+              collapsed ? (
+                <MenuUnfoldOutlined style={{ fontSize: 20 }} />
+              ) : (
+                <MenuFoldOutlined style={{ fontSize: 20 }} />
+              )
+            }
             onClick={() => setCollapsed(!collapsed)}
-            style={{
-              fontSize: '16px',
-              width: 64,
-              height: 64,
-            }}
+            style={{ fontSize: 16, width: 64, height: 64 }}
           />
           <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>
           </span>
         </Header>
+
         <Content
           style={{
-            margin: '24px 16px',
+            margin: "24px 16px",
             padding: 24,
-            minHeight: 280,
+            minHeight: 617,
             background: colorBgContainer,
-            borderRadius: borderRadiusLG,
+            borderRadius: borderRadiusLG
           }}
         >
           {children}
@@ -137,4 +182,3 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 };
 
 export default EmployeeSidebar;
-
