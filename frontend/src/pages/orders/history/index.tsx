@@ -3,6 +3,8 @@ import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
 import { Card, Table, Tag, Spin, message } from "antd";
 // import axios from "axios";
 import { fetchOrderHistories } from "../../../services/orderService";
+import type { OrderHistory } from "../../../interfaces/types";
+
 
 
 const columns = [
@@ -41,7 +43,8 @@ const HistoryPage: React.FC = () => {
   useEffect(() => {
     const fetchHistories = async () => {
       try {
-        const histories = await fetchOrderHistories();
+        const histories = await fetchOrderHistories()
+        console.log(histories);
         setData(histories);
       } catch (error) {
         console.error(error);
