@@ -19,4 +19,7 @@ type User struct {
 	PurchaseDetergent uint
 	PurchaseDetergents []PurchaseDetergent `gorm:"foreignKey:UserID;references:ID"`
 	
+	
+	Employee *Employee `gorm:"foreignKey:UserID"`
+
 }
