@@ -18,5 +18,4 @@ type PromotionUsage struct {
 
 	CustomerID uint
 	Customer Customer `gorm:"foreignKey:CustomerID"`
-	
 }

@@ -11,7 +11,7 @@ type LaundryProcess struct {
 	Status     string
 	End_time   time.Time
 	Start_time time.Time
-	Description string
+	description string
 
 	//many to many เชื่อกับ Order
 	Order []Order `gorm:"many2many:process_orders"`

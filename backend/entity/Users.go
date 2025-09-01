@@ -11,12 +11,15 @@ type User struct {
 	Status   string
 
 	RoleID uint
-	Role Role `gorm:"foreignKey:RoleID"`
+	Role *Role `gorm:"foreignKey:RoleID"`
 
 	CustomerID uint
-	Customers []Customer `gorm:"foreignKey:UserID;references:ID"`
+	Customers []*Customer `gorm:"foreignKey:UserID;references:ID"`
 
 	PurchaseDetergent uint
-	PurchaseDetergents []PurchaseDetergent `gorm:"foreignKey:UserID;references:ID"`
+	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:UserID;references:ID"`
 	
+	
+	Employee *Employee `gorm:"foreignKey:UserID"`
+
 }
