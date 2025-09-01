@@ -6,8 +6,9 @@ import (
 //ประเภทของเครื่องซัก-อบ ผูกราคา
 type ServiceType struct {
 	gorm.Model
-	Type string
-	Price float64
-	Capacity int
-	Orders []Order `gorm:"many2many:OrderServicetypes;"`
+	Type 		string
+	Price 		float64
+	Capacity 	int
+	Orders 		[]*Order `gorm:"many2many:OrderServicetype;"`
 }
+//must add mock data

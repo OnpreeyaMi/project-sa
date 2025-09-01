@@ -11,6 +11,6 @@ type Machine struct {
 	Capacity_kg uint
 	
 	//Many to Many กับ LaundryProcess
-	LaundryProcess []*LaundryProcess `gorm:"many2many:MachineProcess"`
+	LaundryProcess []LaundryProcess `gorm:"foreignKey:MachineID"`
 
 }

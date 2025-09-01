@@ -8,10 +8,12 @@ import (
 
 type SortingHistory struct {
     gorm.Model
-    HisID       uint      `gorm:"primaryKey" json:"his_id"`
     HisQuantity int       
     RecordedAt  time.Time 
 
-    Sorting_ID uint  // FK → SortingRecord
-    SortingRecord []SortingRecord `gorm:"foreignKey:SortingID"`
+    SortedClothesID uint
+    SortedClothes   *SortedClothes `gorm:"foreignKey:SortedClothesID"`
+
+    
+   
 }

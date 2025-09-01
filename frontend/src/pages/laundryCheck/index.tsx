@@ -1,4 +1,4 @@
-import EmployeeSidebar from "../../component/layout/employee/empSidebar";
+import EmployeeSidebar from "../../component/layout/employee/empSidebar"; 
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
@@ -36,7 +36,7 @@ interface Customer {
   name: string;
   phone: string;
   address?: string;
-  note?: string;      // หมายเหตุจากลูกค้า
+  note?: string;      // หมายเหตุจากลูกค้า (อ่านอย่างเดียว)
 }
 
 interface LaundryItem {
@@ -53,7 +53,8 @@ interface OrderRecord {
   items: LaundryItem[];
   totalItems: number;
   totalQuantity: number;
-  note?: string;         // หมายเหตุที่บันทึกคู่กับคำสั่ง
+  customerNote?: string; // หมายเหตุจากลูกค้า
+  staffNote?: string;    // หมายเหตุสำหรับพนักงาน
 }
 
 // --- ลูกค้าตัวอย่าง (แทน API จริง) ---
@@ -111,7 +112,7 @@ const LaundryCheckPage: React.FC = () => {
     [selectedCustomerId]
   );
 
-  // เมื่อเปลี่ยนลูกค้า → เซ็ตหมายเหตุลงฟอร์มอัตโนมัติ (อ่านอย่างเดียว)
+  // เมื่อเปลี่ยนลูกค้า → เซ็ตหมายเหตุจากลูกค้าลงฟอร์มอัตโนมัติ (อ่านอย่างเดียว)
   useEffect(() => {
     form.setFieldsValue({ note: selectedCustomer?.note || "" });
   }, [selectedCustomer, form]);
@@ -153,7 +154,8 @@ const LaundryCheckPage: React.FC = () => {
     { title: "เบอร์", dataIndex: ["customer", "phone"] },
     { title: "จำนวนรายการ", dataIndex: "totalItems", align: "right" as const, width: 130 },
     { title: "จำนวนชิ้น", dataIndex: "totalQuantity", align: "right" as const, width: 130 },
-    { title: "หมายเหตุ", dataIndex: "note" },
+    { title: "หมายเหตุ (ลูกค้า)", dataIndex: "customerNote", ellipsis: true, width: 220 },
+    { title: "หมายเหตุ (พนักงาน)", dataIndex: "staffNote", ellipsis: true, width: 220 },
     {
       title: "การทำงาน",
       key: "actions",
@@ -200,7 +202,11 @@ const LaundryCheckPage: React.FC = () => {
 
       const newOrderId = await apiRequestNewOrderId(); // แทนด้วย API จริง
       const createdAt = nowString();
-      const note = selectedCustomer?.note || ""; // ใช้หมายเหตุจากลูกค้า
+
+      // อ่านค่าในฟอร์ม
+      const values = form.getFieldsValue();
+      const customerNote = selectedCustomer?.note || "";  // หมายเหตุจากลูกค้า (อ่านอย่างเดียว)
+      const staffNote = values?.staffNote || "";          // หมายเหตุสำหรับพนักงาน (พิมพ์เอง)
 
       const payload = {
         id: newOrderId,
@@ -208,7 +214,8 @@ const LaundryCheckPage: React.FC = () => {
         customer: selectedCustomer,
         items: laundryItems,
         totals: { totalItems, totalQuantity },
-        note,
+        customerNote,
+        staffNote,
       };
       await apiSaveOrder(payload); // แทนด้วย API จริง
 
@@ -219,7 +226,8 @@ const LaundryCheckPage: React.FC = () => {
         items: laundryItems,
         totalItems,
         totalQuantity,
-        note,
+        customerNote,
+        staffNote,
       };
       setHistory((prev) => [record, ...prev]);
 
@@ -227,6 +235,9 @@ const LaundryCheckPage: React.FC = () => {
       setCurrentCreatedAt(createdAt);
 
       setLaundryItems([]);
+      // เคลียร์เฉพาะ staffNote เพื่อไม่ให้ติดไปบิลถัดไป
+      form.setFieldsValue({ staffNote: "" });
+
       message.success(`บันทึกคำสั่งซักเรียบร้อย • เลขที่บิล: ${newOrderId}`);
     } catch (e) {
       console.error(e);
@@ -300,7 +311,13 @@ const LaundryCheckPage: React.FC = () => {
           </div>
         </header>
 
-        <Form form={form} layout="vertical" onFinish={onFinish} className="space-y-6" initialValues={{ note: "" }}>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          className="space-y-6"
+          initialValues={{ note: "", staffNote: "" }}
+        >
           {/* ลูกค้า + หมายเหตุอัตโนมัติ */}
           <Card className="shadow-sm">
             <Title level={5} className="mb-4 flex items-center gap-2"><UserOutlined /> ข้อมูลลูกค้า</Title>
@@ -315,7 +332,6 @@ const LaundryCheckPage: React.FC = () => {
                     onChange={(id) => setSelectedCustomerId(id)}
                     className="w-full"
                     optionFilterProp="children"
-                    // filterOption={(input, option) => (option?.children as string).toLowerCase().includes(input.toLowerCase())}
                   >
                     {mockCustomers.map((c) => (
                       <Option key={c.id} value={c.id}>{c.name} • {c.phone}</Option>
@@ -338,6 +354,17 @@ const LaundryCheckPage: React.FC = () => {
                 </Form.Item>
               </div>
             </Space>
+          </Card>
+
+          {/* หมายเหตุสำหรับพนักงาน */}
+          <Card className="shadow-sm">
+            <Title level={5} className="mb-4">หมายเหตุสำหรับพนักงาน</Title>
+            <Form.Item name="staffNote">
+              <TextArea
+                placeholder="พิมพ์หมายเหตุการทำงาน เช่น จุดสังเกต คราบ/ตำหนิ พิเศษ ฯลฯ"
+                autoSize={{ minRows: 2, maxRows: 6 }}
+              />
+            </Form.Item>
           </Card>
 
           {/* รายการผ้า */}
@@ -446,8 +473,17 @@ const LaundryCheckPage: React.FC = () => {
             <Descriptions.Item label="ลูกค้า">{billRecord?.customer.name}</Descriptions.Item>
             <Descriptions.Item label="เบอร์">{billRecord?.customer.phone}</Descriptions.Item>
             <Descriptions.Item label="ที่อยู่" span={2}>{billRecord?.customer.address}</Descriptions.Item>
-            {billRecord?.note ? (
-              <Descriptions.Item label="หมายเหตุ" span={2}>{billRecord?.note}</Descriptions.Item>
+
+            {billRecord?.customerNote ? (
+              <Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>
+                {billRecord.customerNote}
+              </Descriptions.Item>
+            ) : null}
+
+            {billRecord?.staffNote ? (
+              <Descriptions.Item label="หมายเหตุ (พนักงาน)" span={2}>
+                {billRecord.staffNote}
+              </Descriptions.Item>
             ) : null}
           </Descriptions>
 
@@ -505,7 +541,8 @@ async function apiSaveOrder(payload: {
   customer: Customer;
   items: LaundryItem[];
   totals: { totalItems: number; totalQuantity: number };
-  note?: string;
+  customerNote?: string;  // เพิ่มฟิลด์ใหม่
+  staffNote?: string;     // เพิ่มฟิลด์ใหม่
 }): Promise<void> {
   await wait(400);
   // ตัวจริง:

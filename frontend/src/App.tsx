@@ -8,24 +8,14 @@ import ComplaintCreate from './pages/complaint/complaintCreate'; // ถ้าม
 
 function App() {
   return (
-    <BrowserRouter>
-      <CustomerSidebar>
-        <Routes>
-          <Route path="/payment" element={<Payment />} />
-           
-          <Route path="/complaint/create" element={<ComplaintCreate />} />
-          
-          
-        </Routes>
-      </CustomerSidebar>
-      
-          
-      {/* <EmpSidebar>
-        <Routes>
-          <Route path="/complaint/reply" element={<ComplaintReply />} />
-        </Routes>
-      </EmpSidebar> */}
-    </BrowserRouter>
+    <>
+      <Routes>
+        <Route path="/employee/check"element={<LaundryCheckPage />} />
+         <Route path="/admin/employees"element={<EmployeePage />} />
+         
+      </Routes>
+    </>
+    
   );
 }
 

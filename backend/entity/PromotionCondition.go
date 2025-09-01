@@ -9,5 +9,5 @@ type PromotionCondition struct {
 	ConditionType string
 	Value         string
 	PromotionID   uint
-	Promotion     *Promotion `gorm:"foreignKey:PromotionID"`
+	Promotion     Promotion `gorm:"foreignKey:PromotionID"`
 }
