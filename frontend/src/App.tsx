@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 // import AdminSidebar from "./component/layout/admin/AdminSidebar";
 // import Background from "./component/background";
-import EmpSidebar from "./component/layout/Sidebar/EmpSidebar";
 import StatusUpdate from "./Feature/LaundryProcess/pages/StatusUpdate";
 import { BrowserRouter , Routes, Route } from "react-router-dom";
 import HomePage from "./Roles/Employee/HomePage"; // สร้างใหม่ด้านล่าง
