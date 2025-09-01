@@ -38,7 +38,7 @@ func SetupDatabase() {
 		&entity.OrderHistory{},
 		&entity.Payment{},
 		&entity.PositionCount{},
-		&entity.Position{},
+		//&entity.Position{},
 		&entity.PurchaseDetergent{},
 		&entity.Queue{},
 		&entity.Queueassignment{},
