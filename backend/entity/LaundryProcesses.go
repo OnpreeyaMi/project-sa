@@ -13,6 +13,7 @@ type LaundryProcess struct {
 	Start_time time.Time
 	Description string
 
+
 	//many to many เชื่อกับ Order
 	Order []Order `gorm:"many2many:process_orders"`
 	//many to one กับ Employee
