@@ -17,11 +17,12 @@ const App: React.FC = () => {
     <BrowserRouter>
 
           <Routes>
-            <Route path="/" element={<EmpSidebar />}/>
+            
             <Route path="/Home" element={<HomePage />} />
             <Route path="/order" element={<StatusUpdate/>} />
             <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
-
+            <Route path="/store" element={<HomePage />} />
+            <Route path="/profile" element={<StatusPage />} />
             <Route path="/orders/:orderId" element={<OrderDetail />} />
             </Routes>
         

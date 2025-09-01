@@ -1,9 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate , useLocation} from "react-router-dom";
 import React, { useState } from 'react';
 import { FaHome,FaUserFriends,FaUserCircle } from "react-icons/fa";
 import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
 // import { MdLocalLaundryService } from "react-icons/md"; 
 import { TbTruckDelivery } from "react-icons/tb";
+
 
 import {
   MenuFoldOutlined,
@@ -12,12 +13,10 @@ import {
 
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-// import { LiaUserCogSolid } from "react-icons/lia";
-// import { TbSettings } from "react-icons/tb";
+
 
 
 const { Header, Sider, Content } = Layout;
-
 
 interface SidebarProps {
   children?: React.ReactNode;
@@ -25,6 +24,16 @@ interface SidebarProps {
 
 const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const getSelectedKey = () => {
+    if (location.pathname.startsWith("/Home")) return "1";;
+    if (location.pathname.startsWith("/order")) return "2";
+    if (location.pathname.startsWith("/TransportQueuePage")) return "3";
+    if (location.pathname.startsWith("/store")) return "4";
+    if (location.pathname.startsWith("/profile")) return "5";
+    return "1"; // default
+  };
+
 
   const [collapsed, setCollapsed] = useState(false);
   const {
@@ -68,7 +77,7 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
         //   theme="#0E4587"
           style={{ backgroundColor: '#0E4587', color: 'white' }}  
           mode="inline"
-          defaultSelectedKeys={['1']}
+          selectedKeys={[getSelectedKey()]}
           items={[
             { 
               key: '1', 
