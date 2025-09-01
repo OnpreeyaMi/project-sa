@@ -8,8 +8,8 @@ type Queueassignment struct {
 	Assigned_time time.Time
 
 	QueueID uint
-	Queues Queue `gorm:"foreignKey:QueueID"`
+	Queues *Queue `gorm:"foreignKey:QueueID"`
 	
 	EmployeeID uint
-	Employee Employee `gorm:"foreignKey:EmployeeID"`
+	Employee *Employee `gorm:"foreignKey:EmployeeID"`
 }

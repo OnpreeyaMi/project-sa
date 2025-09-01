@@ -24,7 +24,6 @@ func SetupDatabase() {
 	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
-		&entity.Bill{},
 		&entity.ClothType{},
 		&entity.Complaint{},
 		&entity.Customer{},
