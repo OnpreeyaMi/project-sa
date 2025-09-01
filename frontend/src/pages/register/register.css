@@ -1,0 +1,95 @@
+/* พื้นหลัง */
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: radial-gradient(circle at center, #93c5fd, transparent)
+}
+
+/* กล่องหลัก */
+.register-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+  padding: 32px;
+  width: 500px;
+  height: auto;
+  max-width: 90%;
+}
+
+/* หัวข้อ */
+.register-title {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.register-subtitle {
+  color: #666;
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 65px;
+}
+
+/* input */
+.input,
+.textarea {
+  width: 100%;
+  height: 50px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease-in-out;
+  margin-bottom: 16px;
+}
+
+.input:focus,
+.textarea:focus {
+  border: 1px solid #3b82f6;
+  box-shadow: 0px 0px 4px rgba(59, 130, 246, 0.5);
+}
+
+/* row ของ input 2 ช่อง */
+.form-row {
+  display: flex;
+  gap: 8px;
+
+}
+
+/* ปุ่ม */
+.btn {
+  width: 100%;
+  background: #0c4a8f;
+  color: white;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out, transform 0.1s ease-in-out;
+  margin-top: 50px;
+}
+
+.btn:hover {
+  background: #1e40af;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  color: #000000;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
