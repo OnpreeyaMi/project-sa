@@ -28,8 +28,8 @@ func SetupDatabase() {
 		&entity.ClothType{},
 		&entity.Complaint{},
 		&entity.Customer{},
-		&entity.Detergent{},
 		&entity.DetergentCategory{},
+		&entity.Detergent{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
 		&entity.EmpPosition{},
@@ -48,7 +48,9 @@ func SetupDatabase() {
 		&entity.SortedClothes{},
 		&entity.SortingRecord{},
 		&entity.SortingHistory{},
-		&entity.Timeslot{},	
+		&entity.Timeslot{},
+		&entity.User{},
+
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)

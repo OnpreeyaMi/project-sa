@@ -12,10 +12,46 @@ func GetOrderHistories(c *gin.Context) {
 	var histories []entity.OrderHistory
 
 	// preload Order ด้วย (เพื่อดึงข้อมูล Order มาใช้ได้เลย เช่น ราคา/รูป/โน้ต)
-	if err := config.DB.Preload("Order").Find(&histories).Error; err != nil {
+	if err := config.DB.Preload("Order.ServiceTypes").Preload("Order.Detergents").Find(&histories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// สร้าง struct สำหรับส่ง Frontend
+	type OrderHistoryResponse struct {
+		ID        uint      `json:"id"`
+		CreatedAt string    `json:"created_at"`
+		OrderNote string    `json:"order_note"`
+		Status    string    `json:"status"`
+		Payment   string    `json:"payment_status"`
+		Price     int       `json:"price"`
+	}
+
+	var response []OrderHistoryResponse
+	for _, h := range histories {
+    order := h.Order
+    total := 0
+    if order != nil {
+        if order.Servicetypes != nil {
+            for _, s := range order.Servicetypes {
+                total += int(s.Price)
+            }
+        }
+        // if order.Detergents != nil {
+        //     for _, d := range order.Detergents {
+        //         total += int(d.Price)
+        //     }
+        // }
+    }
+
+    response = append(response, OrderHistoryResponse{
+        ID:        h.ID,
+        CreatedAt: h.CreatedAt.Format("2006-01-02 15:04:05"),
+        OrderNote: "", // ใส่ placeholder ถ้า Order.OrderNote ไม่มี
+        Status:    h.Status,
+        Payment:   "-",
+        //Price:     total,
+    })
+}
 
 	c.JSON(http.StatusOK, histories)
 }
