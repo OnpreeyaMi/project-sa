@@ -14,13 +14,13 @@ type LaundryProcess struct {
 	Description string
 
 	//many to many เชื่อกับ Order
-	Order []Order `gorm:"many2many:process_orders"`
+	Order []*Order `gorm:"many2many:process_orders"`
 	//many to one กับ Employee
 	EmployeeID uint
-	Employee   Employee `gorm:"foreignKey:EmployeeID"`
+	Employee   *Employee `gorm:"foreignKey:EmployeeID"`
 	//many to one กับ Sorting
 	SortingID  uint
-	SortingRecord    SortingRecord `gorm:"foreignKey:SortingID"`
+	SortingRecord  *SortingRecord `gorm:"foreignKey:SortingID"`
 	//many to many กับ Machine
-	Machine []Machine `gorm:"foreignKey:MachineID"`
+	Machine []*Machine `gorm:"foreignKey:MachineID"`
 }

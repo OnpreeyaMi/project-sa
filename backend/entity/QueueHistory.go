@@ -6,5 +6,5 @@ type Queuehistory struct {
 	gorm.Model
 
 	QueueID uint
-	Queues Queue `gorm:"foreignKey:QueueID"`
+	Queues *Queue `gorm:"foreignKey:QueueID"`
 }

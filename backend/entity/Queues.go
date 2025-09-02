@@ -12,15 +12,14 @@ type Queue struct {
 
 	
 	TimeslotID  uint
-	Timeslot Timeslot `gorm:"foreignKey:TimeslotID"`
+	Timeslot *Timeslot `gorm:"foreignKey:TimeslotID"`
 
 	OrderID uint
-	Order Order `gorm:"foreignKey:OrderID"`
+	Order *Order `gorm:"foreignKey:OrderID"`
 
-	AssingID uint
-	Queueassignment *Queueassignment `gorm:"foreignKey:AssingID"`
+	Queueassignment *Queueassignment `gorm:"foreignKey:QueueID"`
 
-	Queuehistory []Queuehistory `gorm:"foreignKey:QueueID"`
+	Queuehistory []*Queuehistory `gorm:"foreignKey:QueueID"`
 	
 	
 }
