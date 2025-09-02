@@ -17,8 +17,8 @@ const App: React.FC = () => {
     </Routes>
     
   );
-}
 
+};
 export default App;
 // import React, { useState } from "react";
 // // import AdminSidebar from "./component/layout/admin/AdminSidebar";
