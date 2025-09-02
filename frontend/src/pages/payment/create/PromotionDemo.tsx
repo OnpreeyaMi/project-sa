@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import  { useMemo, useState } from "react";
 
 type DiscountType = "percent" | "amount";
 
@@ -23,8 +23,8 @@ export type PromotionSelectorProps = {
   selectedId?: string | null;
   onChange?: (promo: Promo | null) => void;
 
-  /** เมื่อกด “ใช้คูปอง” */
-  onApply?: (promo: Promo | null) => void;
+  // /** เมื่อกด “ใช้คูปอง” */
+  // onApply?: (promo: Promo | null) => void;
 
   /** ให้เลือกได้เพียงโปรเดียว (ค่าเริ่มต้น = true) */
   singleSelect?: boolean;
@@ -54,7 +54,7 @@ export default function PromotionSelector({
   cartTotal,
   selectedId,
   onChange,
-  onApply,
+  // onApply,
   singleSelect = true,
 }: PromotionSelectorProps) {
   const [internalId, setInternalId] = useState<string | null>(null);

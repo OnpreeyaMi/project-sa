@@ -2,8 +2,8 @@ package controller
 
 import (
 	"net/http"
-	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
+	"github.com/OnpreeyaMi/project-sa/backend/config"
+	"github.com/OnpreeyaMi/project-sa/backend/entity" // ดูmodule at go.mod
 	"github.com/gin-gonic/gin"
 
 )

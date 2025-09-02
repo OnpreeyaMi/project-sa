@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"github.com/OnpreeyaMi/project-sa/entity"
+	"github.com/OnpreeyaMi/project-sa/backend/entity"
 )
 
 var DB *gorm.DB

@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/OnpreeyaMi/project-sa/config"
-	
 	"github.com/gin-gonic/gin"
-	"github.com/OnpreeyaMi/project-sa/controller"
+    "github.com/OnpreeyaMi/project-sa/backend/config"
+    
+    "github.com/OnpreeyaMi/project-sa/backend/controller"
+
+
 )
 
 const port = 8080
