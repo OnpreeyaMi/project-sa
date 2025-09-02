@@ -10,12 +10,12 @@ import type { OrderHistory } from "../../../interfaces/types";
 const columns = [
   {
     title: "วันที่",
-    dataIndex: ["order", "created_at"], // ดึงจาก order.created_at
-    key: "date",
+    dataIndex: "created_at",
+    key: "created_at",
   },
   {
     title: "ราคา",
-    dataIndex: ["order", "price"],
+    dataIndex: "price",
     key: "price",
     render: (price: number) => (price ? `${price} บาท` : "-"),
   },
