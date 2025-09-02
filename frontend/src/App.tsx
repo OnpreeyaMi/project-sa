@@ -41,6 +41,27 @@ const App: React.FC = () => {
     </>
 
   );
+
 };
 
 export default App;
+
+//ระบบย่อย : จัดการกระบวนการซัก actor customer
+
+// const App: React.FC = () => {
+//   return (
+//     <BrowserRouter>
+      
+//       <Routes>
+//         {/* เส้นทางอื่นๆ */}
+//         <Route path="/" element={<CustomerSidebar />}/>
+//         <Route path="/status" element={<StatusPage />} />
+//       </Routes>
+   
+//     </BrowserRouter>
+//   );
+
+// };
+
+// export default App;
+

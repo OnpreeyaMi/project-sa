@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { FaHome } from "react-icons/fa";
 import { LiaUserCogSolid } from "react-icons/lia";
 import { RiUserSmileFill } from "react-icons/ri";
 import { HiSpeakerphone } from "react-icons/hi";
 import { RiArchive2Fill } from "react-icons/ri";
+import { FaHome,FaUserFriends } from "react-icons/fa";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -116,8 +116,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
               height: 64,
             }}
           />
-          <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>
-          </span>
+            <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>Admin Dashboard</span>
         </Header>
         <Content
           style={{
@@ -127,6 +126,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
+          
         >
           {children}
         </Content>

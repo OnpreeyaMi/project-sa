@@ -24,23 +24,31 @@ func SetupDatabase() {
 	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
+		&entity.ClothType{},
+		&entity.Complaint{},
 		&entity.Customer{},
-		&entity.Detergent{},
 		&entity.DetergentCategory{},
+		&entity.Detergent{},
+		&entity.Employee{},
+		&entity.EmployeeStatus{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
 		&entity.OrderHistory{},
+		&entity.Payment{},
+		&entity.PositionCount{},
+		&entity.Position{},
 		&entity.PurchaseDetergent{},
 		&entity.Queue{},
 		&entity.Queueassignment{},
 		&entity.Queuehistory{},
-		
+		&entity.ReplyComplaint{},
 		&entity.ServiceType{},
-		
-		&entity.Payment{},
-		
-		
+		&entity.SortedClothes{},
+		&entity.SortingRecord{},
+		&entity.SortingHistory{},
+		&entity.Timeslot{},
+		&entity.User{},
 
 	)
 	if err != nil {
@@ -55,22 +63,24 @@ func SetupDatabase() {
 
 func MockData() {
 	// --- Mock Customers ---
-	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", Email: "nuntawut@example.com", PhoneNumber: "0812345678", Gender: "Male", IsVerified: true},
-		{FirstName: "Alice", LastName: "B.", Email: "alice@example.com", PhoneNumber: "0898765432", Gender: "Female", IsVerified: false},
-	}
-	for _, c := range customers {
-		DB.FirstOrCreate(&c, entity.Customer{Email: c.Email})
-	}
+
+	// customers := []entity.Customer{
+	// 	{FirstName: "Nuntawut", LastName: "K.", Email: "nuntawut@example.com", PhoneNumber: "0812345678", Gender: "Male", IsVerified: true},
+	// 	{FirstName: "Alice", LastName: "B.", Email: "alice@example.com", PhoneNumber: "0898765432", Gender: "Female", IsVerified: false},
+	// }
+	// for _, c := range customers {
+	// 	DB.FirstOrCreate(&c, entity.Customer{Email: c.Email})
+	// }
 
 	// --- Mock Address ---
-	addresses := []entity.Address{
-		{CustomerID: 1, AddressDetail: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-		{CustomerID: 2, AddressDetail: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	}
-	for _, a := range addresses {
-		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetail: a.AddressDetail})
-	}
+	// addresses := []entity.Address{
+	// 	{CustomerID: 1, AddressDetail: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+	// 	{CustomerID: 2, AddressDetail: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	// }
+	// for _, a := range addresses {
+	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetail: a.AddressDetail})
+	// }
+
 
 	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
@@ -97,20 +107,21 @@ func MockData() {
 			Name:  "น้ำยาซักเหลว",
 			Type:  "Liquid",
 			InStock: 100,
-			UserID: 1,
+			// UserID: 1,
 			CategoryID: 1,
 		},
 		{
 			Name:  "ผงซักฟอก",
 			Type:  "Powder",
 			InStock: 50,
-			UserID: 1,
+			// UserID: 1,
 			CategoryID: 2,
 		},
 		{
 			Name:  "น้ำยาซักสูตรพิเศษ",
 			Type:  "Liquid",
 			InStock: 30,
+			// UserID: 2,
 			UserID: 2,
 			CategoryID: 1,
 		},
@@ -118,7 +129,7 @@ func MockData() {
 			Name:  "ผงซักฟอกสูตรเข้มข้น",
 			Type:  "Powder",
 			InStock: 20,
-			UserID: 2,
+			// UserID: 2,
 			CategoryID: 2,
 		},
 	}
