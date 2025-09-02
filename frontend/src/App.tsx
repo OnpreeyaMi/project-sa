@@ -5,9 +5,8 @@ import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
 import { BrowserRouter , Routes, Route } from "react-router-dom";
 import EmployeeHome from "./pages/Home/EmployeeHome";
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
-import OrderDetail from "./pages/LaundryProcess/OrderDetail";
-import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; 
-import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; 
+import OrderDetail from "./pages/LaundryProcess/OrderDetail"; 
+import CustomerSidebar from "./component/layout/customer/CusSidebar";
 import StatusPage from "./pages/LaundryProcess/StatusPage";
 // import EmpSidebar from "./component/layout/employee/empSidebar";
 //import CustomerSidebar from "./component/layout/customer/CusSidebar";
@@ -19,15 +18,13 @@ import StockAdminPage from "./pages/stock/Admin";
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-
           <Routes>
-            <Route path="/" element={<EmpSidebar />} />
-            <Route path="/Home" element={<EmployeeHome />} />
-            <Route path="/order" element={<StatusUpdate/>} />
-            <Route path="/orders/:orderId" element={<OrderDetail />} />
-            <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
-            <Route path="/store" element={<EmployeeHome />} />
-            <Route path="/profile" element={<StatusPage />} />
+            <Route path="/employee/dashboard" element={<EmployeeHome />} />
+            <Route path="/employee/orders" element={<StatusUpdate/>} />
+            <Route path="/employee/orders/:orderId" element={<OrderDetail />} />
+            <Route path="/employee/delivery" element={<TransportQueuePage/>} />
+            <Route path="/employee/inventory" element={<EmployeeHome />} />
+            <Route path="/employee/profile" element={<StatusPage />} />
             
             </Routes>
       {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
@@ -44,7 +41,6 @@ const App: React.FC = () => {
   );
 
 };
-
 export default App;
 
 //ระบบย่อย : จัดการกระบวนการซัก actor customer

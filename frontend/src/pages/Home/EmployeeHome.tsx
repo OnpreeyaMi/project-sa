@@ -1,9 +1,9 @@
 import React from "react";
-import EmpSidebar from "../../component/layout/Sidebar/EmpSidebar";
+import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 import { Row, Col, Card } from "antd";
 const HomePage: React.FC = () => {
   return (
-    <EmpSidebar>
+    <EmployeeSidebar>
       <h1 style={ { textAlign: "center", marginTop: "20px"}}>Employee Home Page</h1>
 
       <Row gutter={[16, 16]} justify="center" >
@@ -18,7 +18,7 @@ const HomePage: React.FC = () => {
           </Card>
         </Col>
       </Row>
-    </EmpSidebar>
+    </EmployeeSidebar>
   );
 };
 

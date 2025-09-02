@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {Button, Select, Row, Col, Table, Tag } from "antd";
-import EmpSidebar from "../../component/layout/Sidebar/EmpSidebar";
+import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 import { Link } from "react-router-dom";
 // import StatusCard from "../componemts/StatusCard";
 import "./StatusUpdate.css";
@@ -109,7 +109,7 @@ const StatusUpdate: React.FC = () => {
       title: "การจัดการ",
       key: "action",
       render: (_: any, record: any) => (
-        <Link to={`/orders/${record.orderId}`}>
+        <Link to={`/employee/orders/${record.orderId}`}>
           <Button type="primary">ดูรายละเอียด</Button>
         </Link>
       ),
@@ -117,7 +117,7 @@ const StatusUpdate: React.FC = () => {
   ];
 
   return (
-    <EmpSidebar>
+    <EmployeeSidebar>
       <div style={{ padding: 20 }}>
         <h2>📋 รายการออเดอร์</h2>
         <Table
@@ -127,7 +127,7 @@ const StatusUpdate: React.FC = () => {
           pagination={{ pageSize: 20 }}
         />
       </div>
-    </EmpSidebar>
+    </EmployeeSidebar>
   );
 };
 
