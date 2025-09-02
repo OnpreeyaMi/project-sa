@@ -26,13 +26,13 @@ export default App;
 // const App: React.FC = () => {
 //   return (
 //     <BrowserRouter>
-      
+
 //       <Routes>
 //         {/* เส้นทางอื่นๆ */}
 //         <Route path="/" element={<CustomerSidebar />}/>
 //         <Route path="/status" element={<StatusPage />} />
 //       </Routes>
-   
+
 //     </BrowserRouter>
 //   );
 
@@ -40,3 +40,29 @@ export default App;
 
 // export default App;
 
+// import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
+// import { BrowserRouter, Routes, Route } from "react-router-dom";
+// // import EmployeeHome from "./pages/Home/EmployeeHome";
+// // import TransportQueuePage from "./pages/Queue/TransportQueuePage";
+// // import OrderDetail from "./pages/LaundryProcess/OrderDetail";
+// import StatusPage from "./pages/LaundryProcess/StatusPage";
+// import HomePage from "./pages/Home/EmployeeHome";
+// import EmpSidebar from "./component/layout/employee/empSidebar";
+
+// const App: React.FC = () => {
+//   return (
+//     <BrowserRouter>
+//       <Routes>
+//         <Route path="/" element={<EmpSidebar />}>
+//           <Route path="/Home" element={<HomePage />} />
+//           <Route path="/order" element={<StatusUpdate />} />
+//           <Route path="/profile" element={<StatusPage />} />
+//           {/* เพิ่ม route อื่น ๆ */}
+//         </Route>
+//       </Routes>
+//     </BrowserRouter>
+
+//   );
+// };
+
+// export default App;
