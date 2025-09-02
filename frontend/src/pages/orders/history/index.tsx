@@ -1,179 +1,83 @@
-import React from "react";
-import {///เผื่อทำไม่ได้
-  Card,
-  Row,
-  Col,
-  Button,
-  Upload,
-  Input,
-  Radio,
-  Typography,
-  Divider,
-  Image,
-} from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import React, { useEffect, useState } from "react";
+import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
+import { Card, Table, Tag, Spin, message } from "antd";
+// import axios from "axios";
+import { fetchOrderHistories } from "../../../services/orderService";
+import type { OrderHistory } from "../../../interfaces/types";
 
-const { Title, Text } = Typography;
 
-const OrderPage: React.FC = () => {
+
+const columns = [
+  {
+    title: "วันที่",
+    dataIndex: "created_at",
+    key: "created_at",
+  },
+  {
+    title: "ราคา",
+    dataIndex: "price",
+    key: "price",
+    render: (price: number) => (price ? `${price} บาท` : "-"),
+  },
+  {
+    title: "สถานะ",
+    dataIndex: "status",
+    key: "status",
+  },
+  {
+    title: "สถานะการจ่ายเงิน",
+    dataIndex: "payment_status",
+    key: "payment_status",
+    render: (payment_status: string) => {
+      if (!payment_status) return "-";
+      let color = payment_status === "ชำระเงินแล้ว" ? "green" : "orange";
+      return <Tag color={color}>{payment_status}</Tag>;
+    },
+  },
+];
+
+const HistoryPage: React.FC = () => {
+  const [data, setData] = useState<OrderHistory[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchHistories = async () => {
+      try {
+        const histories = await fetchOrderHistories()
+        console.log(histories);
+        setData(histories);
+      } catch (error) {
+        console.error(error);
+        message.error("โหลดข้อมูลไม่สำเร็จ");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistories();
+  }, []);
+
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#FFFFFF" }}>
-      {/* Sidebar */}
-      <div
+    <CustomerSidebar>
+      <h1>History</h1>
+      <Card
+        hoverable
         style={{
-          width: 180,
-          background: "#0E4587",
-          paddingTop: 30,
-          color: "#fff",
+          width: "100%",
+          height: "auto",
+          textAlign: "center",
+          borderRadius: 8,
+          background: "#F9FBFF",
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <img src="/logo.png" alt="Logo" width={50} />
-        </div>
-        <ul style={{ listStyle: "none", padding: 0, fontSize: 16 }}>
-          <li style={{ padding: "12px 20px" }}>หน้าหลัก</li>
-          <li style={{ padding: "12px 20px", background: "#FFFFFF",color: "#6DA3D3"}}>
-            ซัก-อบ 
-          </li>
-          <li style={{ padding: "12px 20px" }}>ชำระเงิน</li>
-          <li style={{ padding: "12px 20px" }}>สถานะ</li>
-          <li style={{ padding: "12px 20px" }}>ประวัติ</li>
-          <li style={{ padding: "12px 20px" }}>แจ้งข้อร้องเรียน</li>
-          <li style={{ padding: "12px 20px" }}>โปรไฟล์</li>
-        </ul>
-      </div>
-
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: "30px 40px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr",
-            gap: 20,
-            height: "100%",
-          }}
-        >
-          {/* ฝั่งซ้าย - เลือกเครื่อง/น้ำยา */}
-          <Card style={{ borderRadius: 10, height: "100%" }}>
-            <Title level={4}>เลือกถังซักที่ต้องการ</Title>
-            <Row gutter={[16, 16]} style={{ marginBottom: 30 }}>
-              {[10, 14, 18, 28].map((kg) => (
-                <Col key={kg}>
-                  <Card
-                    hoverable
-                    style={{
-                      width: 90,
-                      textAlign: "center",
-                      borderRadius: 8,
-                      background: "#F9FBFF",
-                    }}
-                  >
-                    <Image preview={false} src="/wash.png" height={50} />
-                    <Text>{kg} KG</Text>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-
-            <Title level={4}>เลือกถังอบที่ต้องการ</Title>
-            <Row gutter={[16, 16]} style={{ marginBottom: 30 }}>
-              <Col>
-                <Card
-                  hoverable
-                  style={{
-                    width: 90,
-                    textAlign: "center",
-                    borderRadius: 8,
-                    background: "#FFF5F5",
-                  }}
-                >
-                  <Text type="danger">NO</Text>
-                </Card>
-              </Col>
-              {[14, 25].map((kg) => (
-                <Col key={kg}>
-                  <Card
-                    hoverable
-                    style={{
-                      width: 90,
-                      textAlign: "center",
-                      borderRadius: 8,
-                      background: "#F9FBFF",
-                    }}
-                  >
-                    <Image preview={false} src="/dry.png" height={50} />
-                    <Text>{kg} KG</Text>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-
-            <Title level={4}>เลือกน้ำยาซักผ้าที่ต้องการ</Title>
-            <Row gutter={[16, 16]}>
-              <Col>
-                <Card
-                  hoverable
-                  style={{
-                    width: 90,
-                    textAlign: "center",
-                    borderRadius: 8,
-                    background: "#F9FBFF",
-                  }}
-                >
-                  <Image preview={false} src="/detergent1.png" height={50} />
-                  <Text>น้ำเปล่า</Text>
-                </Card>
-              </Col>
-              <Col>
-                <Card
-                  hoverable
-                  style={{
-                    width: 90,
-                    textAlign: "center",
-                    borderRadius: 8,
-                    background: "#F9FBFF",
-                  }}
-                >
-                  <Image preview={false} src="/detergent2.png" height={50} />
-                  <Text>ทางร้าน</Text>
-                </Card>
-              </Col>
-            </Row>
-          </Card>
-
-          {/* ฝั่งขวา - ฟอร์มสร้างออเดอร์ */}
-          <Card style={{ borderRadius: 10 }}>
-            <Title level={4}>สร้างออเดอร์</Title>
-            <Divider />
-            <Title level={5}>ที่อยู่</Title>
-            <Radio.Group style={{ display: "block", marginBottom: 15 }}>
-              <Radio value={1}>ที่อยู่เดิม บ้านในเมือง</Radio>
-              <Radio value={2}>เลือกที่อยู่ใหม่ บ้านใหม่</Radio>
-            </Radio.Group>
-
-            <Title level={5}>รูปภาพ</Title>
-            <Upload listType="picture-card" maxCount={1}>
-              <div>
-                <UploadOutlined />
-                <div style={{ marginTop: 8 }}>อัปโหลด</div>
-              </div>
-            </Upload>
-
-            <Title level={5}>หมายเหตุ</Title>
-            <Input.TextArea
-              placeholder="หมายเหตุ"
-              rows={2}
-              style={{ marginBottom: 20 }}
-            />
-
-            <Button type="primary" block style={{ height: 40, fontSize: 16 }}>
-              ยืนยัน
-            </Button>
-          </Card>
-        </div>
-      </div>
-    </div>
+        {loading ? (
+          <Spin tip="กำลังโหลด..." />
+        ) : (
+          <Table columns={columns} dataSource={data} rowKey="id" />
+        )}
+      </Card>
+    </CustomerSidebar>
   );
 };
 
-export default OrderPage;
+export default HistoryPage;

@@ -1,30 +1,21 @@
 import React, { useState } from 'react';
+import { FaHome} from "react-icons/fa";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
-
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { LiaUserCogSolid } from "react-icons/lia";
-import { FaHome,FaUserFriends,FaUserCircle,FaHistory  } from "react-icons/fa";
-import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
-import { MdLocalLaundryService,MdOutlinePayment  } from "react-icons/md";
-import { TbTruckDelivery } from "react-icons/tb";
 import { TbSettings } from "react-icons/tb";
-import { GiClothes } from "react-icons/gi";
-import { RiUserVoiceFill } from "react-icons/ri";
-import { useNavigate } from 'react-router-dom';
 const { Header, Sider, Content } = Layout;
-import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   children?: React.ReactNode;
 }
 
-const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
+const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate(); // เพิ่มบรรทัดนี้
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -50,12 +41,12 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
             <h1
             style={{
               color: "white",
-              margin: "3px",
+              margin: "-5px",
               fontSize: "18px",
               textAlign: "center",
             }}
           >
-            NEATII.
+            Admin
     
           </h1>
         </Col>
@@ -67,23 +58,10 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
           style={{ backgroundColor: '#0E4587', color: 'white' }}  
           mode="inline"
           defaultSelectedKeys={['1']}
-          onClick={({ key }) => {
-            if (key === '3') {
-              navigate('/payment');
-            }
-            else if(key === '6'){
-              navigate('/complaint/create'); // เปลี่ยนเส้นทางไปยังหน้าสร้างคำร้องเรียน
-            }
-            // เพิ่มเงื่อนไขอื่นๆ ได้ตามต้องการ
-          }}
           items={[
             { key: '1', icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>},
-            { key: '2', icon: <GiClothes style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ซัก-อบ</span> },
-            { key: '3', icon: <MdOutlinePayment   style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ชำระเงิน</span> },
-            { key: '4', icon: <MdLocalLaundryService  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>สถานะ</span> },
-            { key: '5', icon: <FaHistory   style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ประวัติ</span> },
-            { key: '6', icon: <RiUserVoiceFill  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>แจ้งข้อร้องเรียน</span> },
-            { key: '7', icon: <FaUserCircle  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span> },
+            { key: '2', icon: <LiaUserCogSolid  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>พนังงาน</span> },
+            { key: '3', icon: <TbSettings  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>จัดการสิทธิ์</span> },
           ]}
         />
       </Sider>
@@ -100,7 +78,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
               height: 64,
             }}
           />
-            <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>Customer Dashboard</span>
+            <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>Admin Dashboard</span>
         </Header>
         <Content
           style={{
@@ -119,4 +97,4 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
   );
 };
 
-export default CustomerSidebar;
+export default AdminSidebar;
