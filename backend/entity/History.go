@@ -7,5 +7,6 @@ type History struct {
     gorm.Model
     PaymentStatus string
     PaymentID     uint
-    Payment       Payment `gorm:"foreignKey:PaymentID;references:ID"` // <-- ใส่ให้ชัด
+    Payment       *Payment `gorm:"foreignKey:PaymentID;references:ID"` // <-- ใส่ให้ชัด
+    
 }

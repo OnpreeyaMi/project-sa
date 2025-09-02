@@ -84,9 +84,9 @@ export default function CustomerComplaintPage() {
 
   return (
     <div className="min-h-[90vh] bg-white">
-      <div className="mx-auto w-full max-w-3xl px-4 md:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">แจ้งข้อร้องเรียน</h1>
-        <p className="mt-2 text-gray-600">โปรดกรอกรายละเอียดให้ครบถ้วน ทีมงานจะตรวจสอบและตอบกลับโดยเร็ว</p>
+      <div className=" px-4 md:px-6 lg:px-8 py-8">
+        <h1 className="text-4xl  font-semibold text-gray-900">แจ้งข้อร้องเรียน</h1>
+        <p className="text-xl  mt-2 text-gray-600">โปรดกรอกรายละเอียดให้ครบถ้วน ทีมงานจะตรวจสอบและตอบกลับโดยเร็ว</p>
 
         {successId && (
           <div className="mt-6 rounded-2xl border bg-emerald-50 text-emerald-800 p-4 flex items-start gap-3">
@@ -110,7 +110,7 @@ export default function CustomerComplaintPage() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">ชื่อลูกค้า *</label>
+              <label className="block text-xl font-medium text-gray-700">ชื่อลูกค้า *</label>
               <input
                 className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 placeholder="ชื่อ-นามสกุล"
@@ -120,7 +120,7 @@ export default function CustomerComplaintPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">อีเมล</label>
+              <label className="block text-xl font-medium text-gray-700">อีเมล</label>
               <input
                 type="email"
                 className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
@@ -133,7 +133,7 @@ export default function CustomerComplaintPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">หัวข้อ *</label>
+              <label className="block text-xl font-medium text-gray-700">หัวข้อ *</label>
               <input
                 className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 placeholder="เช่น ชำระเงินแล้วแต่สถานะยังไม่อัปเดต"
@@ -143,7 +143,7 @@ export default function CustomerComplaintPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">เลขคำสั่งซื้อ</label>
+              <label className="block text-xl font-medium text-gray-700">เลขคำสั่งซื้อ</label>
               <input
                 className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 placeholder="#123456"
@@ -155,7 +155,7 @@ export default function CustomerComplaintPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700">รายละเอียด *</label>
+              <label className="block text-xl font-medium text-gray-700">รายละเอียด *</label>
               <textarea
                 rows={6}
                 maxLength={charMax}
@@ -195,9 +195,6 @@ export default function CustomerComplaintPage() {
             </div>
           </div>
 
-          {/* Replace with reCAPTCHA if needed */}
-          <div className="pt-1 text-xs text-gray-500">ระบบอาจบันทึก IP/เวลาเพื่อความปลอดภัย</div>
-
           <div className="flex items-center justify-end gap-2 pt-2">
             <button
               type="submit"
@@ -209,15 +206,6 @@ export default function CustomerComplaintPage() {
           </div>
         </form>
 
-        {/* FAQ link / helper */}
-        <div className="mt-10 rounded-2xl border p-4">
-          <div className="font-medium mb-1">เคล็ดลับ</div>
-          <ul className="text-sm text-gray-600 list-disc ml-5 space-y-1">
-            <li>แนบสลิป/หลักฐานจะช่วยให้ทีมงานตรวจสอบได้เร็วขึ้น</li>
-            <li>หากมีหลายคำสั่งซื้อ โปรดระบุเลขคำสั่งซื้อทุกครั้ง</li>
-            <li>ติดตามความคืบหน้าผ่านอีเมล หรือศูนย์ช่วยเหลือโดยใช้หมายเลขอ้างอิง</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

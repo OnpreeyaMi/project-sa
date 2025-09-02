@@ -14,11 +14,10 @@ type HistoryComplain struct {
     ChangedDate time.Time `gorm:"column:changed_date"`
 
     ChangedBy uint     `gorm:"column:changed_by"`
-    Employee  Employee `gorm:"foreignKey:ChangedBy;references:ID"` // <-- เปลี่ยน references:ID
+    Employee  *Employee `gorm:"foreignKey:ChangedBy;references:ID"` // <-- เปลี่ยน references:ID
 
     ComplaintID uint
-    Complaint   Complaint `gorm:"foreignKey:ComplaintID;references:ID"`
+    Complaint   *Complaint `gorm:"foreignKey:ComplaintID;references:ID"`
 }
 
 
-func (HistoryComplain) TableName() string { return "history_complains" }

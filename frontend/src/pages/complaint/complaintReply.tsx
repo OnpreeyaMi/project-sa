@@ -117,11 +117,10 @@ function PriorityDot({ level }: { level: Complaint["priority"] }) {
       : level === "medium"
       ? "bg-orange-500"
       : "bg-gray-400";
-  const label = level === "high" ? "สูง" : level === "medium" ? "กลาง" : "ต่ำ";
+  
   return (
     <div className="flex items-center gap-2">
       <span className={`inline-block size-2 rounded-full ${cls}`} />
-      <span className="text-xs text-gray-600">ความสำคัญ{label}</span>
     </div>
   );
 }
@@ -155,6 +154,7 @@ function ReplyDrawer({
   };
 
   return (
+    
     <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-white shadow-2xl border-l flex flex-col">
       <div className="flex items-center justify-between px-5 py-4 border-b">
         <div className="min-w-0">
@@ -162,7 +162,7 @@ function ReplyDrawer({
             <UserCircle className="size-4" />
             <span className="truncate">{item.customerName}</span>
           </div>
-          <h3 className="font-semibold truncate">{item.subject}</h3>
+          <h3 className="font-semibold truncate text-xl">{item.subject}</h3>
         </div>
         <button className="p-2 rounded-full hover:bg-gray-100" onClick={onClose} aria-label="close">
           <X className="size-5" />
@@ -180,25 +180,25 @@ function ReplyDrawer({
               <AlertCircle className="size-4" />
             )}
             <StatusBadge status={item.status} />
-            <PriorityDot level={item.priority} />
+            
           </div>
-          <p className="mt-2 text-gray-800 whitespace-pre-line">{item.message}</p>
-          <div className="mt-2 text-xs text-gray-500">สร้างเมื่อ {timeAgo(item.createdAt)}</div>
+          <p className="mt-2 text-xl text-gray-800 whitespace-pre-line">{item.message}</p>
+          <div className="mt-2 text-xl text-gray-500">สร้างเมื่อ {timeAgo(item.createdAt)}</div>
         </div>
 
-        {history.length > 0 && (
+        {/* {history.length > 0 && (
           <div>
             <div className="mb-2 font-medium">ประวัติการตอบกลับ</div>
             <ul className="space-y-3">
               {history.map((r, i) => (
                 <li key={i} className="border rounded-lg p-3">
-                  <div className="text-xs text-gray-500 mb-1">{r.by} • {timeAgo(r.at)}</div>
-                  <div className="text-sm text-gray-800 whitespace-pre-line">{r.text}</div>
+                  <div className="text-xl text-gray-500 mb-1">{r.by} • {timeAgo(r.at)}</div>
+                  <div className="text-xl text-gray-800 whitespace-pre-line">{r.text}</div>
                 </li>
               ))}
             </ul>
           </div>
-        )}
+        )} */}
 
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -208,7 +208,7 @@ function ReplyDrawer({
               </button>
             ))}
           </div>
-          <label className="block text-sm text-gray-700 mb-1">ตอบกลับลูกค้า</label>
+          <label className="block text-xl text-gray-700 mb-1">ตอบกลับลูกค้า</label>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -262,12 +262,12 @@ export default function ComplaintAdminPage() {
 
   return (
     <div className="min-h-[90vh] bg-white">
-      <div className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8 py-6">
+      <div className=" px-4 md:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h1 className="text-2xl font-semibold">จัดการคำร้องเรียน</h1>
+          <h1 className="text-4xl font-semibold">จัดการคำร้องเรียน</h1>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
+              <Search className=" absolute left-3 top-1/2 -translate-y-1/2 size-8 text-gray-400" />
               <input
                 value={query}
                 onChange={(e) => { setPage(1); setQuery(e.target.value); }}
@@ -279,7 +279,7 @@ export default function ComplaintAdminPage() {
               <select
                 value={status}
                 onChange={(e) => { setPage(1); setStatus(e.target.value as any); }}
-                className="appearance-none w-44 rounded-xl border py-2 pl-3 pr-8 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                className="text-xl appearance-none w-44 rounded-xl border py-2 pl-3 pr-8 focus:ring-2 focus:ring-blue-600 focus:outline-none"
               >
                 <option value="all">สถานะทั้งหมด</option>
                 <option value="new">ใหม่</option>
@@ -292,7 +292,7 @@ export default function ComplaintAdminPage() {
         </div>
 
         <div className="mt-4 rounded-2xl border overflow-hidden">
-          <table className="w-full text-sm">
+          <table className="w-full text-xl">
             <thead className="bg-gray-50 text-gray-600">
               <tr>
                 <th className="px-4 py-3 text-left">หมายเลข</th>
@@ -307,7 +307,7 @@ export default function ComplaintAdminPage() {
             <tbody>
               {current.map((c) => (
                 <tr key={c.id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-700">{c.id}</td>
+                  <td className="px-4 py-3 font-mono text-xl text-gray-700">{c.id}</td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900 line-clamp-1">{c.subject}</div>
                     <div className="text-gray-500 line-clamp-1">{c.message}</div>
@@ -350,7 +350,7 @@ export default function ComplaintAdminPage() {
         </div>
 
         {/* Pagination */}
-        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-4 flex items-center justify-between text-xl text-gray-600">
           <div>ทั้งหมด {filtered.length} รายการ</div>
           <div className="flex items-center gap-2">
             <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-3 py-2 rounded-lg border disabled:opacity-50 inline-flex items-center gap-1">

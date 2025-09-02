@@ -14,11 +14,10 @@ type ReplyComplaint struct {
     Description     string    `gorm:"column:description"`
 
     EmpID    uint     `gorm:"column:emp_id"`
-    Employee Employee `gorm:"foreignKey:EmpID;references:ID"` // <-- เปลี่ยน references:ID
+    Employee *Employee `gorm:"foreignKey:EmpID;references:ID"` // <-- เปลี่ยน references:ID
 
     ComplaintID uint
-    Complaint   Complaint `gorm:"foreignKey:ComplaintID;references:ID"`
+    Complaint   *Complaint `gorm:"foreignKey:ComplaintID;references:ID"`
 }
 
 
-func (ReplyComplaint) TableName() string { return "reply_complaint" }

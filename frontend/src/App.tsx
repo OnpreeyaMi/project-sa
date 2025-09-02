@@ -12,7 +12,7 @@ function App() {
       <CustomerSidebar>
         <Routes>
           <Route path="/payment" element={<Payment />} />
-          {/* <Route path="/complaint" element={<Complaint />} /> */}
+           
           <Route path="/complaint/create" element={<ComplaintCreate />} />
           
           
@@ -20,11 +20,11 @@ function App() {
       </CustomerSidebar>
       
       
-      {/*<EmpSidebar>
+      {/* <EmpSidebar>
         <Routes>
           <Route path="/complaint/reply" element={<ComplaintReply />} />
         </Routes>
-      </EmpSidebar>*/}
+      </EmpSidebar> */}
     </BrowserRouter>
   );
 }

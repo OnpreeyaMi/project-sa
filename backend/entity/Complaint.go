@@ -15,11 +15,11 @@ type Complaint struct {
 
 	// FK ไป Customer.ID (เพราะ Customer ใช้ gorm.Model)
 	CustomerID uint     `gorm:"column:customer_id;not null"`
-	Customer   Customer `gorm:"foreignKey:CustomerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+	Customer   *Customer `gorm:"foreignKey:CustomerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 
 	// ความสัมพันธ์ย่อย
-	Replies   []ReplyComplaint  `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
-	Histories []HistoryComplain `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
+	Replies   []*ReplyComplaint  `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
+	Histories []*HistoryComplain `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
 func (Complaint) TableName() string { return "complaints" }
