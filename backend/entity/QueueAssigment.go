@@ -3,7 +3,7 @@ package entity
 import ("time"
 	"gorm.io/gorm")
 
-type Queueassignment struct {
+type QueueAssignment struct {
 	gorm.Model
 	Assigned_time time.Time
 
