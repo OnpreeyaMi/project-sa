@@ -1,9 +1,10 @@
 import React from 'react';
 import { Card, Steps, Descriptions, Typography, Divider } from 'antd';
 import type { DescriptionsProps } from 'antd';
-import CustomerSidebar from "../../component/layout/Sidebar/CusSidebar";
+import CustomerSidebar from '../../component/layout/customer/CusSidebar';
 
 const { Step } = Steps;
+
 const { Title, Text } = Typography;
 
 const OrderStatusPage: React.FC = () => {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {Button, Select, Row, Col, Table, Tag } from "antd";
-import EmpSidebar from "../../component/layout/Sidebar/EmpSidebar";
+import EmpSidebar from "../../component/layout/employee/empSidebar";
 import { Link } from "react-router-dom";
 // import StatusCard from "../componemts/StatusCard";
 import "./StatusUpdate.css";
