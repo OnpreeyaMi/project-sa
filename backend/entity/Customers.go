@@ -10,6 +10,7 @@ type Customer struct {
 	LastName string
 	PhoneNumber string
 	IsVerified bool
+	CustomerImage string
 	
 	GenderID uint
 	Gender *Gender `gorm:"foreignKey:GenderID"`
