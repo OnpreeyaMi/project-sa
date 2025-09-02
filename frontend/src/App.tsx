@@ -28,16 +28,19 @@ const App: React.FC = () => {
             <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
             <Route path="/store" element={<EmployeeHome />} />
             <Route path="/profile" element={<StatusPage />} />
-            
+            <Route path="/OrderPage" element={<OrderPage />} />
+            <Route path="/HistoryPage" element={<HistoryPage />} />
+            <Route path="/StockEmpPage" element={<StockEmpPage />} />
+            <Route path="/StockAdminPage" element={<StockAdminPage />} />
             </Routes>
       {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
       {/* <AdminSidebar></AdminSidebar> */}
       {/* <EmpSidebar></EmpSidebar> */}
       {/*<CustomerSidebar></CustomerSidebar>*/}
-      {/* <OrderPage></OrderPage>
+      <OrderPage></OrderPage>
       <HistoryPage></HistoryPage>
       <StockEmpPage></StockEmpPage>
-      <StockAdminPage></StockAdminPage> */}
+      <StockAdminPage></StockAdminPage>
       
       
     </BrowserRouter>

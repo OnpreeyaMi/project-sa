@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Timeslot struct {
+type TimeSlot struct {
 	gorm.Model
 
 	Start_time time.Time

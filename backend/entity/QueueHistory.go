@@ -2,7 +2,7 @@ package entity
 
 import "gorm.io/gorm"
 
-type Queuehistory struct {
+type QueueHistory struct {
 	gorm.Model
 
 	QueueID uint
