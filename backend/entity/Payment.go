@@ -19,8 +19,8 @@ type Payment struct {
     OrderID      uint
 
 
-    Bills []Bill `gorm:"foreignKey:PaymentID;references:ID"`
-    Histories    []History     `gorm:"foreignKey:PaymentID"`
+    Bills []*Bill `gorm:"foreignKey:PaymentID;references:ID"`
+    Histories    []*History     `gorm:"foreignKey:PaymentID"`
     
 
 }

@@ -11,11 +11,11 @@ type PromotionUsage struct {
 	Status string
 
 	PromotionID uint
-	Promotion Promotion `gorm:"foreignKey:PromotionID"`
+	Promotion *Promotion `gorm:"foreignKey:PromotionID"`
 
 	OrderID uint
-	Order Order `gorm:"foreignKey:OrderID"`
+	Order *Order `gorm:"foreignKey:OrderID"`
 
 	CustomerID uint
-	Customer Customer `gorm:"foreignKey:CustomerID"`
+	Customer *Customer `gorm:"foreignKey:CustomerID"`
 }

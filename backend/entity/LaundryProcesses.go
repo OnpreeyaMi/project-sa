@@ -17,10 +17,11 @@ type LaundryProcess struct {
 	Order []Order `gorm:"many2many:process_orders"`
 	//many to one กับ Employee
 	EmployeeID uint
-	Employee   Employee `gorm:"foreignKey:EmployeeID"`
+	Employee   *Employee `gorm:"foreignKey:EmployeeID"`
 	//many to one กับ Sorting
 	SortingID  uint
-	SortingRecord    SortingRecord `gorm:"foreignKey:SortingID"`
+	SortingRecord    *SortingRecord `gorm:"foreignKey:SortingID"`
 	//many to many กับ Machine
-	Machine []Machine `gorm:"foreignKey:MachineID"`
+	MachineID uint
+	Machine   []*Machine `gorm:"foreignKey:MachineID"`
 }
