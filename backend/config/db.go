@@ -57,6 +57,15 @@ func SetupDatabase() {
 		&entity.SortingHistory{},
 		&entity.TimeSlot{},
 		&entity.User{},
+		&entity.Gender{},
+		&entity.History{},
+		&entity.HistoryComplain{},
+		&entity.Promotion{},
+		&entity.PromotionCondition{},
+		&entity.PromotionUsage{},
+		&entity.Role{},
+		&entity.DiscountType{},
+
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
