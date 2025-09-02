@@ -9,6 +9,12 @@ import OrderDetail from "./pages/LaundryProcess/OrderDetail";
 import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; 
 import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; 
 import StatusPage from "./pages/LaundryProcess/StatusPage";
+// import EmpSidebar from "./component/layout/employee/empSidebar";
+//import CustomerSidebar from "./component/layout/customer/CusSidebar";
+import OrderPage from "./pages/orders/create";
+import HistoryPage from "./pages/orders/history";
+import StockEmpPage from "./pages/stock/employee";
+import StockAdminPage from "./pages/stock/Admin";
 
 const App: React.FC = () => {
   return (
@@ -24,7 +30,15 @@ const App: React.FC = () => {
             <Route path="/profile" element={<StatusPage />} />
             
             </Routes>
-        
+      {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
+      {/* <AdminSidebar></AdminSidebar> */}
+      {/* <EmpSidebar></EmpSidebar> */}
+      {/*<CustomerSidebar></CustomerSidebar>*/}
+      {/* <OrderPage></OrderPage>
+      <HistoryPage></HistoryPage>
+      <StockEmpPage></StockEmpPage>
+      <StockAdminPage></StockAdminPage> */}
+      
       
     </BrowserRouter>
   );

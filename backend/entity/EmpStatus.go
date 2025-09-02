@@ -11,5 +11,5 @@ type EmpStatus struct {
 	StatusDescription string `json:"status_description"`
 
 	Emp_ID uint
-	EmployeeStatus []EmployeeStatus `gorm:"foreignKey:Emp_ID"`
+	EmployeeStatus []*EmployeeStatus `gorm:"foreignKey:Emp_ID"`
 }
