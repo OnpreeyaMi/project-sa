@@ -10,17 +10,16 @@ type Customer struct {
 	LastName string
 	PhoneNumber string
 	IsVerified bool
-	CustomerImage string
 	
 	GenderID uint
-	Gender Gender `gorm:"foreignKey:GenderID"`
+	Gender *Gender `gorm:"foreignKey:GenderID"`
 
 	UserID uint
-	User User `gorm:"foreignKey:UserID"`
-
-	Addresses []Address `gorm:"foreignKey:CustomerID"`
+	User *User `gorm:"foreignKey:UserID"`
+	
+	Addresses []*Address `gorm:"foreignKey:CustomerID"`
 
 	OrderID uint
-	Orders []Order `gorm:"foreignKey:CustomerID;references:ID"`
+	Orders []*Order `gorm:"foreignKey:CustomerID;references:ID"`
 
 }

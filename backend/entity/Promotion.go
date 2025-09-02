@@ -16,8 +16,8 @@ type Promotion struct {
 	PromoImage    string
 
 	DiscountTypeID uint
-	DiscountType   DiscountType
+	DiscountTypes   *DiscountType 
 
-	PromotionUsage     []PromotionUsage     `gorm:"foreignKey:PromotionID"`
-	PromotionCondition []PromotionCondition `gorm:"foreignKey:PromotionID"`
+	PromotionUsage     []*PromotionUsage     `gorm:"foreignKey:PromotionID"`
+	PromotionCondition []*PromotionCondition `gorm:"foreignKey:PromotionID"`
 }

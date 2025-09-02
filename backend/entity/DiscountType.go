@@ -8,6 +8,7 @@ type DiscountType struct {
 	gorm.Model
 	TypeName string
 	Description string
-	Promotions []Promotion `gorm:"foreignKey:DiscountTypeID"`
+	
+	Promotions []*Promotion `gorm:"foreignKey:DiscountTypeID"`
 
 }
