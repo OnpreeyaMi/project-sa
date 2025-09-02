@@ -41,7 +41,6 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
       label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
       onClick: () => navigate("/employee/orders"),
     },
-
     {
       key: "/employee/delivery",
       icon: <TbTruckDelivery style={{ fontSize: 18, color: '#6da3d3' }} />,

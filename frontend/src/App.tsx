@@ -19,7 +19,6 @@ const App: React.FC = () => {
   );
 
 };
-
 export default App;
 
 //ระบบย่อย : จัดการกระบวนการซัก actor customer

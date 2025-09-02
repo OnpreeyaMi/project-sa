@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, Table, Button, Modal, Descriptions, message, Divider } from 'antd';
-import EmployeeSidebar from "../../component/layout/employee/empSidebar";
+import EmployeeSidebar from '../../component/layout/employee/empSidebar';
 import './TransportQueuePage.css';
 
 const { Content } = Layout;

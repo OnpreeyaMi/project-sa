@@ -13,7 +13,7 @@ import {
   Col,
   Modal,
 } from "antd";
-import EmpSidebar from  "../../component/layout/Sidebar/EmpSidebar";
+import EmployeeSidebar from "../../component/layout/employee/empSidebar"; 
 import StatusCard from "../../component/StatusCard"; 
 import { GiWashingMachine, GiClothes } from "react-icons/gi";
 import { FaCheckCircle } from "react-icons/fa";
@@ -64,7 +64,7 @@ const OrderDetail: React.FC = () => {
   };
 
   return (
-    <EmpSidebar>
+    <EmployeeSidebar>
       <div className="p-6">
         {/* หัวข้อหลัก */}
         <div className="mb-6">
@@ -271,7 +271,7 @@ const OrderDetail: React.FC = () => {
           <p>คุณต้องการอัปเดตสถานะเป็น <b>{confirmModal.newStatus}</b> ใช่หรือไม่?</p>
         </Modal>
       </div>
-    </EmpSidebar>
+    </EmployeeSidebar>
   );
 };
 
