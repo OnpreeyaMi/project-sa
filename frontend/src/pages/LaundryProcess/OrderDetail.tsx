@@ -13,8 +13,8 @@ import {
   Col,
   Modal,
 } from "antd";
-import EmpSidebar from "../../../component/layout/Sidebar/EmpSidebar";
-import StatusCard from "../componemts/StatusCard";
+import EmpSidebar from  "../../component/layout/Sidebar/EmpSidebar";
+import StatusCard from "../../component/StatusCard"; 
 import { GiWashingMachine, GiClothes } from "react-icons/gi";
 import { FaCheckCircle } from "react-icons/fa";
 

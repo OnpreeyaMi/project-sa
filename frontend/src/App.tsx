@@ -1,15 +1,14 @@
 import React, { useState } from "react";
 // import AdminSidebar from "./component/layout/admin/AdminSidebar";
 // import Background from "./component/background";
-import StatusUpdate from "./Feature/LaundryProcess/pages/StatusUpdate";
+import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
 import { BrowserRouter , Routes, Route } from "react-router-dom";
-import HomePage from "./Roles/Employee/HomePage"; // สร้างใหม่ด้านล่าง
-import TransportQueuePage from "./Feature/Queue/page/TransportQueuePage";
-import OrderDetail from "./Feature/LaundryProcess/pages/OrderDetail"; // หน้ารายละเอียดออเดอร์ + อัพเดทสถานะ
-import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; //หน้าพนักงาน
-import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; //หน้าลูกค้า
-import StatusPage from "./Feature/LaundryProcess/pages/StatusPage";
-
+import EmployeeHome from "./pages/Home/EmployeeHome";
+import TransportQueuePage from "./pages/Queue/TransportQueuePage";
+import OrderDetail from "./pages/LaundryProcess/OrderDetail";
+import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; 
+import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; 
+import StatusPage from "./pages/LaundryProcess/StatusPage";
 
 const App: React.FC = () => {
   return (
@@ -17,12 +16,13 @@ const App: React.FC = () => {
 
           <Routes>
             <Route path="/" element={<EmpSidebar />} />
-            <Route path="/Home" element={<HomePage />} />
+            <Route path="/Home" element={<EmployeeHome />} />
             <Route path="/order" element={<StatusUpdate/>} />
-            <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
-            <Route path="/store" element={<HomePage />} />
-            <Route path="/profile" element={<StatusPage />} />
             <Route path="/orders/:orderId" element={<OrderDetail />} />
+            <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
+            <Route path="/store" element={<EmployeeHome />} />
+            <Route path="/profile" element={<StatusPage />} />
+            
             </Routes>
         
       
