@@ -47,11 +47,11 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
 	"github.com/OnpreeyaMi/project-sa/config"
-    "github.com/gin-gonic/gin"
-    "github.com/OnpreeyaMi/project-sa/controller"
-
+	"github.com/gin-gonic/gin"
+	"github.com/OnpreeyaMi/project-sa/controller"
+	"github.com/OnpreeyaMi/project-sa/entity"
 )
 
 const port = 8080
@@ -73,6 +73,20 @@ func main() {
 
     // รัน server
     router.Run(fmt.Sprintf(":%d", port))
+
+	config.DB.AutoMigrate(&entity.Employee{})
+	config.DB.AutoMigrate(&entity.EmployeeStatus{})
+	config.DB.AutoMigrate(&entity.Position{})
+	config.DB.AutoMigrate(&entity.PositionCount{})
+	config.DB.AutoMigrate(&entity.User{})
+	config.DB.AutoMigrate(&entity.ClothType{})
+	config.DB.AutoMigrate(&entity.Order{})
+	config.DB.AutoMigrate(&entity.SortingRecord{})
+	config.DB.AutoMigrate(&entity.SortedClothes{})
+	config.DB.AutoMigrate(&entity.SortingHistory{})
+
+
+
 
 }
 func CORSMiddleware() gin.HandlerFunc {

@@ -9,7 +9,7 @@ type Role struct {
 	Role_name string
 
 	UserID uint
-	Users []User `gorm:"foreignKey:RoleID;references:ID"`
+	Users []*User `gorm:"foreignKey:RoleID;references:ID"`
 
 
 }

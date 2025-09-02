@@ -6,7 +6,7 @@ import {
   FaEdit,
   FaTrash,
 } from "react-icons/fa";
-import { Modal, Form, Input, Select, Button, Popconfirm, message } from "antd";
+import { Modal, Form, Input, Select, Button, Popconfirm, message, Divider } from "antd";
 import AdminSidebar from "../../component/layout/admin/AdminSidebar";
 
 // -----------------------------
@@ -14,10 +14,12 @@ import AdminSidebar from "../../component/layout/admin/AdminSidebar";
 // -----------------------------
 interface Employee {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   gender: "male" | "female" | "other";
   position: string;
   email: string;
+  password: string; // แก้ไขได้จากฟอร์ม (ไม่แสดงบนการ์ด)
   phone: string;
   joinDate: string; // dd/mm/yyyy or yyyy-mm-dd
   status: "active" | "inactive" | "onleave";
@@ -29,10 +31,12 @@ interface Employee {
 const initialEmployees: Employee[] = [
   {
     id: 1,
-    name: "นางสาวสุดา จันทร์ใส",
+    firstName: "สุดา",
+    lastName: "จันทร์ใส",
     gender: "female",
     position: "พนักงานขนส่ง",
     email: "suda@laundry.com",
+    password: "password123",
     phone: "089-123-4567",
     joinDate: "15/1/2566",
     status: "active",
@@ -49,6 +53,9 @@ const statusMeta: Record<Employee["status"], { label: string; badge: string; dot
 };
 
 const genderLabel = (g: Employee["gender"]) => (g === "male" ? "ชาย" : g === "female" ? "หญิง" : "อื่น ๆ");
+const fullName = (e: Employee) => `${e.firstName} ${e.lastName}`;
+const initialsOf = (e: Employee) =>
+  [e.firstName?.trim()[0], e.lastName?.trim()[0]].filter(Boolean).join("");
 
 // -----------------------------
 // Component
@@ -77,7 +84,16 @@ const EmployeePage: React.FC = () => {
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       const term = search.toLowerCase();
-      const hit = [emp.name, emp.position, emp.email, emp.phone].some((f) => f.toLowerCase().includes(term));
+      const hit = [
+        fullName(emp),
+        emp.firstName,
+        emp.lastName,
+        emp.position,
+        emp.email,
+        emp.phone,
+      ]
+        .filter(Boolean)
+        .some((f) => f.toLowerCase().includes(term));
       const statusOk = statusFilter === "all" || emp.status === statusFilter;
       const genderOk = genderFilter === "all" || emp.gender === genderFilter;
       const positionOk = positionFilter === "all" || emp.position === positionFilter;
@@ -90,18 +106,41 @@ const EmployeePage: React.FC = () => {
     message.success("ลบข้อมูลพนักงานเรียบร้อย");
   };
 
+  // ลบจากใน Modal แล้วปิด Modal
+  const handleDeleteInModal = () => {
+    if (!editingEmployee) return;
+    handleConfirmDelete(editingEmployee.id);
+    setIsModalOpen(false);
+    setEditingEmployee(null);
+    form.resetFields();
+  };
+
+  // Save (รองรับแก้ไขรหัสผ่านได้)
   const handleSaveEmployee = (values: any) => {
+    const { password, ...rest } = values;
+    const newPassword = (password ?? "").toString().trim();
+
     if (editingEmployee) {
-      setEmployees((prev) => prev.map((emp) => (emp.id === editingEmployee.id ? { ...emp, ...values } : emp)));
+      // ในโหมดแก้ไข: ถ้าช่องรหัสผ่านเว้นว่าง → เก็บรหัสเดิม
+      const nextPassword = newPassword !== "" ? newPassword : editingEmployee.password;
+      const updated: Employee = { ...editingEmployee, ...rest, password: nextPassword };
+      setEmployees((prev) => prev.map((emp) => (emp.id === editingEmployee.id ? updated : emp)));
       message.success("บันทึกการแก้ไขเรียบร้อย");
     } else {
+      // ในโหมดเพิ่ม: ต้องกรอกรหัสผ่านเอง
+      if (newPassword === "") {
+        message.error("กรุณากรอกรหัสผ่าน");
+        return;
+      }
       const newEmployee: Employee = {
         id: employees.length ? Math.max(...employees.map((e) => e.id)) + 1 : 1,
-        ...values,
+        ...rest,
+        password: newPassword,
       };
       setEmployees((prev) => [newEmployee, ...prev]);
       message.success("เพิ่มพนักงานใหม่เรียบร้อย");
     }
+
     setIsModalOpen(false);
     form.resetFields();
     setEditingEmployee(null);
@@ -109,6 +148,7 @@ const EmployeePage: React.FC = () => {
 
   const handleEditClick = (emp: Employee) => {
     setEditingEmployee(emp);
+    // ใส่ค่าปัจจุบันทั้งหมดลงฟอร์ม รวมถึงรหัสผ่าน (แก้ไขได้)
     form.setFieldsValue(emp);
     setIsModalOpen(true);
   };
@@ -148,7 +188,7 @@ const EmployeePage: React.FC = () => {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow"
             onClick={() => {
               setEditingEmployee(null);
-              form.resetFields();
+              form.resetFields(); // ไม่ตั้งค่า password อัตโนมัติ
               setIsModalOpen(true);
             }}
           >
@@ -197,7 +237,7 @@ const EmployeePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredEmployees.map((emp) => {
               const meta = statusMeta[emp.status];
-              const initials = emp.name.trim().split(' ').filter(Boolean).map((s) => s[0]).slice(0, 2).join('');
+              const initials = initialsOf(emp) || "•";
               return (
                 <div key={emp.id} className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg">
                   {/* subtle top border */}
@@ -213,7 +253,7 @@ const EmployeePage: React.FC = () => {
                         {initials}
                       </div>
                       <div>
-                        <h2 className="font-semibold leading-tight">{emp.name}</h2>
+                        <h2 className="font-semibold leading-tight">{fullName(emp)}</h2>
                         <p className="text-gray-500 text-sm">{emp.position} • {genderLabel(emp.gender)}</p>
                       </div>
                     </div>
@@ -222,26 +262,16 @@ const EmployeePage: React.FC = () => {
                       <p className="flex items-center gap-2"><FaMapMarkerAlt className="text-gray-400" /> รหัส: EMP{String(emp.id).padStart(3, "0")}</p>
                       <p className="flex items-center gap-2"><FaPhone className="text-gray-400" /> {emp.phone}</p>
                       <p className="flex items-center gap-2"><FaEnvelope className="text-gray-400" /> {emp.email}</p>
+                      {/* ไม่แสดงรหัสผ่านบนการ์ดตามคำขอ */}
                     </div>
 
                     <p className="text-xs text-gray-400 mt-2">เข้าร่วม: {emp.joinDate}</p>
 
-                    <div className="flex justify-between mt-4 pt-3 border-t">
+                    {/* ปุ่มเฉพาะ “แก้ไข” */}
+                    <div className="flex justify-end mt-4 pt-3 border-t">
                       <button className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-600" onClick={() => handleEditClick(emp)}>
                         <FaEdit /> แก้ไข
                       </button>
-                      <Popconfirm
-                        title="ต้องการลบข้อมูลพนักงานหรือไม่?"
-                        description={`คุณกำลังจะลบ "${emp.name}" ออกจากระบบ`}
-                        okText="ยืนยันลบ"
-                        cancelText="ยกเลิก"
-                        okButtonProps={{ danger: true }}
-                        onConfirm={() => handleConfirmDelete(emp.id)}
-                      >
-                        <button className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700">
-                          <FaTrash /> ลบ
-                        </button>
-                      </Popconfirm>
                     </div>
                   </div>
                 </div>
@@ -313,9 +343,15 @@ const EmployeePage: React.FC = () => {
           footer={null}
         >
           <Form form={form} layout="vertical" onFinish={handleSaveEmployee}>
-            <Form.Item label="ชื่อ-นามสกุล" name="name" rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}>
-              <Input />
-            </Form.Item>
+            {/* ชื่อแยกเป็น firstName / lastName */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Form.Item label="ชื่อ (First name)" name="firstName" rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="นามสกุล (Last name)" name="lastName" rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}>
+                <Input />
+              </Form.Item>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Form.Item label="เพศ" name="gender" rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}>
@@ -330,13 +366,33 @@ const EmployeePage: React.FC = () => {
               </Form.Item>
             </div>
 
+            {/* แถว: อีเมล | รหัสผ่าน (แก้ไขได้) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Form.Item label="อีเมล" name="email" rules={[{ required: true, type: "email", message: "อีเมลไม่ถูกต้อง" }]}>
                 <Input />
               </Form.Item>
+              <Form.Item
+                label="รหัสผ่าน"
+                name="password"
+                rules={
+                  editingEmployee
+                    ? [] // โหมดแก้ไข: ไม่บังคับ
+                    : [
+                        { required: true, message: "กรุณากรอกรหัสผ่าน" },
+                        { min: 6, message: "รหัสผ่านอย่างน้อย 6 ตัวอักษร" },
+                      ]
+                }
+              >
+                <Input.Password />
+              </Form.Item>
+            </div>
+
+            {/* แถว: เบอร์โทร */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Form.Item label="เบอร์โทร" name="phone" rules={[{ required: true, message: "กรุณากรอกเบอร์โทร" }]}>
                 <Input />
               </Form.Item>
+              <div />
             </div>
 
             <Form.Item label="วันที่เข้าร่วม" name="joinDate" rules={[{ required: true, message: "กรุณากรอกวันที่เข้าร่วม" }]}>
@@ -351,20 +407,43 @@ const EmployeePage: React.FC = () => {
               </Select>
             </Form.Item>
 
+            {/* ปุ่มลบมาอยู่ “ในหน้าแก้ไข” เท่านั้น */}
+            {editingEmployee && (
+              <>
+                <Divider />
+                <div className="flex items-center justify-between">
+                  <div className="text-red-600 font-medium"></div>
+                  <Popconfirm
+                    title="ต้องการลบข้อมูลพนักงานหรือไม่?"
+                    description={`คุณกำลังจะลบ "${fullName(editingEmployee)}" ออกจากระบบ`}
+                    okText="ยืนยันลบ"
+                    cancelText="ยกเลิก"
+                    okButtonProps={{ danger: true }}
+                    onConfirm={handleDeleteInModal}
+                  >
+                    <Button danger icon={<FaTrash />}>ลบพนักงาน</Button>
+                  </Popconfirm>
+                </div>
+              </>
+            )}
+
+            {/* ปุ่มบันทึกซ้าย / ยกเลิกขวา */}
             <Form.Item>
-              <div className="flex justify-end gap-2">
-                <Button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setEditingEmployee(null);
-                    form.resetFields();
-                  }}
-                >
-                  ยกเลิก
-                </Button>
+              <div className="flex items-center mt-4">
                 <Button type="primary" htmlType="submit">
                   {editingEmployee ? "บันทึกการแก้ไข" : "บันทึก"}
                 </Button>
+                <div className="ml-auto">
+                  <Button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingEmployee(null);
+                      form.resetFields();
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+                </div>
               </div>
             </Form.Item>
           </Form>
