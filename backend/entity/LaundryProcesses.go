@@ -22,5 +22,5 @@ type LaundryProcess struct {
 	SortingID  uint
 	SortingRecord  *SortingRecord `gorm:"foreignKey:SortingID"`
 	//many to many กับ Machine
-	Machine []*Machine `gorm:"foreignKey:MachineID"`
+	Machine []*Machine `gorm:"many2many:machine_processes;"`
 }

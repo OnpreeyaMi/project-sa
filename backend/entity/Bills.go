@@ -7,3 +7,4 @@ type Bill struct {
     PaymentID uint
     Payment   Payment `gorm:"foreignKey:PaymentID;references:ID"`
 }
+//พี่เข้มสั่งลบ
