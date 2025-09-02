@@ -37,24 +37,43 @@ func SetupDatabase() {
 		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
+<<<<<<< HEAD
 		&entity.Order{},
 		&entity.OrderHistory{},
 		&entity.Payment{},
 		&entity.PositionCount{},
 		&entity.Position{},
+=======
+		&entity.OrderHistory{},
+		&entity.Order{},
+		&entity.Payment{},
+		&entity.Position{},
+		&entity.PositionCount{},
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06
 		&entity.Promotion{},
 		&entity.PromotionCondition{},
 		&entity.PromotionUsage{},
 		&entity.PurchaseDetergent{},
+<<<<<<< HEAD
 		&entity.Queue{},
 		&entity.QueueAssignment{},
 		&entity.QueueHistory{},
+=======
+		&entity.Queueassignment{},
+		&entity.Queuehistory{},
+		&entity.Queue{},
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06
 		&entity.ReplyComplaint{},
 		&entity.Role{},
 		&entity.ServiceType{},
 		&entity.SortedClothes{},
+<<<<<<< HEAD
 		&entity.SortingRecord{},
 		&entity.SortingHistory{},
+=======
+		&entity.SortingHistory{},
+		&entity.SortingRecord{},
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06
 		&entity.TimeSlot{},
 		&entity.User{},
 
@@ -192,4 +211,8 @@ func MockData() {
 	// }
 
 	fmt.Println("Mock data added successfully!")
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06

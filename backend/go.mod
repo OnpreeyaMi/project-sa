@@ -38,4 +38,8 @@ require (
 	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+<<<<<<< HEAD
 )
+=======
+)
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06

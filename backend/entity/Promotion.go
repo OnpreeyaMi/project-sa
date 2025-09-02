@@ -20,4 +20,8 @@ type Promotion struct {
 
 	PromotionUsage     []*PromotionUsage     `gorm:"foreignKey:PromotionID"`
 	PromotionCondition []*PromotionCondition `gorm:"foreignKey:PromotionID"`
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06

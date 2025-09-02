@@ -77,4 +77,8 @@ func GetOrders(c *gin.Context) {
 	// order = SELECT orders.* FROM orders LEFT JOIN customers ON orders.customer_id = customers.id
 
 	c.JSON(http.StatusOK, orders)
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06

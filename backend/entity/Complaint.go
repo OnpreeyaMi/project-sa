@@ -22,4 +22,8 @@ type Complaint struct {
 	Histories []*HistoryComplain `gorm:"foreignKey:ComplaintID;references:ID;constraint:OnDelete:CASCADE"`
 }
 
+<<<<<<< HEAD
 func (Complaint) TableName() string { return "complaints" }
+=======
+func (Complaint) TableName() string { return "complaints" }
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06

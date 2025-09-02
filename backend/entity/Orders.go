@@ -22,4 +22,7 @@ type Order struct {
 	PromotionUsage 		*PromotionUsage `gorm:"foreignKey:OrderID;"`
 	Payment 			*Payment `gorm:"foreignKey:OrderID;"`	
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> ae0b4f670b0322212318d085cd9a6f1b63f7af06
