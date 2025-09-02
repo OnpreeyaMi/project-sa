@@ -11,6 +11,6 @@ type Timeslot struct {
 	Start_time time.Time
 	End_time   time.Time
 
-	Queue  []Queue `gorm:"foreignKey:QueueID"`
+	Queue  []*Queue `gorm:"foreignKey:TimeSlotID"`
 
 }
