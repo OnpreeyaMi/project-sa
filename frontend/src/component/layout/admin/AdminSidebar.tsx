@@ -25,7 +25,7 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // ✅ เมนูพร้อม navigate
+
   const menuItems = [
     {
       key: "/admin/dashboard",
