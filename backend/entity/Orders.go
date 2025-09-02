@@ -14,7 +14,7 @@ type Order struct {
 	OrderImage 			string
 	OrderNote 			string
 	LaundryProcesses 	[]*LaundryProcess `gorm:"many2many:OrderProcess;"`
-	// OrderHistories 		[]*OrderHistory `gorm:"foreignKey:OrderID;"`
+	OrderHistories 		[]*OrderHistory `gorm:"foreignKey:OrderID;"`
 	AddressID 			uint
 	Address 			*Address `gorm:"foreignKey:AddressID;"`
 	Queues 				[]*Queue `gorm:"foreignKey:OrderID;"`

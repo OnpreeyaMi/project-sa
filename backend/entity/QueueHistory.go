@@ -7,5 +7,4 @@ type Queuehistory struct {
 
 	QueueID uint
 	Queues *Queue `gorm:"foreignKey:QueueID"`
-
 }
