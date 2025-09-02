@@ -61,6 +61,9 @@ func SetupDatabase() {
 		&entity.DiscountType{},
 
 		&entity.DetergentUsageHistory{},
+		&entity.Role{},
+		&entity.DiscountType{},
+
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
