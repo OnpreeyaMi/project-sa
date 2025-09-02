@@ -6,7 +6,7 @@ import { BrowserRouter , Routes, Route } from "react-router-dom";
 import HomePage from "./Roles/Employee/HomePage"; // สร้างใหม่ด้านล่าง
 import TransportQueuePage from "./Feature/Queue/page/TransportQueuePage";
 import OrderDetail from "./Feature/LaundryProcess/pages/OrderDetail"; // หน้ารายละเอียดออเดอร์ + อัพเดทสถานะ
-
+import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; //หน้าพนักงาน
 import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; //หน้าลูกค้า
 import StatusPage from "./Feature/LaundryProcess/pages/StatusPage";
 
@@ -16,7 +16,7 @@ const App: React.FC = () => {
     <BrowserRouter>
 
           <Routes>
-            
+            <Route path="/" element={<EmpSidebar />} />
             <Route path="/Home" element={<HomePage />} />
             <Route path="/order" element={<StatusUpdate/>} />
             <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
