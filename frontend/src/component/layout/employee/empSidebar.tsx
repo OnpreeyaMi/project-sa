@@ -30,10 +30,10 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
   // ✅ เมนูพร้อม navigate
   const menuItems = [
     {
-      key: "/admin/dashboard",
+      key: "/employee/dashboard",
       icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-      onClick: () => navigate("/admin/dashboard"),
+      onClick: () => navigate("/employee/dashboard"),
     },
     {
       key: "/employee/orders",
@@ -41,12 +41,7 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
       label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
       onClick: () => navigate("/employee/orders"),
     },
-    {
-      key: "/employee/status",
-      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>สถานะ</span>,
-      onClick: () => navigate("/employee/status"),
-    },
+
     {
       key: "/employee/delivery",
       icon: <TbTruckDelivery style={{ fontSize: 18, color: '#6da3d3' }} />,

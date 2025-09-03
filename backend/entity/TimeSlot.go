@@ -5,12 +5,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type Timeslot struct {
+type TimeSlot struct {
 	gorm.Model
 
 	Start_time time.Time
 	End_time   time.Time
 
-	Queue  []*Queue `gorm:"foreignKey:QueueID"`
+	Queue  []*Queue `gorm:"foreignKey:TimeSlotID"`
 
 }

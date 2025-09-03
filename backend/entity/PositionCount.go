@@ -1,12 +1,11 @@
 package entity
-import (
-	"gorm.io/gorm"
-)
+
+import "gorm.io/gorm"
 
 type PositionCount struct {
 	gorm.Model
-	TotalEmployee      int 
+	TotalEmployee int       `json:"totalEmployee"`
 
-	PositionID         uint 
-	Position          *Position `gorm:"foreignKey:PositionID"`
+	PositionID    uint      `json:"positionID"`
+	Position      *Position `gorm:"foreignKey:PositionID" json:"-"`
 }
