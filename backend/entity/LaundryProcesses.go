@@ -11,10 +11,10 @@ type LaundryProcess struct {
 	Status     string
 	End_time   time.Time
 	Start_time time.Time
-	description string
+	Description string
 
 	//many to many เชื่อกับ Order
-	Order []Order `gorm:"many2many:process_orders"`
+	Order []*Order `gorm:"many2many:process_orders"`
 	//many to one กับ Employee
 	EmployeeID uint
 	Employee   *Employee `gorm:"foreignKey:EmployeeID"`
@@ -22,6 +22,5 @@ type LaundryProcess struct {
 	SortingID  uint
 	SortingRecord    *SortingRecord `gorm:"foreignKey:SortingID"`
 	//many to many กับ Machine
-	MachineID uint
-	Machine   []*Machine `gorm:"foreignKey:MachineID"`
+	Machine []*Machine `gorm:"many2many:MachineProcess"`
 }

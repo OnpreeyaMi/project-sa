@@ -2,8 +2,8 @@ package controller
 
 import (
 	"net/http"
-	"github.com/OnpreeyaMi/project-sa/backend/config"
-	"github.com/OnpreeyaMi/project-sa/backend/entity"
+	"github.com/OnpreeyaMi/project-sa/config"
+	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
 )
 
