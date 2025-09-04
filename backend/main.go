@@ -54,6 +54,7 @@ func main() {
 
 	// Order routes
 
+<<<<<<< HEAD
 	// ตั้งค่า CORS
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173"}, // frontend origin
@@ -74,6 +75,8 @@ func main() {
 
 	// Order routes
 	router.GET("/orders", controller.GetOrders)
+=======
+>>>>>>> c925c9d (ย้อนประวัติกลับมาก่อนดึงเมน)
 	router.POST("/orders", controller.CreateOrder)
 
 	// Promotion routes
