@@ -2,10 +2,10 @@ package controller
 
 import (
 	"net/http"
+
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
 	"github.com/gin-gonic/gin"
-
 )
 
 // CreateOrder รับข้อมูลจาก frontend แล้วบันทึกลง DB
@@ -60,12 +60,7 @@ func CreateOrder(c *gin.Context) {
 		OrderID: order.ID,
 		Status:  "Pending",
 	}
-<<<<<<< HEAD
 	// ส่ง response กลับ frontend
-	c.JSON(http.StatusOK, order)
-}
-<<<<<<< HEAD
-=======
 	if err := config.DB.Create(&history).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -83,7 +78,7 @@ func CreateOrder(c *gin.Context) {
 
 	c.JSON(http.StatusOK, order)
 }
->>>>>>> c925c9d (ย้อนประวัติกลับมาก่อนดึงเมน)
+
 // ดึงประวัติการสั่งซื้อทั้งหมด
 func GetOrderHistories(c *gin.Context) {
 	var histories []entity.OrderHistory
@@ -93,21 +88,21 @@ func GetOrderHistories(c *gin.Context) {
 		Preload("Order.Detergents").
 		Preload("Order.Address").
 		Find(&histories).Error; err != nil {
-<<<<<<< HEAD
-=======
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, histories)
+}
 
 func GetOrders(c *gin.Context) {
 	var orders []entity.Order
 	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
->>>>>>> 7a07dbc (fetch old commit81ecb3d)
-=======
->>>>>>> c925c9d (ย้อนประวัติกลับมาก่อนดึงเมน)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, histories)
+	c.JSON(http.StatusOK, orders)
 }
+
 // ดึงที่อยู่ทั้งหมด
 func GetAddresses(c *gin.Context) {
 	var addresses []entity.Address

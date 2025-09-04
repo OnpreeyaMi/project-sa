@@ -6,8 +6,6 @@ import { BrowserRouter , Routes, Route } from "react-router-dom";
 import EmployeeHome from "./pages/Home/EmployeeHome";
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
 import OrderDetail from "./pages/LaundryProcess/OrderDetail";
-import EmpSidebar from "./component/layout/Sidebar/EmpSidebar"; 
-import CustomerSidebar from "./component/layout/Sidebar/CusSidebar"; 
 import StatusPage from "./pages/LaundryProcess/StatusPage";
 // import EmpSidebar from "./component/layout/employee/empSidebar";
 //import CustomerSidebar from "./component/layout/customer/CusSidebar";

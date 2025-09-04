@@ -26,7 +26,6 @@ func main() {
     router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
 	router.GET("/addresses", controller.GetAddresses)
-	router.GET("/customers/:id", controller.GetCustomerByID)
 	
 	router.POST("/detergents", controller.CreateDetergent)
 	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
@@ -44,26 +43,6 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// ตั้งค่า routes
-	// Customer routes
-	router.POST("/customers", controller.CreateCustomer)
-	router.GET("/customers", controller.GetCustomers)
-	router.GET("/customers/:id", controller.GetCustomerByID)
-	router.PUT("/customers/:id", controller.UpdateCustomer)
-	router.DELETE("/customers/:id", controller.DeleteCustomer)
-
-	// Order routes
-
-<<<<<<< HEAD
-	// ตั้งค่า CORS
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // frontend origin
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
 
 	// ตั้งค่า routes
 	// Customer routes
@@ -72,12 +51,6 @@ func main() {
 	router.GET("/customers/:id", controller.GetCustomerByID)
 	router.PUT("/customers/:id", controller.UpdateCustomer)
 	router.DELETE("/customers/:id", controller.DeleteCustomer)
-
-	// Order routes
-	router.GET("/orders", controller.GetOrders)
-=======
->>>>>>> c925c9d (ย้อนประวัติกลับมาก่อนดึงเมน)
-	router.POST("/orders", controller.CreateOrder)
 
 	// Promotion routes
 	router.POST("/promotions", controller.CreatePromotion)
