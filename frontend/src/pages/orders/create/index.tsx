@@ -9,7 +9,6 @@ import {
   Radio,
   Typography,
   Divider,
-  Modal as AntdModal,
   Modal,
   Tooltip,
 } from "antd";
