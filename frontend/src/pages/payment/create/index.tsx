@@ -28,7 +28,7 @@
 //   const [openQR, setOpenQR] = useState(false);
 //   const [openSlip, setOpenSlip] = useState(false);
 //   const [paidAt, setPaidAt] = useState<Date | null>(null);
-  
+
 //   const totalAmount = 100;             // รวมก่อนหักโปร
 //   const orderId = "INV-2024-000123";
 //   const promptPayTarget = "0645067561";
@@ -174,6 +174,7 @@ import { GiWashingMachine } from "react-icons/gi";
 import PromotionSelector, { type Promo } from "./PromotionDemo"; // ✅ นำเข้าคอมโพเนนต์
 import PaymentModal from "./PaymentModal";
 import PaymentSuccessModal from "./slipDemo";
+import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
 
 
 // utils เล็กๆ
@@ -191,11 +192,10 @@ function computeDiscount(total: number, p?: Promo | null) {
 export default function Payment() {
   // เดิมของคุณ
   const [note, setNote] = useState("");
-  const [code, setCode] = useState("");
   const [openQR, setOpenQR] = useState(false);
   const [openSlip, setOpenSlip] = useState(false);
   const [paidAt, setPaidAt] = useState<Date | null>(null);
-  
+
   const totalAmount = 50;             // รวมก่อนหักโปร
   const orderId = 1;
   const promptPayTarget = "0645067561";
@@ -212,16 +212,16 @@ export default function Payment() {
   const discount = useMemo(() => computeDiscount(totalAmount, selectedPromo), [totalAmount, selectedPromo]);
   const finalTotal = useMemo(() => Math.max(0, Math.round((totalAmount - discount) * 100) / 100), [totalAmount, discount]);
   const handleSimulatePaid = () => {
-      setOpenQR(false);
-      setPaidAt(new Date());
-      setOpenSlip(true);
-    };
+    setOpenQR(false);
+    setPaidAt(new Date());
+    setOpenSlip(true);
+  };
 
   // ยกเลิก simulate-only handler (เปลี่ยนมาใช้ onVerified จาก EasySlip)
 
 
   return (
-    <div className="max-w-full mx-auto bg-white min-h-screen p-4">
+    <CustomerSidebar><div className="max-w-full mx-auto bg-white min-h-screen p-4">
       {/* Header */}
       <div className="flex items-center mb-4">
         <h1 className="flex-1 text-center font-semibold">รายการชำระเงิน</h1>
@@ -256,7 +256,7 @@ export default function Payment() {
           cartTotal={totalAmount}
           selectedId={selectedPromo?.id ?? null}     // โหมด controlled
           onChange={(p) => setSelectedPromo(p)}
-          
+
         />
       </div>
 
@@ -309,7 +309,7 @@ export default function Payment() {
             className="w-[800px] bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 hover:shadow-md active:scale-95 transition duration-200 flex items-center justify-center gap-2"
             title="ชำระเงินสด"
           >
-            <BsCashCoin size={100}/>
+            <BsCashCoin size={100} />
           </button>
         </div>
       </div>
@@ -320,12 +320,12 @@ export default function Payment() {
         onClose={() => setOpenSlip(false)}
         shopName="NATII."      // เปลี่ยนชื่อร้านตรงนี้
         orderId={orderId}
-        
+
         amount={finalTotal}
         currency="THB"
         paidAt={paidAt ?? new Date()}
         statusText="ชำระเงินแล้ว"
       />
-    </div>
+    </div></CustomerSidebar>
   );
 }

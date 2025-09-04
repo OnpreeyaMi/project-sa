@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"github.com/OnpreeyaMi/project-sa/backend/entity" // ← ใช้ path โมดูลจริงของโปรเจกต์คุณ
+	"github.com/OnpreeyaMi/project-sa/entity" // ← ใช้ path โมดูลจริงของโปรเจกต์คุณ
 )
 
 const easySlipURL = "https://developer.easyslip.com/api/v1/verify"

@@ -13,6 +13,7 @@ import {
   AlertCircle,
   UserCircle,
 } from "lucide-react";
+import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 
 // --- Types ---
 type Complaint = {
@@ -115,9 +116,9 @@ function PriorityDot({ level }: { level: Complaint["priority"] }) {
     level === "high"
       ? "bg-red-500"
       : level === "medium"
-      ? "bg-orange-500"
-      : "bg-gray-400";
-  
+        ? "bg-orange-500"
+        : "bg-gray-400";
+
   return (
     <div className="flex items-center gap-2">
       <span className={`inline-block size-2 rounded-full ${cls}`} />
@@ -154,7 +155,7 @@ function ReplyDrawer({
   };
 
   return (
-    
+
     <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-white shadow-2xl border-l flex flex-col">
       <div className="flex items-center justify-between px-5 py-4 border-b">
         <div className="min-w-0">
@@ -180,7 +181,7 @@ function ReplyDrawer({
               <AlertCircle className="size-4" />
             )}
             <StatusBadge status={item.status} />
-            
+
           </div>
           <p className="mt-2 text-xl text-gray-800 whitespace-pre-line">{item.message}</p>
           <div className="mt-2 text-xl text-gray-500">สร้างเมื่อ {timeAgo(item.createdAt)}</div>
@@ -261,7 +262,7 @@ export default function ComplaintAdminPage() {
   };
 
   return (
-    <div className="min-h-[90vh] bg-white">
+    <EmployeeSidebar><div className="min-h-[90vh] bg-white">
       <div className=" px-4 md:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-4xl font-semibold">จัดการคำร้องเรียน</h1>
@@ -367,6 +368,7 @@ export default function ComplaintAdminPage() {
       </div>
 
       <ReplyDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} item={selected} />
-    </div>
+    </div></EmployeeSidebar>
+
   );
 }

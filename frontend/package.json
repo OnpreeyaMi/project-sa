@@ -19,6 +19,8 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "leaflet": "^1.9.4",
+    "lucide-react": "^0.542.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icon": "^1.0.0",

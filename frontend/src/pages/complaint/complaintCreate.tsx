@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Send, Upload, X, CheckCircle2, AlertCircle } from "lucide-react";
+import CustomerSidebar from "../../component/layout/customer/CusSidebar";
 
 // NOTE: This UI is designed to match the admin page types you already have.
 // The payload below aligns with Complaint type used in the admin screen.
@@ -64,7 +65,7 @@ export default function CustomerComplaintPage() {
       fd.append("subject", form.subject);
       fd.append("message", form.message);
       fd.append("priority", form.priority || "medium");
-      (form.attachments || []).forEach((f, i) => fd.append("attachments", f, f.name));
+      (form.attachments || []).forEach((f) => fd.append("attachments", f, f.name));
 
       // Replace with your API endpoint. Make sure backend returns { id: string }
       const res = await fetch("/api/complaints", { method: "POST", body: fd });
@@ -83,7 +84,7 @@ export default function CustomerComplaintPage() {
   }
 
   return (
-    <div className="min-h-[90vh] bg-white">
+    <CustomerSidebar> <div className="min-h-[90vh] bg-white">
       <div className=" px-4 md:px-6 lg:px-8 py-8">
         <h1 className="text-4xl  font-semibold text-gray-900">แจ้งข้อร้องเรียน</h1>
         <p className="text-xl  mt-2 text-gray-600">โปรดกรอกรายละเอียดให้ครบถ้วน ทีมงานจะตรวจสอบและตอบกลับโดยเร็ว</p>
@@ -170,7 +171,7 @@ export default function CustomerComplaintPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
+
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700">แนบไฟล์ (ไม่เกิน 5 ไฟล์)</label>
               <div className="mt-1 flex items-center gap-2">
@@ -207,6 +208,6 @@ export default function CustomerComplaintPage() {
         </form>
 
       </div>
-    </div>
+    </div></CustomerSidebar>
   );
 }

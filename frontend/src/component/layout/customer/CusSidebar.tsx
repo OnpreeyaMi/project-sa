@@ -1,4 +1,4 @@
-import React, { useState, type ReactNode } from 'react';
+import React, { useState } from 'react';
 import { FaHome, FaUserCircle, FaHistory } from "react-icons/fa";
 import { MdLocalLaundryService, MdOutlinePayment } from "react-icons/md";
 import { RiUserVoiceFill } from "react-icons/ri";
