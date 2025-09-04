@@ -16,6 +16,9 @@ import Profile from "./pages/profile/profile";
 import CustomerComplaintPage from "./pages/complaint/complaintCreate";
 import Payment from "./pages/payment/create";
 import ComplaintAdminPage from "./pages/complaint/complaintReply";
+import OrderPage from "./pages/orders/create";
+import HistoryPage from "./pages/orders/history";
+import StockAdminPage from "./pages/stock/Admin";
 
 const App: React.FC = () => {
 
@@ -43,6 +46,7 @@ const App: React.FC = () => {
         <Route path="employees" element={<EmployeePage />} />
         <Route path="customers" element={<CustomerManagement />} />
         <Route path="promotions" element={<PromotionManagement />} />
+        <Route path="stock" element={<StockAdminPage />} />
       </Route>
 
       {/* Customer routes */}
@@ -50,6 +54,8 @@ const App: React.FC = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="complaint" element={<CustomerComplaintPage />} />
           <Route path="payment" element={<Payment />} />
+          <Route path="orders" element={<OrderPage />} />
+          <Route path="history" element={<HistoryPage />} />
         </Route>
     </Routes>
 

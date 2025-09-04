@@ -1,6 +1,6 @@
 import React, { useState, type ReactNode } from 'react';
-import { FaHome } from "react-icons/fa";
-import { IoNewspaper } from "react-icons/io5";
+import { FaHome, FaUserCircle } from "react-icons/fa";
+import { IoNewspaper, IoStorefrontSharp } from "react-icons/io5";
 import { MdLocalLaundryService } from "react-icons/md";
 import { TbTruckDelivery } from "react-icons/tb";
 import { FaShirt } from "react-icons/fa6";
@@ -22,54 +22,12 @@ interface SidebarProps {
 
 const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate(); // ✅ ใช้งาน useNavigate
-  const location = useLocation(); // ✅ ใช้งาน useLocation
 
   const {
       token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
 
-  // ✅ เมนูพร้อม navigate
-  const menuItems = [
-    {
-      key: "/employee/dashboard",
-      icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-      onClick: () => navigate("/employee/dashboard"),
-    },
-    {
-      key: "/employee/orders",
-      icon: <IoNewspaper style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
-      onClick: () => navigate("/employee/orders"),
-    },
-    {
-      key: "/employee/delivery",
-      icon: <TbTruckDelivery style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span>,
-      onClick: () => navigate("/employee/delivery"),
-    },
-    {
-      key: "/employee/check",
-      icon: <FaShirt style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>รับผ้า</span>,
-      onClick: () => navigate("/employee/check"),
-    },
-    {
-      key: "/employee/inventory",
-      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
-      onClick: () => navigate("/employee/inventory"),
-    },
-    {
-      key: "/employee/complaint",
-      icon: <RiUserVoiceFilll style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>ตอบกลับข้อร้องเรียน</span>,
-      onClick: () => navigate("/employee/complaint"),
-    }
-
-  ];
-
+  
 
   const navigate = useNavigate();
   const location = useLocation();

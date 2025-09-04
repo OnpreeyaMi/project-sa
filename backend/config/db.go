@@ -106,14 +106,6 @@ func MockData() {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
 
-	// --- Mock Customer ---
-	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", IsVerified: true, GenderID: 1, UserID: 2},
-		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", IsVerified: false, GenderID: 2, UserID: 3},
-	}
-	for _, c := range customers {
-		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
-	}
 
 	// --- Mock Address ---
 	addresses := []entity.Address{
@@ -270,59 +262,7 @@ func MockData() {
 	// }
 
 	fmt.Println("Mock data added successfully!")
-	// --- Mock Orders ---
-	orders := []entity.Order{
-		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
-		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
-	}
-	for _, o := range orders {
-		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
-	}
-
-	// --- Mock DiscountType ---
-	discountTypes := []entity.DiscountType{
-		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
-		{TypeName: "จำนวนเงิน", Description: "ลดเป็นจำนวนเงิน"},
-	}
-	for _, dt := range discountTypes {
-		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
-	}
-
-	// --- Mock Promotion ---
-	promotions := []entity.Promotion{
-		{
-			PromotionName:  "โปรลดหน้าฝน",
-			Description:    "ลด 10% ทุกออเดอร์ช่วงหน้าฝน",
-			DiscountValue:  10,
-			StartDate:      time.Now().AddDate(0, 0, -5),
-			EndDate:        time.Now().AddDate(0, 1, 0),
-			Status:         "ใช้งาน",
-			PromoImage:     "",
-			DiscountTypeID: 1,
-		},
-		{
-			PromotionName:  "ลด 50 บาท สำหรับลูกค้าใหม่",
-			Description:    "ลูกค้าใหม่รับส่วนลด 50 บาท",
-			DiscountValue:  50,
-			StartDate:      time.Now().AddDate(0, 0, -10),
-			EndDate:        time.Now().AddDate(0, 2, 0),
-			Status:         "ใช้งาน",
-			PromoImage:     "",
-			DiscountTypeID: 2,
-		},
-	}
-	for _, p := range promotions {
-		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
-	}
-
-	// --- Mock PromotionCondition ---
-	conds := []entity.PromotionCondition{
-		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
-		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
-	}
-	for _, c := range conds {
-		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
-	}
+	
 
 	fmt.Println("✅ Mock data added successfully!")
 }
