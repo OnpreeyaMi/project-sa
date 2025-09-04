@@ -153,10 +153,10 @@ func AssignMachinesToProcess(c *gin.Context) {
     }
 
     // อัปเดตสถานะเครื่อง
-    // for _, m := range machines {
-    //     m.Status = "in_use"
-    //     config.DB.Save(&m)
-    // }
+    for _, m := range machines {
+        m.Status = "in_use"
+        config.DB.Save(&m)
+    }
 
     c.JSON(200, gin.H{"message": "บันทึกเครื่องสำเร็จ"})
 }

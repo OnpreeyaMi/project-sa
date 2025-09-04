@@ -10,6 +10,12 @@ import Login from "./pages/login/login";
 import RegisterForm from "./pages/register/register";
 import "leaflet/dist/leaflet.css";
 import Profile from "./pages/profile/profile";
+import EmployeeHome from "./pages/Home/EmployeeHome";
+import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
+import OrderDetail from "./pages/LaundryProcess/OrderDetail";
+import TransportQueuePage from "./pages/Queue/TransportQueuePage";
+import StockEmpPage from "./pages/stock/employee/index";
+import StatusPage from "./pages/LaundryProcess/StatusPage";
 
 {
   /* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */
@@ -24,55 +30,44 @@ import Profile from "./pages/profile/profile";
   /* <CustomerSidebar></CustomerSidebar> */
 }
 const App: React.FC = () => {
-const [activeTab, setActiveTab] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("");
 
   return (
-    <>
+
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<RegisterForm />} />
 
+        {/* Employee routes */}
+        <Route path="/employee" >
+          <Route path="dashboard" element={<EmployeeHome />} />
+          <Route path="orders" element={<StatusUpdate />} />
+          <Route path="orders/:orderId" element={<OrderDetail />} />
+          <Route path="delivery" element={<TransportQueuePage />} />
+          <Route path="check" element={<LaundryCheckPage />} />
+          <Route path="inventory" element={<StockEmpPage />} />
+          <Route path="profile" element={<StatusPage />} />
+        </Route>
 
-        <Route path="/employee/check" element={<LaundryCheckPage />} />
-        <Route path="/profile" element={<Profile />} />
+        {/* Admin routes */}
+        <Route path="/admin" >
+          <Route path="employees" element={<EmployeePage />} />
+          <Route path="customers" element={<CustomerManagement />} />
+          <Route path="promotions" element={<PromotionManagement />} />
+        </Route>
 
-
-        <Route path="/admin/employees" element={<EmployeePage />} />
-        <Route path="/admin/customers" element={<CustomerManagement />} />
-        <Route path="/admin/promotions" element={<PromotionManagement />} />
+        {/* Customer routes */}
+        <Route path="/customer">
+          <Route path="profile" element={<Profile />} />
+          {/* เพิ่ม route อื่นของ customer ได้ที่นี่ */}
+        </Route>
       </Routes>
-    </>
 
-      //     <Routes>
-      //       <Route path="/" element={<EmpSidebar />} />
-      //       <Route path="/Home" element={<EmployeeHome />} />
-      //       <Route path="/order" element={<StatusUpdate/>} />
-      //       <Route path="/orders/:orderId" element={<OrderDetail />} />
-      //       <Route path="/TransportQueuePage" element={<TransportQueuePage/>} />
-      //       <Route path="/store" element={<EmployeeHome />} />
-      //       <Route path="/profile" element={<StatusPage />} />
-      //       <Route path="/OrderPage" element={<OrderPage />} />
-      //       <Route path="/HistoryPage" element={<HistoryPage />} />
-      //       <Route path="/StockEmpPage" element={<StockEmpPage />} />
-      //       <Route path="/StockAdminPage" element={<StockAdminPage />} />
-      //       </Routes>
-      // {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
-      // {/* <AdminSidebar></AdminSidebar> */}
-      // {/* <EmpSidebar></EmpSidebar> */}
-      // {/*<CustomerSidebar></CustomerSidebar>*/}
-      // <OrderPage></OrderPage>
-      // <HistoryPage></HistoryPage>
-      // <StockEmpPage></StockEmpPage>
-      // <StockAdminPage></StockAdminPage>
-      
-      
-    // </BrowserRouter>
   );
-
 };
 
 export default App;
-
 //ระบบย่อย : จัดการกระบวนการซัก actor customer
 
 // const App: React.FC = () => {

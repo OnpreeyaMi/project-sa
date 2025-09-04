@@ -51,6 +51,18 @@ func main() {
 	router.PUT("/promotions/:id", controller.UpdatePromotion)
 	router.DELETE("/promotions/:id", controller.DeletePromotion)
 
+	// Laundry Process
+    router.POST("/laundry-process", controller.CreateLaundryProcess)      // บันทึก process ใหม่
+    router.GET("/laundry-processes", controller.GetLaundryProcesses)      // ดึงทั้งหมด
+    router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess) //  ดึงล่าสุด
+    router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)    // อัปเดตสถานะ
+    router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
+	router.GET("/orders/:id", controller.GetOrderByID)
+	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
+
+    // Machine
+    router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
+
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
 }
