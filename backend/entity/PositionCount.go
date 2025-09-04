@@ -4,8 +4,8 @@ import "gorm.io/gorm"
 
 type PositionCount struct {
 	gorm.Model
-	TotalEmployee int       `json:"totalEmployee"`
+	TotalEmployee int      
 
-	PositionID    uint      `json:"positionID"`
-	Position      *Position `gorm:"foreignKey:PositionID" json:"-"`
+	PositionID    uint      
+	Position      *Position `gorm:"foreignKey:PositionID"`
 }

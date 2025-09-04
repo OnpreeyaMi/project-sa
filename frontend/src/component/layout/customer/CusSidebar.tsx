@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, type ReactNode } from 'react';
+import { FaHome, FaUserCircle, FaHistory } from "react-icons/fa";
+import { MdLocalLaundryService, MdOutlinePayment } from "react-icons/md";
+import { RiUserVoiceFill } from "react-icons/ri";
+import { GiClothes } from "react-icons/gi";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -6,11 +10,8 @@ import {
 
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-import { FaHome,FaUserCircle,FaHistory  } from "react-icons/fa";
-import { MdLocalLaundryService,MdOutlinePayment  } from "react-icons/md";
-import { GiClothes } from "react-icons/gi";
-import { RiUserVoiceFill } from "react-icons/ri";
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 const { Header, Sider, Content } = Layout;
 
 
@@ -20,10 +21,58 @@ interface SidebarProps {
 
 const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate(); // เพิ่มบรรทัดนี้
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  // ✅ เมนูลูกค้า — รูปแบบเดียวกับ EmployeeSidebar (key = path จริง + onClick)
+  const menuItems = [
+    {
+      key: "/customer/home",
+      icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
+      onClick: () => navigate("/customer/home"),
+    },
+    {
+      key: "/customer/wash",
+      icon: <GiClothes style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ซัก-อบ</span>,
+      onClick: () => navigate("/customer/wash"),
+    },
+    {
+      key: "/customer/payment",
+      icon: <MdOutlinePayment style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ชำระเงิน</span>,
+      onClick: () => navigate("/customer/payment"),
+    },
+    {
+      key: "/customer/status",
+      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>สถานะ</span>,
+      onClick: () => navigate("/customer/status"),
+    },
+    {
+      key: "/customer/history",
+      icon: <FaHistory style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ประวัติ</span>,
+      onClick: () => navigate("/customer/history"),
+    },
+    {
+      key: "/customer/complaint",
+      icon: <RiUserVoiceFill style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>แจ้งข้อร้องเรียน</span>,
+      onClick: () => navigate("/customer/complaint"),
+    },
+    {
+      key: "/customer/profile",
+      icon: <FaUserCircle style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span>,
+      onClick: () => navigate("/customer/profile"),
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
@@ -40,47 +89,31 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
         }}
       >
         <div className="demo-logo-vertical" />
-         {!collapsed && (
-          <Col style={{ marginBottom: '20px',display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {!collapsed && (
+          <Col style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={iconWashing} alt="Washing Icon" width={100} height={100} />
             <h1
-            style={{
-              color: "white",
-              margin: "3px",
-              fontSize: "18px",
-              textAlign: "center",
-            }}
-          >
-            NEATII.
-    
-          </h1>
-        </Col>
-          
-          
+              style={{
+                color: "white",
+                margin: "-5px",
+                fontSize: "18px",
+                textAlign: "center",
+              }}
+            >
+              NEATII.
+            </h1>
+          </Col>
         )}
+
         <Menu
-        //   theme="#0E4587"
-          style={{ backgroundColor: '#0E4587', color: 'white' }}  
+          style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          defaultSelectedKeys={['1']}
+          selectedKeys={[location.pathname]}  // ✅ ไฮไลท์ตาม path ปัจจุบัน (รูปแบบเดียวกัน)
+          items={menuItems}
           onClick={({ key }) => {
-            if (key === '3') {
-              navigate('/payment');
-            }
-            else if(key === '6'){
-              navigate('/complaint/create'); // เปลี่ยนเส้นทางไปยังหน้าสร้างคำร้องเรียน
-            }
-            // เพิ่มเงื่อนไขอื่นๆ ได้ตามต้องการ
+            const selected = menuItems.find(item => item.key === key);
+            if (selected?.onClick) selected.onClick();
           }}
-          items={[
-            { key: '1', icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>},
-            { key: '2', icon: <GiClothes style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ซัก-อบ</span> },
-            { key: '3', icon: <MdOutlinePayment   style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ชำระเงิน</span> },
-            { key: '4', icon: <MdLocalLaundryService  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>สถานะ</span> },
-            { key: '5', icon: <FaHistory   style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ประวัติ</span> },
-            { key: '6', icon: <RiUserVoiceFill  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>แจ้งข้อร้องเรียน</span> },
-            { key: '7', icon: <FaUserCircle  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span> },
-          ]}
         />
       </Sider>
 
@@ -96,7 +129,9 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
               height: 64,
             }}
           />
-            <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>Customer Dashboard</span>
+          <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>
+            Customer Dashboard
+          </span>
         </Header>
         <Content
           style={{
@@ -106,7 +141,6 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
-          
         >
           {children}
         </Content>

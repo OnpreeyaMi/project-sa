@@ -7,20 +7,20 @@ import (
 
 type Employee struct {
     gorm.Model
-    Code      string    `gorm:"uniqueIndex;size:16" json:"employeeCode"` // <- เพิ่ม
-    FirstName string    `json:"firstName"`
-    LastName  string    `json:"lastName"`
-    Phone     string    `json:"phone"`
-    Gender    string    `json:"gender"`
-    StartDate time.Time `json:"startDate"`
+    Code      string    `gorm:"uniqueIndex;size:16"` // <- เพิ่ม
+    FirstName string   
+    LastName  string   
+    Phone     string    
+    Gender    string    
+    StartDate time.Time 
 
-    UserID uint  `json:"userId"`
-    User   *User `gorm:"foreignKey:UserID" json:"User,omitempty"`
+    UserID uint  
+    User   *User `gorm:"foreignKey:UserID"`
 
-    PositionID uint      `json:"positionID"`
-    Position   *Position `gorm:"foreignKey:PositionID" json:"Position,omitempty"`
+    PositionID uint      
+    Position   *Position `gorm:"foreignKey:PositionID"`
 
-    EmployeeStatusID uint            `json:"employeeStatusId"`
-    EmployeeStatus   *EmployeeStatus `gorm:"foreignKey:EmployeeStatusID" json:"EmployeeStatus,omitempty"`
+    EmployeeStatusID uint           
+    EmployeeStatus   *EmployeeStatus `gorm:"foreignKey:EmployeeStatusID"`
 }
 

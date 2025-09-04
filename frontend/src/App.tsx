@@ -8,7 +8,7 @@ import TransportQueuePage from "./pages/Queue/TransportQueuePage";
 const App: React.FC = () => {
   return (
     <Routes>
-      {/* <Route path="/" element={<Navigate to="/admin/employees" replace />} /> */}
+      <Route path="/" element={<Navigate to="/admin/employees" replace />} />
       <Route path="/employee/check" element={<LaundryCheckPage />} />
       <Route path="/employee/dashboard" element={<HomePage />} />
       <Route path="/employee/delivery" element={<TransportQueuePage />} />
