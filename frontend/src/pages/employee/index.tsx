@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { Modal, Form, Input, Select, Button, Popconfirm, message, Divider } from "antd";
 import AdminSidebar from "../../component/layout/admin/AdminSidebar";
-import api from "../../lib/api";
+import api from "../../lib/Employee/api";
 import type { IEmployee } from "../../interfaces/Employee/IEmployee";
 
 type EmpStatus = "active" | "inactive" | "onleave";
