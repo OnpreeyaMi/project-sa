@@ -23,6 +23,15 @@ func main() {
     //ตั้งค่า route
     router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
+	router.GET("/addresses", controller.GetAddresses)
+	router.GET("/customers/:id", controller.GetCustomerByID)
+	
+	router.POST("/detergents", controller.CreateDetergent)
+	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	router.GET("/detergents", controller.GetDetergents)
+	router.DELETE("/detergents/:id", controller.DeleteDetergent)
+
+	
 
     // รัน server
     router.Run(fmt.Sprintf(":%d", port))

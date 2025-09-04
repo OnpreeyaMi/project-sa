@@ -9,7 +9,7 @@ type Detergent struct {
 	Name 		string
 	Type 		string
 	InStock 	int
-	Orders 		[]*Order `gorm:"many2many:OrderDetergents;"`
+	Orders 		[]*Order `gorm:"many2many:OrderDetergent;"`
 	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:DetergentID"`
 	UserID 		uint
 	User 		*User `gorm:"foreignKey:UserID;"`

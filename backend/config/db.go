@@ -71,23 +71,22 @@ func SetupDatabase() {
 
 func MockData() {
 	// --- Mock Customers ---
+	customers := []entity.Customer{
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1,  IsVerified: true},
+		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false},
+	}
+	for _, c := range customers {
+		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
+	}
 
-	// customers := []entity.Customer{
-	// 	{FirstName: "Nuntawut", LastName: "K.", Email: "nuntawut@example.com", PhoneNumber: "0812345678", Gender: "Male", IsVerified: true},
-	// 	{FirstName: "Alice", LastName: "B.", Email: "alice@example.com", PhoneNumber: "0898765432", Gender: "Female", IsVerified: false},
-	// }
-	// for _, c := range customers {
-	// 	DB.FirstOrCreate(&c, entity.Customer{Email: c.Email})
-	// }
-
-	// --- Mock Address ---
-	// addresses := []entity.Address{
-	// 	{CustomerID: 1, AddressDetail: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-	// 	{CustomerID: 2, AddressDetail: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	// }
-	// for _, a := range addresses {
-	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetail: a.AddressDetail})
-	// }
+	//--- Mock Address ---
+	addresses := []entity.Address{
+		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	}
+	for _, a := range addresses {
+		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
+	}
 
 
 	// --- Mock ServiceType ---
@@ -142,7 +141,7 @@ func MockData() {
 		},
 	}
 	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Type: d.Type})
+		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
 	}
 
 	// --- Mock DetergentCategory ---
@@ -154,15 +153,6 @@ func MockData() {
 	for _, c := range categories {
 		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
-
-	// --- Mock Orders ---
-	// orders := []entity.Order{
-	// 	{OrderID: "ORD001", OrderDate: "2025-08-20", Status: "Completed", CustomerID: 1, AddressID: 1, ServiceID: 1},
-	// 	{OrderID: "ORD002", OrderDate: "2025-08-21", Status: "Pending", CustomerID: 2, AddressID: 2, ServiceID: 2},
-	// }
-	// for _, o := range orders {
-	// 	DB.FirstOrCreate(&o, entity.Order{OrderNo: o.OrderNo})
-	// }
 
 	// --- Mock Payments ---
 	// payments := []entity.Payment{
@@ -181,15 +171,5 @@ func MockData() {
 	// for _, lp := range processes {
 	// 	DB.Create(&lp)
 	// }
-
-	// // --- Mock History ---
-	// histories := []entity.OrderHistory{
-	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
-	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
-	// }
-	// for _, h := range histories {
-	// 	DB.Create(&h)
-	// }
-
 	fmt.Println("Mock data added successfully!")
 }
