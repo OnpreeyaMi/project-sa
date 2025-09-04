@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
+	"github.com/OnpreeyaMi/project-sa/entity"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"github.com/OnpreeyaMi/project-sa/entity"
+	"time"
 )
 
 var DB *gorm.DB
@@ -29,8 +30,12 @@ func SetupDatabase() {
 		&entity.Customer{},
 		&entity.DetergentCategory{},
 		&entity.Detergent{},
+		&entity.DiscountType{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
+		&entity.Gender{},
+		&entity.History{},
+		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
@@ -38,11 +43,15 @@ func SetupDatabase() {
 		&entity.Payment{},
 		&entity.PositionCount{},
 		&entity.Position{},
+		&entity.Promotion{},
+		&entity.PromotionCondition{},
+		&entity.PromotionUsage{},
 		&entity.PurchaseDetergent{},
 		&entity.Queue{},
 		&entity.QueueAssignment{},
 		&entity.QueueHistory{},
 		&entity.ReplyComplaint{},
+		&entity.Role{},
 		&entity.ServiceType{},
 		&entity.SortedClothes{},
 		&entity.SortingRecord{},
@@ -70,126 +79,115 @@ func SetupDatabase() {
 }
 
 func MockData() {
-	// --- Mock Customers ---
+	// --- Mock Role ---
+	roles := []entity.Role{
+		{Role_name: "admin"},
+		{Role_name: "customer"},
+	}
+	for _, r := range roles {
+		DB.FirstOrCreate(&r, entity.Role{Role_name: r.Role_name})
+	}
 
-	// customers := []entity.Customer{
-	// 	{FirstName: "Nuntawut", LastName: "K.", Email: "nuntawut@example.com", PhoneNumber: "0812345678", Gender: "Male", IsVerified: true},
-	// 	{FirstName: "Alice", LastName: "B.", Email: "alice@example.com", PhoneNumber: "0898765432", Gender: "Female", IsVerified: false},
-	// }
-	// for _, c := range customers {
-	// 	DB.FirstOrCreate(&c, entity.Customer{Email: c.Email})
-	// }
+	// --- Mock User ---
+	users := []entity.User{
+		{Email: "admin@example.com", Password: "hashedpassword", Status: "active", RoleID: 1},
+		{Email: "customer1@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
+		{Email: "customer2@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
+	}
+	for _, u := range users {
+		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
+	}
+
+	// --- Mock Gender ---
+	genders := []entity.Gender{
+		{Name: "ชาย"},
+		{Name: "หญิง"},
+		{Name: "อืนๆ"},
+	}
+	for _, g := range genders {
+		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
+	}
+
+	// --- Mock Customer ---
+	customers := []entity.Customer{
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", IsVerified: true, GenderID: 1, UserID: 2},
+		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", IsVerified: false, GenderID: 2, UserID: 3},
+	}
+	for _, c := range customers {
+		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
+	}
 
 	// --- Mock Address ---
-	// addresses := []entity.Address{
-	// 	{CustomerID: 1, AddressDetail: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-	// 	{CustomerID: 2, AddressDetail: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	// }
-	// for _, a := range addresses {
-	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetail: a.AddressDetail})
-	// }
-
+	addresses := []entity.Address{
+		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	}
+	for _, a := range addresses {
+		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
+	}
 
 	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
-		// 🧺 ถังซัก (Washer)
-		{Type: "ถังซัก 10kg", Price: 50, Capacity: 10},
-		{Type: "ถังซัก 14kg", Price: 70, Capacity: 14},
-		{Type: "ถังซัก 18kg", Price: 90, Capacity: 18},
-		{Type: "ถังซัก 28kg", Price: 120, Capacity: 28},
-
-		// 🔥 ถังอบ (Dryer)
-		{Type: "ถังอบ 14kg", Price: 50, Capacity: 14},
-		{Type: "ถังอบ 25kg", Price: 70, Capacity: 25},
-		{Type: "ไม่อบ", Price: 0, Capacity: 0},
+		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
+		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
 	}
-
 	for _, s := range services {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-
-	// --- Mock Detergent ---
-	detergents := []entity.Detergent{
-		{
-			Name:  "น้ำยาซักเหลว",
-			Type:  "Liquid",
-			InStock: 100,
-			// UserID: 1,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอก",
-			Type:  "Powder",
-			InStock: 50,
-			// UserID: 1,
-			CategoryID: 2,
-		},
-		{
-			Name:  "น้ำยาซักสูตรพิเศษ",
-			Type:  "Liquid",
-			InStock: 30,
-			// UserID: 2,
-			UserID: 2,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอกสูตรเข้มข้น",
-			Type:  "Powder",
-			InStock: 20,
-			// UserID: 2,
-			CategoryID: 2,
-		},
-	}
-	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Type: d.Type})
-	}
-
-	// --- Mock DetergentCategory ---
-	categories := []entity.DetergentCategory{
-		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
-		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
-	}
-
-	for _, c := range categories {
-		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
-	}
-
 	// --- Mock Orders ---
-	// orders := []entity.Order{
-	// 	{OrderID: "ORD001", OrderDate: "2025-08-20", Status: "Completed", CustomerID: 1, AddressID: 1, ServiceID: 1},
-	// 	{OrderID: "ORD002", OrderDate: "2025-08-21", Status: "Pending", CustomerID: 2, AddressID: 2, ServiceID: 2},
-	// }
-	// for _, o := range orders {
-	// 	DB.FirstOrCreate(&o, entity.Order{OrderNo: o.OrderNo})
-	// }
+	orders := []entity.Order{
+		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
+		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
+	}
+	for _, o := range orders {
+		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
+	}
 
-	// --- Mock Payments ---
-	// payments := []entity.Payment{
-	// 	{Bill: 1, PaymentType: "Credit Card", CreatedAtTime: "2025-08-20 10:00", CheckPayment: true, OrderID: 1, StatusPayment: "Paid", Price: 150, TotalAmount: 150},
-	// 	{Bill: 2, PaymentType: "Cash", CreatedAtTime: "2025-08-21 14:00", CheckPayment: false, OrderID: 2, StatusPayment: "Unpaid", Price: 240, TotalAmount: 240},
-	// }
-	// for _, p := range payments {
-	// 	DB.FirstOrCreate(&p, entity.Payment{Bill: p.Bill})
-	// }
+	// --- Mock DiscountType ---
+	discountTypes := []entity.DiscountType{
+		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
+		{TypeName: "จำนวนเงิน", Description: "ลดเป็นจำนวนเงิน"},
+	}
+	for _, dt := range discountTypes {
+		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
+	}
 
-	// --- Mock LaundryProcess ---
-	// processes := []entity.Process{
-	// 	{Step: "Washing", StartTime: 9.00, EndTime: 10.00, OrderID: 1, ServiceID: 1, MachineID: 101},
-	// 	{Step: "Drying", StartTime: 10.15, EndTime: 11.00, OrderID: 1, ServiceID: 1, MachineID: 202},
-	// }
-	// for _, lp := range processes {
-	// 	DB.Create(&lp)
-	// }
+	// --- Mock Promotion ---
+	promotions := []entity.Promotion{
+		{
+			PromotionName:  "โปรลดหน้าฝน",
+			Description:    "ลด 10% ทุกออเดอร์ช่วงหน้าฝน",
+			DiscountValue:  10,
+			StartDate:      time.Now().AddDate(0, 0, -5),
+			EndDate:        time.Now().AddDate(0, 1, 0),
+			Status:         "ใช้งาน",
+			PromoImage:     "",
+			DiscountTypeID: 1,
+		},
+		{
+			PromotionName:  "ลด 50 บาท สำหรับลูกค้าใหม่",
+			Description:    "ลูกค้าใหม่รับส่วนลด 50 บาท",
+			DiscountValue:  50,
+			StartDate:      time.Now().AddDate(0, 0, -10),
+			EndDate:        time.Now().AddDate(0, 2, 0),
+			Status:         "ใช้งาน",
+			PromoImage:     "",
+			DiscountTypeID: 2,
+		},
+	}
+	for _, p := range promotions {
+		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
+	}
 
-	// // --- Mock History ---
-	// histories := []entity.OrderHistory{
-	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
-	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
-	// }
-	// for _, h := range histories {
-	// 	DB.Create(&h)
-	// }
+	// --- Mock PromotionCondition ---
+	conds := []entity.PromotionCondition{
+		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
+		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
+	}
+	for _, c := range conds {
+		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
+	}
 
-	fmt.Println("Mock data added successfully!")
+	fmt.Println("✅ Mock data added successfully!")
 }

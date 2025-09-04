@@ -69,12 +69,15 @@ func CreateOrder(c *gin.Context) {
 }
 
 func GetOrders(c *gin.Context) {
-	var orders []entity.Order
-	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	// order = SELECT orders.* FROM orders LEFT JOIN customers ON orders.customer_id = customers.id
-
-	c.JSON(http.StatusOK, orders)
+    customerId := c.Query("customerId")
+    var orders []entity.Order
+    db := config.DB.Preload("Address")
+    if customerId != "" {
+        db = db.Where("customer_id = ?", customerId)
+    }
+    if err := db.Find(&orders).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, orders)
 }
