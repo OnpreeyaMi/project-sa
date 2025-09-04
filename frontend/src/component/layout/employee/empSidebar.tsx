@@ -9,6 +9,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
+
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -69,6 +70,54 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 
   ];
 
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    {
+      key: "/employee/dashboard",
+      icon: <FaHome style={{ fontSize: 18 }} />,
+      label: "หน้าหลัก",
+      onClick: () => navigate("/employee")
+    },
+    {
+      key: "/employee/orders",
+      icon: <IoNewspaper style={{ fontSize: 18 }} />,
+      label: "ออเดอร์",
+      onClick: () => navigate("/employee/orders")
+    },
+    {
+      key: "/employee/status",
+      icon: <MdLocalLaundryService style={{ fontSize: 18 }} />,
+      label: "สถานะ",
+      onClick: () => navigate("/employee/status")
+    },
+    {
+      key: "/employee/delivery",
+      icon: <TbTruckDelivery style={{ fontSize: 18 }} />,
+      label: "คิวขนส่ง",
+      onClick: () => navigate("/employee/delivery")
+    },
+    {
+      key: "/employee/check",
+      icon: <FaShirt style={{ fontSize: 18 }} />,
+      label: "รับผ้า",
+      onClick: () => navigate("/employee/check")
+    },
+    {
+      key: "/employee/inventory",
+      icon: <IoStorefrontSharp style={{ fontSize: 18 }} />,
+      label: "คลัง",
+      onClick: () => navigate("/employee/inventory")
+    },
+    {
+      key: "/employee/profile",
+      icon: <FaUserCircle style={{ fontSize: 18 }} />,
+      label: "โปรไฟล์",
+      onClick: () => navigate("/employee/profile")
+    }
+  ];
 
   return (
     <Layout>

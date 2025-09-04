@@ -31,8 +31,41 @@ export const createOrder = async (orderData: OrderService) => {
 
   return res.json(); // คืนค่า order object จาก backend
 };
+// src/services/orderService.ts
 // ดึงประวัติการสั่งซื้อทั้งหมด
 export const fetchOrderHistories = async (): Promise<OrderHistory[]> => {
-  const res = await axios.get("http://localhost:8080/order-histories");
-  return res.data;
+  try {
+    const response = await axios.get(`${API_BASE}/order-histories`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching order histories:", error);
+    throw error;
+  }
 };
+
+export const fetchAddressByCustomerId = async (customerId: number) => {
+  try {
+    const response = await axios.get(`${API_BASE}/addresses?customer_id=${customerId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching addresses:", error);
+    throw error;
+  }
+}
+
+// ดึงที่อยู่ทั้งหมด (mock)
+export const fetchAddresses = async () => {
+  const res = await axios.get(`${API_BASE}/addresses`);
+  // คืน array จริงจาก res.data.data
+  return Array.isArray(res.data?.data) ? res.data.data : [];
+};
+// ดึงข้อมูลลูกค้าจาก customer ID (mock)
+export const fetchCustomerById = async (customerId: number) => {
+  try {
+    const response = await axios.get(`${API_BASE}/customers/${customerId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching customer:", error);
+    throw error;
+  }
+}
