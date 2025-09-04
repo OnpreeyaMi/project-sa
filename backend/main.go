@@ -65,15 +65,16 @@ func main() {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 
-	// ตั้งค่า CORS
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // frontend origin
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// ตัวอย่าง route อื่น
+	router.POST("/order", controller.CreateOrder)
+	router.GET("/order-histories", controller.GetOrderHistories)
+	// router.GET("/addresses", controller.GetAddresses)
+
+	
+	// router.POST("/detergents", controller.CreateDetergent)
+	// router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	// router.GET("/detergents", controller.GetDetergents)
+	// router.DELETE("/detergents/:id", controller.DeleteDetergent)
 
 	
 
@@ -99,18 +100,6 @@ func main() {
 	router.PUT("/customers/:id", controller.UpdateCustomer) // แก้ไขลูกค้า
 	router.DELETE("/customers/:id", controller.DeleteCustomer) // ลบลูกค้า
 	router.GET("/customers/:id", controller.GetCustomerByID) // ดึงลูกค้าตาม ID
-
-    // Machine
-    router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
-
-	// Laundry Process
-    router.POST("/laundry-process", controller.CreateLaundryProcess)      // บันทึก process ใหม่
-    router.GET("/laundry-processes", controller.GetLaundryProcesses)      // ดึงทั้งหมด
-    router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess) //  ดึงล่าสุด
-    router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)    // อัปเดตสถานะ
-    router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
-	router.GET("/orders/:id", controller.GetOrderByID)
-	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
 
     // Machine
     router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด

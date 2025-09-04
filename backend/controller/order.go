@@ -43,10 +43,10 @@ func CreateOrder(c *gin.Context) {
 	}
 
 	// map servicetypes
-	if len(req.ServicetypeIDs) > 0 {
+	if len(req.ServiceTypeIDs) > 0 {
 		var servicetypes []entity.ServiceType
-		if err := config.DB.Find(&servicetypes, req.ServicetypeIDs).Error; err == nil {
-			config.DB.Model(&order).Association("Servicetypes").Append(servicetypes)
+		if err := config.DB.Find(&servicetypes, req.ServiceTypeIDs).Error; err == nil {
+			config.DB.Model(&order).Association("ServiceTypes").Append(servicetypes)
 		}
 	}
 

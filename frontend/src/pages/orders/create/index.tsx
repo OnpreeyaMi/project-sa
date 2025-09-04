@@ -51,6 +51,10 @@ const OrderPage: React.FC = () => {
   const [orderImage, setOrderImage] = useState<string | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
 
+  // Mapping KG → ServiceType ID
+  const washerIdMap: Record<number, number> = { 10: 1, 14: 2, 18: 3, 28: 4 };
+  const dryerIdMap: Record<number, number> = { 14: 5, 25: 6, 0: 7 }; // 0 = NO Dryer
+
   const handleConfirm = () => {
     if (!selectedAddress) {
       AntdModal.error({ title: "กรุณาเลือกที่อยู่ก่อน" });
