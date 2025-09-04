@@ -9,7 +9,7 @@ import ComplaintCreate from './pages/complaint/complaintCreate'; // ถ้าม
 function App() {
   return (
     <BrowserRouter>
-      {/* <CustomerSidebar>
+      <CustomerSidebar>
         <Routes>
           <Route path="/payment" element={<Payment />} />
            
@@ -17,14 +17,14 @@ function App() {
           
           
         </Routes>
-      </CustomerSidebar> */}
+      </CustomerSidebar>
       
-      
-      <EmpSidebar>
+          
+      {/* <EmpSidebar>
         <Routes>
           <Route path="/complaint/reply" element={<ComplaintReply />} />
         </Routes>
-      </EmpSidebar>
+      </EmpSidebar> */}
     </BrowserRouter>
   );
 }

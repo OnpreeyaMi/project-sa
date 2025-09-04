@@ -11,7 +11,7 @@ type Props = {
   subtitle?: string;         // ข้อความขอบคุณ
   shopName?: string;         // ชื่อร้าน/โปรไฟล์ ถ้าต้องการแสดงด้านบน (เช่น "Pham Korat")
 
-  orderId?: string | null;   // หมายเลขคำสั่งซื้อ
+  orderId?: number ;   // หมายเลขคำสั่งซื้อ
   amount?: number;           // จำนวนเงิน
   currency?: string;         // THB, USD ...
   paidAt?: Date;             // วันที่สั่งซื้อ/เวลาชำระ
@@ -47,7 +47,7 @@ export default function PaymentSuccessModal({
   title = "ชำระเงินสำเร็จ!",
   subtitle = "ขอบคุณสำหรับการสั่งซื้อ เราได้รับการชำระเงินเรียบร้อยแล้ว",
   shopName,
-  orderId = "N/A",
+  orderId = 1234,
   amount = 0,
   currency = "THB",
   paidAt = new Date(),
