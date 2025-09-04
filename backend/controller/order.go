@@ -68,16 +68,5 @@ func CreateOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, order)
 }
 
-func GetOrders(c *gin.Context) {
-    customerId := c.Query("customerId")
-    var orders []entity.Order
-    db := config.DB.Preload("Address")
-    if customerId != "" {
-        db = db.Where("customer_id = ?", customerId)
-    }
-    if err := db.Find(&orders).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, gin.H{"data": customer})
-}
+
+

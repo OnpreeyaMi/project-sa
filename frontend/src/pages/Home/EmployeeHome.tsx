@@ -66,7 +66,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchMe(); /* eslint-disable-next-line */}, [employeeId]);
+  useEffect(() => { fetchMe();  }, [employeeId]);
 
   // เรียก API เปลี่ยนสถานะ
   const changeStatus = async (status: EmpStatus) => {

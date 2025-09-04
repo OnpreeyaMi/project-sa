@@ -1,13 +1,21 @@
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route} from "react-router-dom";
 import EmployeePage from "./pages/employee";
 import LaundryCheckPage from "./pages/laundryCheck";
-import HomePage from "./pages/Home/EmployeeHome";
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
+import Login from "./pages/login/login";
+import RegisterForm from "./pages/register/register";
+import EmployeeHome from "./pages/Home/EmployeeHome";
+import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
+import OrderDetail from "./pages/LaundryProcess/OrderDetail";
+import StockEmpPage from "./pages/stock/employee";
+import StatusPage from "./pages/LaundryProcess/StatusPage";
+import CustomerManagement from "./pages/customer/CustomerMangement";
+import PromotionManagement from "./pages/promotion/PromotionManagement";
+import Profile from "./pages/profile/profile";
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("");
-
+ 
   return (
 
       <Routes>
