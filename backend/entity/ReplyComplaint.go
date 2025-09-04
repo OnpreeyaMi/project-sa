@@ -21,4 +21,3 @@ type ReplyComplaint struct {
 }
 
 
-func (ReplyComplaint) TableName() string { return "reply_complaint" }

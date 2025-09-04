@@ -11,17 +11,16 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() {
-	// สร้างไฟล์ฐานข้อมูล SQLite (ถ้ายังไม่มี)
 	database, err := gorm.Open(sqlite.Open("sa_laundry.db"), &gorm.Config{})
 	if err != nil {
 		panic("ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
 	}
-
 	DB = database
 	fmt.Println("เชื่อมต่อ SQLite สำเร็จ!")
 }
 
 func SetupDatabase() {
+	// สร้างตารางตามโมเดล (ไม่มีการใส่ mock data)
 	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
@@ -30,12 +29,8 @@ func SetupDatabase() {
 		&entity.Customer{},
 		&entity.DetergentCategory{},
 		&entity.Detergent{},
-		&entity.DiscountType{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
-		&entity.Gender{},
-		&entity.History{},
-		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
@@ -43,15 +38,11 @@ func SetupDatabase() {
 		&entity.Payment{},
 		&entity.PositionCount{},
 		&entity.Position{},
-		&entity.Promotion{},
-		&entity.PromotionCondition{},
-		&entity.PromotionUsage{},
 		&entity.PurchaseDetergent{},
 		&entity.Queue{},
 		&entity.QueueAssignment{},
 		&entity.QueueHistory{},
 		&entity.ReplyComplaint{},
-		&entity.Role{},
 		&entity.ServiceType{},
 		&entity.SortedClothes{},
 		&entity.SortingRecord{},
@@ -79,6 +70,16 @@ func SetupDatabase() {
 }
 
 func MockData() {
+	// --- Mock Customers ---
+	customers := []entity.Customer{
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1,  IsVerified: true},
+		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false},
+	}
+	for _, c := range customers {
+		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
+	}
+
+	//--- Mock Address ---
 	// --- Mock Role ---
 	roles := []entity.Role{
 		{Role_name: "admin"},
@@ -108,14 +109,6 @@ func MockData() {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
 
-	// --- Mock Customer ---
-	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", IsVerified: true, GenderID: 1, UserID: 2},
-		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", IsVerified: false, GenderID: 2, UserID: 3},
-	}
-	for _, c := range customers {
-		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
-	}
 
 	// --- Mock Address ---
 	addresses := []entity.Address{
@@ -133,6 +126,49 @@ func MockData() {
 	}
 	for _, s := range services {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
+	}
+
+
+	// --- Mock Detergent ---
+	detergents := []entity.Detergent{
+		{
+			Name:  "น้ำยาซักเหลว",
+			Type:  "Liquid",
+			InStock: 100,
+			CategoryID: 1,
+		},
+		{
+			Name:  "ผงซักฟอก",
+			Type:  "Powder",
+			InStock: 50,
+			CategoryID: 2,
+		},
+		{
+			Name:  "น้ำยาซักสูตรพิเศษ",
+			Type:  "Liquid",
+			InStock: 30,
+			UserID: 2,
+			CategoryID: 1,
+		},
+		{
+			Name:  "ผงซักฟอกสูตรเข้มข้น",
+			Type:  "Powder",
+			InStock: 20,
+			CategoryID: 2,
+		},
+	}
+	for _, d := range detergents {
+		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
+	}
+
+	// --- Mock DetergentCategory ---
+	categories := []entity.DetergentCategory{
+		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
+		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
+	}
+
+	for _, c := range categories {
+		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
 
 	// --- Mock Orders ---
@@ -219,5 +255,17 @@ func MockData() {
 		},
 		)
 	}
+	// // --- Mock History ---
+	// histories := []entity.OrderHistory{
+	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
+	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
+	// }
+	// for _, h := range histories {
+	// 	DB.Create(&h)
+	// }
+
+	fmt.Println("Mock data added successfully!")
+	
+
 	fmt.Println("✅ Mock data added successfully!")
 }

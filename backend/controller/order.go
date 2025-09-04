@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
 	"github.com/gin-gonic/gin"
@@ -65,19 +66,54 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 	// ส่ง response กลับ frontend
+	if err := config.DB.Create(&history).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// preload ก่อนส่งกลับ
+	if err := config.DB.Preload("Customer").
+		Preload("ServiceTypes").
+		Preload("Detergents").
+		Preload("Address").
+		First(&order, order.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, order)
 }
 
+// ดึงประวัติการสั่งซื้อทั้งหมด
+func GetOrderHistories(c *gin.Context) {
+	var histories []entity.OrderHistory
+	if err := config.DB.Preload("Order").
+		Preload("Order.Customer").
+		Preload("Order.ServiceTypes").
+		Preload("Order.Detergents").
+		Preload("Order.Address").
+		Find(&histories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, histories)
+}
+
 func GetOrders(c *gin.Context) {
-    customerId := c.Query("customerId")
-    var orders []entity.Order
-    db := config.DB.Preload("Address")
-    if customerId != "" {
-        db = db.Where("customer_id = ?", customerId)
-    }
-    if err := db.Find(&orders).Error; err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, orders)
+	var orders []entity.Order
+	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, orders)
+}
+
+// ดึงที่อยู่ทั้งหมด
+func GetAddresses(c *gin.Context) {
+	var addresses []entity.Address
+	if err := config.DB.Preload("Customer").Find(&addresses).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, addresses)
 }

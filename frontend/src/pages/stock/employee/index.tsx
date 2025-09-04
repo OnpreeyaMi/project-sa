@@ -79,7 +79,7 @@ const StockEmpPage: React.FC = () => {
       dataIndex: "type",
       key: "type",
       render: (type: string) => {
-        let color = type === "detergent" ? "blue" : type === "drying" ? "green" : "orange";
+        const color = type === "detergent" ? "blue" : type === "drying" ? "green" : "orange";
         return <Text style={{ color }}>{type}</Text>;
       },
     },

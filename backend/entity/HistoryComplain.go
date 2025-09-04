@@ -21,3 +21,4 @@ type HistoryComplain struct {
 }
 
 
+func (HistoryComplain) TableName() string { return "history_complains" }

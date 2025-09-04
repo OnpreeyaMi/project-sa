@@ -1,72 +1,66 @@
-import React, { useState } from "react";
-// import AdminSidebar from "./component/layout/admin/AdminSidebar";
-// import Background from "./component/background";
-import { BrowserRouter, Route, Router, Routes } from "react-router-dom";
+import React from "react";
+import { Routes, Route } from "react-router-dom";
 import EmployeePage from "./pages/employee";
 import LaundryCheckPage from "./pages/laundryCheck";
-import CustomerManagement from "./pages/customer/CustomerMangement";
-import PromotionManagement from "./pages/promotion/PromotionManagement";
+import TransportQueuePage from "./pages/Queue/TransportQueuePage";
 import Login from "./pages/login/login";
 import RegisterForm from "./pages/register/register";
-import "leaflet/dist/leaflet.css";
-import Profile from "./pages/profile/profile";
 import EmployeeHome from "./pages/Home/EmployeeHome";
 import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
 import OrderDetail from "./pages/LaundryProcess/OrderDetail";
-import TransportQueuePage from "./pages/Queue/TransportQueuePage";
-import StockEmpPage from "./pages/stock/employee/index";
+import StockEmpPage from "./pages/stock/employee";
 import StatusPage from "./pages/LaundryProcess/StatusPage";
+import CustomerManagement from "./pages/customer/CustomerMangement";
+import PromotionManagement from "./pages/promotion/PromotionManagement";
+import Profile from "./pages/profile/profile";
+import CustomerComplaintPage from "./pages/complaint/complaintCreate";
+import Payment from "./pages/payment/create";
+import ComplaintAdminPage from "./pages/complaint/complaintReply";
+import OrderPage from "./pages/orders/create";
+import HistoryPage from "./pages/orders/history";
+import StockAdminPage from "./pages/stock/Admin";
 
-{
-  /* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */
-}
-{
-  /* <AdminSidebar></AdminSidebar> */
-}
-{
-  /* <EmpSidebar></EmpSidebar> */
-}
-{
-  /* <CustomerSidebar></CustomerSidebar> */
-}
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("");
 
   return (
 
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<RegisterForm />} />
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<Login />} />
+      <Route path="/register" element={<RegisterForm />} />
 
-        {/* Employee routes */}
-        <Route path="/employee" >
-          <Route path="dashboard" element={<EmployeeHome />} />
-          <Route path="orders" element={<StatusUpdate />} />
-          <Route path="orders/:orderId" element={<OrderDetail />} />
-          <Route path="delivery" element={<TransportQueuePage />} />
-          <Route path="check" element={<LaundryCheckPage />} />
-          <Route path="inventory" element={<StockEmpPage />} />
-          <Route path="profile" element={<StatusPage />} />
-        </Route>
+      {/* Employee routes */}
+      <Route path="/employee" >
+        <Route path="dashboard" element={<EmployeeHome />} />
+        <Route path="orders" element={<StatusUpdate />} />
+        <Route path="orders/:orderId" element={<OrderDetail />} />
+        <Route path="delivery" element={<TransportQueuePage />} />
+        <Route path="check" element={<LaundryCheckPage />} />
+        <Route path="inventory" element={<StockEmpPage />} />
+        <Route path="profile" element={<StatusPage />} />
+        <Route path="complaint" element={<ComplaintAdminPage />} />
+      </Route>
 
-        {/* Admin routes */}
-        <Route path="/admin" >
-          <Route path="employees" element={<EmployeePage />} />
-          <Route path="customers" element={<CustomerManagement />} />
-          <Route path="promotions" element={<PromotionManagement />} />
-        </Route>
+      {/* Admin routes */}
+      <Route path="/admin" >
+        <Route path="employees" element={<EmployeePage />} />
+        <Route path="customers" element={<CustomerManagement />} />
+        <Route path="promotions" element={<PromotionManagement />} />
+        <Route path="stock" element={<StockAdminPage />} />
+      </Route>
 
-        {/* Customer routes */}
+      {/* Customer routes */}
         <Route path="/customer">
           <Route path="profile" element={<Profile />} />
-          {/* เพิ่ม route อื่นของ customer ได้ที่นี่ */}
+          <Route path="complaint" element={<CustomerComplaintPage />} />
+          <Route path="payment" element={<Payment />} />
+          <Route path="orders" element={<OrderPage />} />
+          <Route path="history" element={<HistoryPage />} />
         </Route>
-      </Routes>
+    </Routes>
 
   );
 };
-
 export default App;
 //ระบบย่อย : จัดการกระบวนการซัก actor customer
 

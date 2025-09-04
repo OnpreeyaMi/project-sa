@@ -6,22 +6,21 @@ import (
 )
 
 type Employee struct {
-	gorm.Model
-	FirstName    	string   
-	LastName     	string
-	Email       	string
-	Password      	string
-	Phone      		string
-	Gender    	    string
-	StartDate       time.Time
+    gorm.Model
+    Code      string    `gorm:"uniqueIndex;size:16"` // <- เพิ่ม
+    FirstName string   
+    LastName  string   
+    Phone     string    
+    Gender    string    
+    StartDate time.Time 
 
-	
-	UserID uint
-	User *User `gorm:"foreignKey:UserID"`
+    UserID uint  
+    User   *User `gorm:"foreignKey:UserID"`
 
-	PositionID uint
-	Position *Position `gorm:"foreignKey:PositionID"`
-	
-	EmployeeStatusID uint
-	EmployeeStatus *EmployeeStatus `gorm:"foreignKey:EmployeeStatusID"`
+    PositionID uint      
+    Position   *Position `gorm:"foreignKey:PositionID"`
+
+    EmployeeStatusID uint           
+    EmployeeStatus   *EmployeeStatus `gorm:"foreignKey:EmployeeStatusID"`
 }
+

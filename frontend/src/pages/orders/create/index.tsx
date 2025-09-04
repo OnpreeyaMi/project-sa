@@ -51,8 +51,13 @@ const OrderPage: React.FC = () => {
   const [orderImage, setOrderImage] = useState<string | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
 
-  // ปุ่มกดยืนยันหลัก
-  const handleConfirm = () => setIsModalVisible(true);
+  const handleConfirm = () => {
+    if (!selectedAddress) {
+      AntdModal.error({ title: "กรุณาเลือกที่อยู่ก่อน" });
+      return;
+    }
+    setIsModalVisible(true);
+  };
 
   // ปุ่ม OK ใน Modal
   const handleModalOk = async () => {
