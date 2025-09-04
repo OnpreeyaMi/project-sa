@@ -3,10 +3,10 @@ import React, { useState } from "react";
 // import Background from "./component/background";
 import { BrowserRouter, Route, Router, Routes } from "react-router-dom";
 import EmployeeSidebar from "./pages/laundryCheck";
-// import EmployeePage from "./pages/employee";
+import EmployeePage from "./pages/employee";
 import LaundryCheckPage from "./pages/laundryCheck";
-// import CustomerManagement from "./pages/customer/CustomerMangement";
-// import PromotionManagement from "./pages/promotion/PromotionManagement";
+import CustomerManagement from "./pages/customer/CustomerMangement";
+import PromotionManagement from "./pages/promotion/PromotionManagement";
 import Login from "./pages/login/login";
 import RegisterForm from "./pages/register/register";
 import "leaflet/dist/leaflet.css";
@@ -30,17 +30,17 @@ const [activeTab, setActiveTab] = useState<string>("");
   return (
     <>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/register" element={<RegisterForm />} />
+        {/* <Route path="/" element={<Login />} />
+        <Route path="/register" element={<RegisterForm />} /> */}
 
 
         {/* <Route path="/employee/check" element={<LaundryCheckPage />} />
         <Route path="/profile" element={<Profile />} /> */}
 
 
-        {/* <Route path="/admin/employees" element={<EmployeePage />} />
+        <Route path="/admin/employees" element={<EmployeePage />} />
         <Route path="/admin/customers" element={<CustomerManagement />} />
-        <Route path="/admin/promotions" element={<PromotionManagement />} /> */}
+        <Route path="/admin/promotions" element={<PromotionManagement />} />
       </Routes>
     </>
 

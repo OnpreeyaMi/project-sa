@@ -54,6 +54,26 @@ func main() {
 
 	// Order routes
 
+	// ตั้งค่า CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // frontend origin
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	// ตั้งค่า routes
+	// Customer routes
+	router.POST("/customers", controller.CreateCustomer)
+	router.GET("/customers", controller.GetCustomers)
+	router.GET("/customers/:id", controller.GetCustomerByID)
+	router.PUT("/customers/:id", controller.UpdateCustomer)
+	router.DELETE("/customers/:id", controller.DeleteCustomer)
+
+	// Order routes
+	router.GET("/orders", controller.GetOrders)
 	router.POST("/orders", controller.CreateOrder)
 
 	// Promotion routes
