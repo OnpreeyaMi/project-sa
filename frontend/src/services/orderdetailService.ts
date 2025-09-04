@@ -2,6 +2,8 @@
 export interface Machine {
   ID: number;
   Machine_type: string;
+  Capacity_kg: number;
+  Machine_number: number;
   status?: string;
 }
 
