@@ -37,7 +37,7 @@ const CustomerProfile: React.FC = () => {
 
   return (
     <CustomerSidebar>
-      <h2 style={{ margin: 10 }}>โปร์ไฟล์</h2>
+      <h2 style={{ marginTop: 10 , marginBottom:10 }}>โปร์ไฟล์</h2>
 
       <Row gutter={24}>
         {/* Card 1 */}
