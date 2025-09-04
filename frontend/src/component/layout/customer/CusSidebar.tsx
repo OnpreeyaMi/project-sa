@@ -5,10 +5,10 @@ import {
 } from '@ant-design/icons';
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-import { LiaUserCogSolid } from "react-icons/lia";
-import { FaHome,FaUserFriends,FaUserCircle,FaHistory  } from "react-icons/fa";
-import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
+import { FaHome,FaUserCircle,FaHistory  } from "react-icons/fa";
 import { MdLocalLaundryService,MdOutlinePayment  } from "react-icons/md";
+import { LiaUserCogSolid } from "react-icons/lia";
+import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
 import { TbTruckDelivery } from "react-icons/tb";
 import { TbSettings } from "react-icons/tb";
 import { GiClothes } from "react-icons/gi";

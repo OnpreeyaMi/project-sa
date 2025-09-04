@@ -13,7 +13,7 @@ import {
   Col,
   Modal,
 } from "antd";
-import EmpSidebar from  "../../component/layout/Sidebar/EmpSidebar";
+import EmpSidebar from  "../../component/layout/employee/empSidebar";
 import StatusCard from "../../component/StatusCard"; 
 import { GiWashingMachine, GiClothes } from "react-icons/gi";
 import { FaCheckCircle } from "react-icons/fa";

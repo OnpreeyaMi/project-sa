@@ -110,13 +110,16 @@ func GetAddresses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": addresses})
 }
 
-// GetCustomerByID handles GET /customers/:id
-func GetCustomerByID(c *gin.Context) {
-    var customer entity.Customer
-    id := c.Param("id")
-    if err := config.DB.First(&customer, id).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+func GetOrders(c *gin.Context) {
+    customerId := c.Query("customerId")
+    var orders []entity.Order
+    db := config.DB.Preload("Address")
+    if customerId != "" {
+        db = db.Where("customer_id = ?", customerId)
+    }
+    if err := db.Find(&orders).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
-    c.JSON(http.StatusOK, gin.H{"data": customer})
+    c.JSON(http.StatusOK, orders)
 }

@@ -1,16 +1,21 @@
+import { useNavigate , useLocation} from "react-router-dom";
 import React, { useState } from 'react';
 import { FaHome,FaUserFriends,FaUserCircle } from "react-icons/fa";
 import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
-import { MdLocalLaundryService } from "react-icons/md";
+// import { MdLocalLaundryService } from "react-icons/md"; 
 import { TbTruckDelivery } from "react-icons/tb";
+
+
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
+
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-import { LiaUserCogSolid } from "react-icons/lia";
-import { TbSettings } from "react-icons/tb";
+
+
+
 const { Header, Sider, Content } = Layout;
 
 interface SidebarProps {
@@ -18,6 +23,18 @@ interface SidebarProps {
 }
 
 const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const getSelectedKey = () => {
+    if (location.pathname.startsWith("/Home")) return "1";;
+    if (location.pathname.startsWith("/order")) return "2";
+    if (location.pathname.startsWith("/TransportQueuePage")) return "3";
+    if (location.pathname.startsWith("/store")) return "4";
+    if (location.pathname.startsWith("/profile")) return "5";
+    return "1"; // default
+  };
+
+
   const [collapsed, setCollapsed] = useState(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -60,14 +77,42 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
         //   theme="#0E4587"
           style={{ backgroundColor: '#0E4587', color: 'white' }}  
           mode="inline"
-          defaultSelectedKeys={['1']}
+          selectedKeys={[getSelectedKey()]}
           items={[
-            { key: '1', icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>},
-            { key: '2', icon: <IoNewspaper style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span> },
-            { key: '3', icon: <MdLocalLaundryService  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>สถานะ</span> },
-            { key: '4', icon: <TbTruckDelivery  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span> },
-            { key: '5', icon: <IoStorefrontSharp  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>คลัง</span> },
-            { key: '6', icon: <FaUserCircle  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span> },
+            { 
+              key: '1', 
+              icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, 
+              label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
+              onClick: () => {
+                navigate('/Home'); //หน้าหลัก
+              }},
+            { 
+              key: '2', 
+              icon: <IoNewspaper style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
+              label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
+              onClick: () => {
+                navigate('/order'); //ออเดอร์
+              }},
+            
+            { key: '3', 
+              icon: <TbTruckDelivery  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
+              label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span>,
+              onClick: () => {
+                navigate('/TransportQueuePage'); //คิวขนส่ง
+              }},
+            { key: '4', 
+              icon: <IoStorefrontSharp  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
+              label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
+              onClick: () => {
+                navigate('/store'); //คลัง
+              }},
+            { key: '5', 
+              icon: <FaUserCircle  
+              style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
+              label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span>,
+              onClick: () => {
+                navigate('/profile'); //โปรไฟล์
+              }},
           ]}
         />
       </Sider>

@@ -1,5 +1,5 @@
 import React from "react";
-import EmpSidebar from "../../component/layout/Sidebar/EmpSidebar";
+import EmpSidebar from "../../component/layout/employee/empSidebar";
 import { Row, Col, Card } from "antd";
 const HomePage: React.FC = () => {
   return (
