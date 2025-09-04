@@ -16,7 +16,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-
 // --------- Utilities ---------
 
 var dateLayouts = []string{
@@ -34,6 +33,7 @@ func parseDateThaiAware(s string) (time.Time, error) {
 	if s == "" {
 		return time.Time{}, errors.New("empty date")
 	}
+	// รองรับปี พ.ศ. รูปแบบ dd/mm/yyyy
 	if strings.Count(s, "/") == 2 {
 		parts := strings.Split(s, "/")
 		if len(parts) == 3 {
@@ -97,13 +97,13 @@ func modifyPositionCount(tx *gorm.DB, positionID uint, delta int) error {
 		).Error
 }
 
-// คำอธิบายสถานะดีฟอลต์ตาม status
+// คำอธิบายสถานะดีฟอลต์ (สะกดให้ตรงกัน: ปฏิบัติงาน)
 func defaultStatusDescription(name string) string {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "active":
-		return "กำลังปฎิบัติงาน"
+		return "กำลังปฏิบัติงาน"
 	case "inactive":
-		return "ยังไม่ปฎิบัติงาน"
+		return "ยังไม่ปฏิบัติงาน"
 	case "onleave":
 		return "ลาพัก"
 	default:
@@ -111,7 +111,7 @@ func defaultStatusDescription(name string) string {
 	}
 }
 
-// หา/สร้าง/อัปเดตคำอธิบายสถานะ
+// หา/สร้าง/อัปเดตคำอธิบายสถานะ (ใช้ชื่อฟิลด์ใน struct เพื่อความสม่ำเสมอ)
 func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	desc = strings.TrimSpace(desc)
@@ -133,12 +133,11 @@ func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	case err != nil:
 		return 0, err
 	default:
-		// อัปเดตคำอธิบายถ้าส่งมาใหม่
 		if desc == "" {
 			desc = defaultStatusDescription(name)
 		}
 		if st.StatusDescription != desc {
-			if err := tx.Model(&st).Update("status_description", desc).Error; err != nil {
+			if err := tx.Model(&st).Update("StatusDescription", desc).Error; err != nil {
 				return 0, err
 			}
 		}
@@ -146,25 +145,25 @@ func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	}
 }
 
-// --------- DTO ---------
+// --------- DTO (อินพุตจาก Frontend) ---------
+// controller/employee_controller.go
 type EmployeePayload struct {
-	Code       string `json:"employeeCode,omitempty"`
-	FirstName  string `json:"firstName"`
-	LastName   string `json:"lastName"`
-	Gender     string `json:"gender"`
-	Position   string `json:"position"`
-	PositionID uint   `json:"positionID"`
-	Phone      string `json:"phone"`
-
-	Email    string `json:"email"`
-	Password string `json:"password"`
-
-	JoinDate          string `json:"joinDate"`
-	StartDate         string `json:"startDate,omitempty"`
-	Status            string `json:"status"`
-	StatusDescription string `json:"statusDescription,omitempty"`
-	UserID            uint   `json:"userId,omitempty"`
+	Code              string
+	FirstName         string
+	LastName          string
+	Gender            string
+	Position          string
+	PositionID        uint
+	Phone             string
+	Email             string
+	Password          string
+	JoinDate          string
+	StartDate         string
+	Status            string
+	StatusDescription string
+	UserID            uint
 }
+
 
 // --------- Handlers ---------
 
@@ -197,7 +196,7 @@ func CreateEmployee(c *gin.Context) {
 	startTime, err := parseDateThaiAware(jd)
 	if err != nil { tx.Rollback(); c.JSON(400, gin.H{"error": "invalid join/start date"}); return }
 
-	// status (use default desc if empty)
+	// status + description
 	if strings.TrimSpace(p.StatusDescription) == "" {
 		p.StatusDescription = defaultStatusDescription(p.Status)
 	}
@@ -218,7 +217,7 @@ func CreateEmployee(c *gin.Context) {
 	u := entity.User{Email: p.Email, Password: string(hashed), Status: "active"}
 	if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// employee code (optional)
+	// employee code (ถ้าส่งมา ต้องไม่ซ้ำ)
 	code := strings.TrimSpace(p.Code)
 	if code != "" {
 		var dup entity.Employee
@@ -242,7 +241,7 @@ func CreateEmployee(c *gin.Context) {
 	}
 	if err := tx.Create(&emp).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// gen code ถ้ายังว่าง
+	// gen code ถ้าไม่ได้ส่งมา
 	if emp.Code == "" {
 		gen := fmt.Sprintf("EMP%03d", emp.ID)
 		if err := tx.Model(&entity.Employee{}).Where("id = ?", emp.ID).Update("code", gen).Error; err != nil {
@@ -251,7 +250,7 @@ func CreateEmployee(c *gin.Context) {
 		emp.Code = gen
 	}
 
-	// position counter
+	// ปรับยอดตำแหน่ง
 	if posID != 0 {
 		if err := modifyPositionCount(tx, posID, 1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 	}
@@ -353,10 +352,10 @@ func UpdateEmployee(c *gin.Context) {
 	}
 
 	// employee fields
-	e.FirstName = p.FirstName
-	e.LastName  = p.LastName
-	e.Gender    = strings.ToLower(strings.TrimSpace(p.Gender))
-	e.Phone     = p.Phone
+	e.FirstName  = p.FirstName
+	e.LastName   = p.LastName
+	e.Gender     = strings.ToLower(strings.TrimSpace(p.Gender))
+	e.Phone      = p.Phone
 	e.PositionID = newPosID
 
 	// user (email/password)
@@ -396,6 +395,7 @@ func UpdateEmployee(c *gin.Context) {
 		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
 	}
 
+	// ปรับยอดตำแหน่ง เมื่อมีการย้าย
 	if oldPosID != newPosID {
 		if oldPosID != 0 {
 			if err := modifyPositionCount(tx, oldPosID, -1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
@@ -440,6 +440,7 @@ func DeleteEmployee(c *gin.Context) {
 	if err := tx.Delete(&entity.Employee{}, uint(id)).Error; err != nil {
 		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
 	}
+	// เลือก “ลบ user” ถ้าผูกอยู่ (ถ้าจะเปลี่ยนเป็น inactive ก็แก้ตรงนี้)
 	if userID != 0 {
 		if err := tx.Delete(&entity.User{}, userID).Error; err != nil {
 			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return

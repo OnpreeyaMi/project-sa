@@ -8,7 +8,7 @@ import OrderPage from "./pages/orders/create";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-    <OrderPage></OrderPage>
+    {/* <OrderPage></OrderPage> */}
       <App />
     </BrowserRouter>
   </React.StrictMode>

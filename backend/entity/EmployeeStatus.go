@@ -4,9 +4,9 @@ import "gorm.io/gorm"
 
 type EmployeeStatus struct {
 	gorm.Model
-	StatusName        string       `json:"StatusName"`        // เช่น active / inactive / onleave
-	StatusDescription string       `json:"StatusDescription"` // คำอธิบาย
+	StatusName        string       // เช่น active / inactive / onleave
+	StatusDescription string       // คำอธิบาย
 
-	Employees []*Employee `gorm:"foreignKey:EmployeeStatusID" json:"-"`
+	Employees []*Employee `gorm:"foreignKey:EmployeeStatusID"`
 }
                                  

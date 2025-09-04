@@ -6,7 +6,7 @@ import (
 
 type ClothType struct {
 	gorm.Model
-	Type_name string
+	TypeName string
 
 	
 	SortedClothes *SortedClothes `gorm:"foreignKey:ClothTypeID"`
