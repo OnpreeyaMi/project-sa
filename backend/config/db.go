@@ -125,8 +125,16 @@ func MockData() {
 
 	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
-		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
-		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
+		// 🧺 ถังซัก (Washer)
+		{Type: "ถังซัก 10kg", Price: 50, Capacity: 10},
+		{Type: "ถังซัก 14kg", Price: 70, Capacity: 14},
+		{Type: "ถังซัก 18kg", Price: 90, Capacity: 18},
+		{Type: "ถังซัก 28kg", Price: 120, Capacity: 28},
+
+		// 🔥 ถังอบ (Dryer)
+		{Type: "ถังอบ 14kg", Price: 50, Capacity: 14},
+		{Type: "ถังอบ 25kg", Price: 70, Capacity: 25},
+		{Type: "ไม่อบ", Price: 0, Capacity: 0},
 	}
 	for _, s := range services {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
@@ -139,21 +147,18 @@ func MockData() {
 			Name:  "น้ำยาซักเหลว",
 			Type:  "Liquid",
 			InStock: 100,
-			// UserID: 1,
 			CategoryID: 1,
 		},
 		{
 			Name:  "ผงซักฟอก",
 			Type:  "Powder",
 			InStock: 50,
-			// UserID: 1,
 			CategoryID: 2,
 		},
 		{
 			Name:  "น้ำยาซักสูตรพิเศษ",
 			Type:  "Liquid",
 			InStock: 30,
-			// UserID: 2,
 			UserID: 2,
 			CategoryID: 1,
 		},
@@ -161,12 +166,11 @@ func MockData() {
 			Name:  "ผงซักฟอกสูตรเข้มข้น",
 			Type:  "Powder",
 			InStock: 20,
-			// UserID: 2,
 			CategoryID: 2,
 		},
 	}
 	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Type: d.Type})
+		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
 	}
 
 	// --- Mock DetergentCategory ---

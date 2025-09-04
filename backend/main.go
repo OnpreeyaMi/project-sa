@@ -53,7 +53,7 @@ func main() {
 	router.DELETE("/customers/:id", controller.DeleteCustomer)
 
 	// Order routes
-	router.GET("/orders", controller.GetOrders)
+
 	router.POST("/orders", controller.CreateOrder)
 
 	// Promotion routes
