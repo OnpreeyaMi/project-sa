@@ -1,7 +1,7 @@
 // src/types.ts
 export interface OrderService {
   customer_id: number;
-  service_type_ids: number[];
+  servicetype_ids: number[];
   detergent_ids: number[];
   order_image?: string | null;
   order_note?: string;
@@ -24,17 +24,12 @@ export interface Detergent {
 
 export interface OrderHistory {
   id: number;
-  order_id: number;
-  status: string;
+  customer_id: number;
+  servicetype_ids: number[];
+  detergent_ids: number[];
+  order_image?: string | null;
+  order_note?: string;
+  address_id: number;
   created_at: string;
   updated_at: string;
-  order: {
-    id: number;
-    customer_id: number;
-    order_image?: string | null;
-    order_note?: string;
-    address_id: number;
-    service_types: { id: number; name: string; price?: number }[];
-    detergents: { id: number; name: string; type: "Liquid"|"Powder"; inStock: number }[];
-  }
 }

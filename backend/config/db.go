@@ -93,69 +93,59 @@ func MockData() {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-
-	// --- Mock Detergent ---
-	detergents := []entity.Detergent{
-		{
-			Name:  "น้ำยาซักเหลว",
-			Type:  "Liquid",
-			InStock: 100,
-			// UserID: 1,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอก",
-			Type:  "Powder",
-			InStock: 50,
-			// UserID: 1,
-			CategoryID: 2,
-		},
-		{
-			Name:  "น้ำยาซักสูตรพิเศษ",
-			Type:  "Liquid",
-			InStock: 30,
-			// UserID: 2,
-			UserID: 2,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอกสูตรเข้มข้น",
-			Type:  "Powder",
-			InStock: 20,
-			// UserID: 2,
-			CategoryID: 2,
-		},
+	// --- Mock Orders ---
+	orders := []entity.Order{
+		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
+		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
 	}
-	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
+	for _, o := range orders {
+		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
 	}
 
-	// --- Mock DetergentCategory ---
-	categories := []entity.DetergentCategory{
-		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
-		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
+	// --- Mock DiscountType ---
+	discountTypes := []entity.DiscountType{
+		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
+		{TypeName: "จำนวนเงิน", Description: "ลดเป็นจำนวนเงิน"},
+	}
+	for _, dt := range discountTypes {
+		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
 	}
 
-	for _, c := range categories {
-		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
+	// --- Mock Promotion ---
+	promotions := []entity.Promotion{
+		{
+			PromotionName:  "โปรลดหน้าฝน",
+			Description:    "ลด 10% ทุกออเดอร์ช่วงหน้าฝน",
+			DiscountValue:  10,
+			StartDate:      time.Now().AddDate(0, 0, -5),
+			EndDate:        time.Now().AddDate(0, 1, 0),
+			Status:         "ใช้งาน",
+			PromoImage:     "",
+			DiscountTypeID: 1,
+		},
+		{
+			PromotionName:  "ลด 50 บาท สำหรับลูกค้าใหม่",
+			Description:    "ลูกค้าใหม่รับส่วนลด 50 บาท",
+			DiscountValue:  50,
+			StartDate:      time.Now().AddDate(0, 0, -10),
+			EndDate:        time.Now().AddDate(0, 2, 0),
+			Status:         "ใช้งาน",
+			PromoImage:     "",
+			DiscountTypeID: 2,
+		},
+	}
+	for _, p := range promotions {
+		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
 	}
 
-	// --- Mock Payments ---
-	// payments := []entity.Payment{
-	// 	{Bill: 1, PaymentType: "Credit Card", CreatedAtTime: "2025-08-20 10:00", CheckPayment: true, OrderID: 1, StatusPayment: "Paid", Price: 150, TotalAmount: 150},
-	// 	{Bill: 2, PaymentType: "Cash", CreatedAtTime: "2025-08-21 14:00", CheckPayment: false, OrderID: 2, StatusPayment: "Unpaid", Price: 240, TotalAmount: 240},
-	// }
-	// for _, p := range payments {
-	// 	DB.FirstOrCreate(&p, entity.Payment{Bill: p.Bill})
-	// }
+	// --- Mock PromotionCondition ---
+	conds := []entity.PromotionCondition{
+		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
+		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
+	}
+	for _, c := range conds {
+		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
+	}
 
-	// --- Mock LaundryProcess ---
-	// processes := []entity.Process{
-	// 	{Step: "Washing", StartTime: 9.00, EndTime: 10.00, OrderID: 1, ServiceID: 1, MachineID: 101},
-	// 	{Step: "Drying", StartTime: 10.15, EndTime: 11.00, OrderID: 1, ServiceID: 1, MachineID: 202},
-	// }
-	// for _, lp := range processes {
-	// 	DB.Create(&lp)
-	// }
-	fmt.Println("Mock data added successfully!")
+	fmt.Println("✅ Mock data added successfully!")
 }

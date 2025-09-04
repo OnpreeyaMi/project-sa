@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import EmpSidebar from "../../../component/layout/admin/AdminSidebar";
 import {
   Card,
@@ -13,13 +13,7 @@ import {
   InputNumber,
   Form,
   Select,
-  message,
 } from "antd";
-import {
-  createDetergentWithPurchase,
-  getAllDetergents,
-  deleteDetergent, // เพิ่ม import
-} from "../../../services/stockService";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -72,73 +66,24 @@ const StockAdminPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    fetchStockData();
-    // eslint-disable-next-line
-  }, []);
-
-  const fetchStockData = async () => {
-    try {
-      const res = await getAllDetergents();
-      const detergents = res.data || [];
-      setStockData(
-        detergents.map((d: any, idx: number) => ({
-          key: d.ID || idx + 1,
-          name: d.Name,
-          type: d.Type,
-          quantity: d.InStock,
-          lastUpdated: d.UpdatedAt,
-          editor: d.UserID ? `User ${d.UserID}` : "-",
-        }))
-      );
-    } catch (err) {
-      // สามารถแจ้งเตือน error ได้
-    }
+  const handleDelete = (key: number) => {
+    setStockData(stockData.filter((item) => item.key !== key));
   };
 
-  const handleDelete = async (key: number) => {
-    try {
-      await deleteDetergent(key);
-      message.success("ลบสินค้าสำเร็จ");
-      fetchStockData(); // refresh ข้อมูลใหม่
-    } catch (err) {
-      message.error("เกิดข้อผิดพลาดในการลบสินค้า");
-    }
-  };
-
-  const handleAddStock = async (values: any) => {
-    try {
-      // สมมุติ UserID และ CategoryID เป็น 1 (ควรดึงจริงจากระบบ)
-      const detergentTypeMap: Record<string, number> = {
-        detergent: 1, // น้ำยาซักผ้า
-        softener: 2,  // น้ำยาปรับผ้านุ่ม
-        drying: 3,    // น้ำยาอบผ้า (ถ้ามี category จริง)
-      };
-      const categoryId = detergentTypeMap[values.type] || 1;
-      const userId = 1; // สมมุติ admin id
-
-      await createDetergentWithPurchase({
-        detergent: {
-          Name: values.name,
-          Type: values.type,
-          InStock: values.quantity,
-          UserID: userId,
-          CategoryID: categoryId,
-        },
-        purchase: {
-          Quantity: values.quantity,
-          Price: values.price,
-          Supplier: values.supplier || "",
-          UserID: userId,
-        },
-      });
-      message.success("เพิ่มสินค้าและบันทึกการจัดซื้อสำเร็จ");
-      setIsModalVisible(false);
-      form.resetFields();
-      fetchStockData(); // เพิ่มบรรทัดนี้เพื่อ refresh ข้อมูลทันทีหลังเพิ่ม
-    } catch (err) {
-      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-    }
+  const handleAddStock = (values: any) => {
+    const newItem: StockItem = {
+      key: stockData.length
+        ? Math.max(...stockData.map((i) => i.key)) + 1
+        : 1,
+      name: values.name,
+      type: values.type, // ใช้ type จาก Select
+      quantity: values.quantity,
+      lastUpdated: new Date().toISOString(),
+      editor: "currentUserName",
+    };
+    setStockData([...stockData, newItem]);
+    setIsModalVisible(false);
+    form.resetFields();
   };
 
   const columns = [
@@ -305,7 +250,7 @@ const StockAdminPage: React.FC = () => {
             เพิ่มรายการสินค้า
           </Button>
           <Button type="primary" style={{ height: 40, fontSize: 16 }}>
-            ประวัติการซื้อสินค้า
+            ซื้อสินค้า
           </Button>
         </Space>
       </Row>
