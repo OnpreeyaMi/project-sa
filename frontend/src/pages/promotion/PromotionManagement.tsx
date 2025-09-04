@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Form,
   Input,
@@ -11,109 +11,190 @@ import {
   Space,
   Popconfirm,
   Select,
+  Upload,
+  message,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
+import axios from "axios";
 import AdminSidebar from "../../component/layout/admin/AdminSidebar";
 
 interface PromotionCondition {
-  type: string;
-  operator: string;
-  value: string;
+  id?: number;
+  ConditionType: string;
+  Value: string;
 }
 
 interface Promotion {
-  id: number;
-  code: string;
-  description: string;
-  discount: number;
-  discountType: string; // 'เปอร์เซ็นต์' หรือ 'จำนวนเงิน'
-  conditions?: PromotionCondition[];
-  startDate: string;
-  endDate: string;
-  status: string;
-  createdAt: string;
+  ID: number;
+  PromotionName: string;
+  Description: string;
+  DiscountValue: number;
+  StartDate: string;
+  EndDate: string;
+  Status: string;
+  PromoImage: string;
+  DiscountTypeID: number;
+  DiscountType?: { TypeName: string };
+  PromotionCondition?: PromotionCondition[];
 }
 
 const PromotionManagement: React.FC = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
-    null
-  );
+  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [form] = Form.useForm();
+  const [searchText, setSearchText] = useState("");
 
-  const handleAddPromotion = () => {
-    form.validateFields().then((values) => {
-      const newPromotion: Promotion = {
-        id: Date.now(),
-        code: values.code,
-        description: values.description,
-        discount: values.discount,
-        discountType: values.discountType,
-        conditions: values.conditions || [],
+  // ดึงข้อมูลโปรโมชั่น
+  const fetchPromotions = async () => {
+    try {
+      const res = await axios.get("http://localhost:8080/promotions");
+      setPromotions(res.data);
+    } catch (err) {
+      message.error("โหลดข้อมูลโปรโมชั่นล้มเหลว");
+    }
+  };
+
+  useEffect(() => {
+    fetchPromotions();
+  }, []);
+
+  // ฟังก์ชันแปลงไฟล์เป็น base64 เพื่อ preview
+  const getBase64 = (file: File | Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+
+  // handle อัปโหลดรูป
+  const handleImageChange = async (info: any) => {
+    const file = info.file.originFileObj;
+    if (file) {
+      const url = await getBase64(file);
+      setImageUrl(url);
+    }
+  };
+
+  // เพิ่มโปรโมชั่น
+  const handleAddPromotion = async () => {
+    try {
+      const values = await form.validateFields();
+      const payload = {
+        promotionName: values.PromotionName,
+        description: values.Description,
+        discountValue: values.DiscountValue,
         startDate: values.date[0].format("YYYY-MM-DD"),
         endDate: values.date[1].format("YYYY-MM-DD"),
         status: "ใช้งาน",
-        createdAt: new Date().toISOString().slice(0, 10),
+        promoImage: imageUrl || "",
+        discountTypeId: values.DiscountTypeID,
+        conditions: (values.conditions || []).map((c: any) => ({
+          conditionType: c.ConditionType,
+          value: c.Value,
+        })),
       };
-      setPromotions((prev) => [...prev, newPromotion]);
-      form.resetFields();
+      await axios.post("http://localhost:8080/promotions", payload);
+      message.success("เพิ่มโปรโมชั่นสำเร็จ");
       setAddModalVisible(false);
-    });
+      setImageUrl(null);
+      form.resetFields();
+      fetchPromotions();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || "เกิดข้อผิดพลาด");
+    }
   };
 
+  // แก้ไขโปรโมชั่น
   const handleEdit = (record: Promotion) => {
     setEditingPromotion(record);
+    setImageUrl(record.PromoImage || null);
     form.setFieldsValue({
-      ...record,
-      date: [dayjs(record.startDate), dayjs(record.endDate)],
+      PromotionName: record.PromotionName,
+      Description: record.Description,
+      DiscountValue: record.DiscountValue,
+      DiscountTypeID: record.DiscountTypeID,
+      date: [dayjs(record.StartDate), dayjs(record.EndDate)],
+      conditions: record.PromotionCondition?.map((c) => ({
+        ConditionType: c.ConditionType,
+        Value: c.Value,
+      })),
     });
     setEditModalVisible(true);
   };
 
-  const handleEditPromotion = () => {
-    form.validateFields().then((values) => {
-      setPromotions((prev) =>
-        prev.map((p) =>
-          p.id === editingPromotion?.id
-            ? {
-                ...p,
-                code: values.code,
-                description: values.description,
-                discount: values.discount,
-                discountType: values.discountType,
-                conditions: values.conditions || [],
-                startDate: values.date[0].format("YYYY-MM-DD"),
-                endDate: values.date[1].format("YYYY-MM-DD"),
-              }
-            : p
-        )
-      );
-      setEditingPromotion(null);
+  const handleEditPromotion = async () => {
+    if (!editingPromotion || !editingPromotion.ID) {
+      message.error("ไม่พบข้อมูลโปรโมชั่นที่จะแก้ไข");
+      return;
+    }
+    try {
+      const values = await form.validateFields();
+      const payload = {
+        promotionName: values.PromotionName,
+        description: values.Description,
+        discountValue: values.DiscountValue,
+        startDate: values.date[0].format("YYYY-MM-DD"),
+        endDate: values.date[1].format("YYYY-MM-DD"),
+        status: values.Status,
+        promoImage: imageUrl || "",
+        discountTypeId: values.DiscountTypeID,
+        conditions: (values.conditions || []).map((c: any) => ({
+          conditionType: c.ConditionType,
+          value: c.Value,
+        })),
+      };
+      await axios.put(`http://localhost:8080/promotions/${editingPromotion.ID}`, payload);
+      message.success("แก้ไขโปรโมชั่นสำเร็จ");
       setEditModalVisible(false);
-    });
+      setEditingPromotion(null);
+      setImageUrl(null);
+      form.resetFields();
+      fetchPromotions();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || "เกิดข้อผิดพลาด");
+    }
   };
 
+  // ลบโปรโมชั่น
+  const handleDeletePromotion = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8080/promotions/${id}`);
+      message.success("ลบโปรโมชั่นสำเร็จ");
+      fetchPromotions();
+    } catch (err: any) {
+      message.error(err.response?.data?.error || "เกิดข้อผิดพลาด");
+    }
+  };
+
+  // columns สำหรับ Table
   const columns = [
-    { title: "รหัส", dataIndex: "code", key: "code" },
-    { title: "รายละเอียด", dataIndex: "description", key: "description" },
-    { title: "ประเภท", dataIndex: "discountType", key: "discountType" },
+    { title: "ชื่อโปรโมชั่น", dataIndex: "PromotionName", key: "PromotionName" },
+    { title: "รายละเอียด", dataIndex: "Description", key: "Description" },
+    {
+      title: "ประเภท",
+      dataIndex: ["DiscountType", "TypeName"],
+      key: "DiscountType",
+      render: (_: any, record: Promotion) => record.DiscountType?.TypeName || "-",
+    },
     {
       title: "เงื่อนไข",
-      dataIndex: "conditions",
-      key: "conditions",
+      dataIndex: "PromotionCondition",
+      key: "PromotionCondition",
       render: (conds: PromotionCondition[] | undefined) =>
-        conds?.map((c) => `${c.type} ${c.operator} ${c.value}`).join(", ") ||
-        "-",
+        conds?.map((c) => `${c.ConditionType}: ${c.Value}`).join(", ") || "-",
     },
-    { title: "ส่วนลด", dataIndex: "discount", key: "discount" },
-    { title: "วันที่เริ่ม", dataIndex: "startDate", key: "startDate" },
-    { title: "วันที่สิ้นสุด", dataIndex: "endDate", key: "endDate" },
+    { title: "ส่วนลด", dataIndex: "DiscountValue", key: "DiscountValue" },
+    { title: "วันที่เริ่ม", dataIndex: "StartDate", key: "StartDate" },
+    { title: "วันที่สิ้นสุด", dataIndex: "EndDate", key: "EndDate" },
     {
       title: "สถานะ",
-      dataIndex: "status",
-      key: "status",
+      dataIndex: "Status",
+      key: "Status",
       render: (status: string) => (
         <Tag color={status === "ใช้งาน" ? "green" : "red"}>{status}</Tag>
       ),
@@ -134,9 +215,7 @@ const PromotionManagement: React.FC = () => {
             title="คุณแน่ใจว่าจะลบโปรโมชั่นนี้?"
             okText="ลบ"
             cancelText="ยกเลิก"
-            onConfirm={() =>
-              setPromotions((prev) => prev.filter((p) => p.id !== record.id))
-            }
+            onConfirm={() => handleDeletePromotion(record.ID)}
           >
             <Button danger>ลบ</Button>
           </Popconfirm>
@@ -145,9 +224,16 @@ const PromotionManagement: React.FC = () => {
     },
   ];
 
+  // ฟิลเตอร์โปรโมชั่นตามข้อความค้นหา
+  const filteredPromotions = promotions.filter(
+    (promo) =>
+      promo.PromotionName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      promo.Description?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <AdminSidebar>
-      <div className="min-h-screen p-8 bg-gray-50 font-sans">
+      <div className="min-h-screen p-8 bg-white font-sans">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-blue-900">
@@ -158,6 +244,7 @@ const PromotionManagement: React.FC = () => {
             style={{ backgroundColor: "#0E4587" }}
             onClick={() => {
               form.resetFields();
+              setImageUrl(null);
               setAddModalVisible(true);
             }}
           >
@@ -165,8 +252,17 @@ const PromotionManagement: React.FC = () => {
           </Button>
         </div>
 
+        {/* ช่องค้นหา */}
+        <Input.Search
+          placeholder="ค้นหาชื่อ / รายละเอียดโปรโมชั่น"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{ marginBottom: 16, maxWidth: 400 }}
+          allowClear
+        />
+
         {/* Table */}
-        <Table columns={columns} dataSource={promotions} rowKey="id" />
+        <Table columns={columns} dataSource={filteredPromotions} rowKey="id" />
 
         {/* Modal เพิ่มโปรโมชั่น */}
         <Modal
@@ -178,32 +274,51 @@ const PromotionManagement: React.FC = () => {
           cancelText="ยกเลิก"
         >
           <Form form={form} layout="vertical">
+            {/* อัปโหลดรูปภาพ */}
+            <Form.Item label="รูปภาพโปรโมชั่น" name="PromoImage">
+              <Upload
+                listType="picture-card"
+                showUploadList={false}
+                beforeUpload={() => false}
+                onChange={handleImageChange}
+                accept="image/*"
+              >
+                {imageUrl ? (
+                  <img src={imageUrl} alt="promotion" style={{ width: "100%" }} />
+                ) : (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>อัปโหลด</div>
+                  </div>
+                )}
+              </Upload>
+            </Form.Item>
             <Form.Item
-              name="code"
-              label="รหัสโปรโมชั่น"
+              name="PromotionName"
+              label="ชื่อโปรโมชั่น"
               rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
             <Form.Item
-              name="description"
+              name="Description"
               label="รายละเอียด"
               rules={[{ required: true }]}
             >
               <Input.TextArea />
             </Form.Item>
             <Form.Item
-              name="discountType"
+              name="DiscountTypeID"
               label="ประเภท"
               rules={[{ required: true }]}
             >
               <Select>
-                <Select.Option value="เปอร์เซ็นต์">เปอร์เซ็นต์</Select.Option>
-                <Select.Option value="จำนวนเงิน">จำนวนเงิน</Select.Option>
+                <Select.Option value={1}>เปอร์เซ็นต์</Select.Option>
+                <Select.Option value={2}>จำนวนเงิน</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item
-              name="discount"
+              name="DiscountValue"
               label="ส่วนลด"
               rules={[{ required: true }]}
             >
@@ -216,7 +331,18 @@ const PromotionManagement: React.FC = () => {
             >
               <DatePicker.RangePicker />
             </Form.Item>
-
+            {/* ช่องกำหนดสถานะ */}
+            <Form.Item
+              name="Status"
+              label="สถานะ"
+              rules={[{ required: true }]}
+              initialValue="ใช้งาน"
+            >
+              <Select>
+                <Select.Option value="ใช้งาน">ใช้งาน</Select.Option>
+                <Select.Option value="ไม่ใช้งาน">ไม่ใช้งาน</Select.Option>
+              </Select>
+            </Form.Item>
             {/* เงื่อนไข */}
             <Form.List name="conditions">
               {(fields, { add, remove }) => (
@@ -229,7 +355,7 @@ const PromotionManagement: React.FC = () => {
                     >
                       <Form.Item
                         {...restField}
-                        name={[name, "type"]}
+                        name={[name, "ConditionType"]}
                         rules={[{ required: true }]}
                       >
                         <Select placeholder="ประเภทเงื่อนไข">
@@ -246,18 +372,7 @@ const PromotionManagement: React.FC = () => {
                       </Form.Item>
                       <Form.Item
                         {...restField}
-                        name={[name, "operator"]}
-                        rules={[{ required: true }]}
-                      >
-                        <Select placeholder="Operator">
-                          <Select.Option value=">=">{">="}</Select.Option>
-                          <Select.Option value="<=">{"<="}</Select.Option>
-                          <Select.Option value="=">{"="}</Select.Option>
-                        </Select>
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, "value"]}
+                        name={[name, "Value"]}
                         rules={[{ required: true }]}
                       >
                         <Input placeholder="ค่า" />
@@ -286,32 +401,51 @@ const PromotionManagement: React.FC = () => {
           cancelText="ยกเลิก"
         >
           <Form form={form} layout="vertical">
+            {/* อัปโหลดรูปภาพ */}
+            <Form.Item label="รูปภาพโปรโมชั่น" name="PromoImage">
+              <Upload
+                listType="picture-card"
+                showUploadList={false}
+                beforeUpload={() => false}
+                onChange={handleImageChange}
+                accept="image/*"
+              >
+                {imageUrl ? (
+                  <img src={imageUrl} alt="promotion" style={{ width: "100%" }} />
+                ) : (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>อัปโหลด</div>
+                  </div>
+                )}
+              </Upload>
+            </Form.Item>
             <Form.Item
-              name="code"
-              label="รหัสโปรโมชั่น"
+              name="PromotionName"
+              label="ชื่อโปรโมชั่น"
               rules={[{ required: true }]}
             >
               <Input />
             </Form.Item>
             <Form.Item
-              name="description"
+              name="Description"
               label="รายละเอียด"
               rules={[{ required: true }]}
             >
               <Input.TextArea />
             </Form.Item>
             <Form.Item
-              name="discountType"
+              name="DiscountTypeID"
               label="ประเภท"
               rules={[{ required: true }]}
             >
               <Select>
-                <Select.Option value="เปอร์เซ็นต์">เปอร์เซ็นต์</Select.Option>
-                <Select.Option value="จำนวนเงิน">จำนวนเงิน</Select.Option>
+                <Select.Option value={1}>เปอร์เซ็นต์</Select.Option>
+                <Select.Option value={2}>จำนวนเงิน</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item
-              name="discount"
+              name="DiscountValue"
               label="ส่วนลด"
               rules={[{ required: true }]}
             >
@@ -324,7 +458,17 @@ const PromotionManagement: React.FC = () => {
             >
               <DatePicker.RangePicker />
             </Form.Item>
-
+            {/* ช่องกำหนดสถานะ */}
+            <Form.Item
+              name="Status"
+              label="สถานะ"
+              rules={[{ required: true }]}
+            >
+              <Select>
+                <Select.Option value="ใช้งาน">ใช้งาน</Select.Option>
+                <Select.Option value="ไม่ใช้งาน">ไม่ใช้งาน</Select.Option>
+              </Select>
+            </Form.Item>
             <Form.List name="conditions">
               {(fields, { add, remove }) => (
                 <>
@@ -336,7 +480,7 @@ const PromotionManagement: React.FC = () => {
                     >
                       <Form.Item
                         {...restField}
-                        name={[name, "type"]}
+                        name={[name, "ConditionType"]}
                         rules={[{ required: true }]}
                       >
                         <Select placeholder="ประเภทเงื่อนไข">
@@ -353,18 +497,7 @@ const PromotionManagement: React.FC = () => {
                       </Form.Item>
                       <Form.Item
                         {...restField}
-                        name={[name, "operator"]}
-                        rules={[{ required: true }]}
-                      >
-                        <Select placeholder="Operator">
-                          <Select.Option value=">=">{">="}</Select.Option>
-                          <Select.Option value="<=">{"<="}</Select.Option>
-                          <Select.Option value="=">{"="}</Select.Option>
-                        </Select>
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, "value"]}
+                        name={[name, "Value"]}
                         rules={[{ required: true }]}
                       >
                         <Input placeholder="ค่า" />

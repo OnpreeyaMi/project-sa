@@ -22,7 +22,7 @@ export default function LeafletMap({ position, setPosition }: MapProps) {
     <MapContainer
       center={[position.lat, position.lng]}
       zoom={15}
-      style={{ width: "100%", height: "190px", marginBottom: "16px" }}
+      style={{ width: "100%", height: "400px", marginBottom: "16px" }}
       scrollWheelZoom={true}
     >
       <TileLayer
