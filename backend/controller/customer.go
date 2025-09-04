@@ -1,0 +1,163 @@
+package controller
+
+import (
+	"net/http"
+	"fmt"
+	"github.com/OnpreeyaMi/project-sa/config"
+	"github.com/OnpreeyaMi/project-sa/entity"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// -------------------- CREATE --------------------
+type CustomerCreatePayload struct {
+	FirstName string `json:"firstName" binding:"required"`
+	LastName  string `json:"lastName" binding:"required"`
+	Phone     string `json:"phone" binding:"required"`
+	GenderID  uint   `json:"genderId" binding:"required"`
+	Email     string `json:"email" binding:"required"`
+	Password  string `json:"password" binding:"required"`
+}
+
+func CreateCustomer(c *gin.Context) {
+	var payload CustomerCreatePayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), 14)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		return
+	}
+
+	user := entity.User{
+		Email:    payload.Email,
+		Password: string(hashedPassword),
+		Status:   "active",
+		RoleID:   1, // ให้เป็น Role ลูกค้าอัตโนมัติ
+	}
+	if err := config.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	customer := entity.Customer{
+		FirstName:   payload.FirstName,
+		LastName:    payload.LastName,
+		PhoneNumber: payload.Phone,
+		IsVerified:  false,
+		GenderID:    payload.GenderID,
+		UserID:      user.ID,
+	}
+
+	if err := config.DB.Create(&customer).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Preload User + Gender
+	var createdCustomer entity.Customer
+	config.DB.Preload("User").Preload("Gender").First(&createdCustomer, customer.ID)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Customer created successfully",
+		"data":    createdCustomer,
+	})
+}
+
+// -------------------- READ --------------------
+func GetCustomers(c *gin.Context) {
+	var customers []entity.Customer
+	if err := config.DB.Preload("User").Preload("Gender").Find(&customers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, customers)
+}
+
+func GetCustomerByID(c *gin.Context) {
+	id := c.Param("id")
+	var customer entity.Customer
+	if err := config.DB.Preload("User").Preload("Gender").First(&customer, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	// debug print
+	fmt.Printf("Customer: %s %s, Gender: %+v, Email: %s\n",
+		customer.FirstName, customer.LastName, customer.Gender, customer.User.Email)
+
+	c.JSON(http.StatusOK, customer)
+}
+
+
+// -------------------- UPDATE --------------------
+type CustomerUpdatePayload struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Phone     string `json:"phone"`
+	GenderID  uint   `json:"genderId"`
+}
+
+func UpdateCustomer(c *gin.Context) {
+	id := c.Param("id")
+	var customer entity.Customer
+
+	if err := config.DB.First(&customer, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	var payload CustomerUpdatePayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	customer.FirstName = payload.FirstName
+	customer.LastName = payload.LastName
+	customer.PhoneNumber = payload.Phone
+	customer.GenderID = payload.GenderID
+
+	if err := config.DB.Save(&customer).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Preload User + Gender
+	var updatedCustomer entity.Customer
+	if err := config.DB.Preload("User").Preload("Gender").First(&updatedCustomer, customer.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Customer updated successfully",
+		"data":    updatedCustomer,
+	})
+}
+
+// -------------------- DELETE --------------------
+func DeleteCustomer(c *gin.Context) {
+	id := c.Param("id")
+	var customer entity.Customer
+
+	if err := config.DB.First(&customer, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	// ลบทั้ง Customer และ User ที่เกี่ยวข้อง
+	if err := config.DB.Delete(&customer).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if err := config.DB.Delete(&entity.User{}, customer.UserID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Customer deleted successfully"})
+}

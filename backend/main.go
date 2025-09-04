@@ -50,7 +50,12 @@ import (
 	"fmt"
 
 	"github.com/OnpreeyaMi/project-sa/config"
+    "github.com/gin-gonic/gin"
+    "github.com/OnpreeyaMi/project-sa/controller"
+
+	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/controller"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
