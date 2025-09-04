@@ -19,5 +19,3 @@ type HistoryComplain struct {
     ComplaintID uint
     Complaint   *Complaint `gorm:"foreignKey:ComplaintID;references:ID"`
 }
-
-
