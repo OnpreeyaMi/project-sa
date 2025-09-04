@@ -16,6 +16,7 @@ import OrderDetail from "./pages/LaundryProcess/OrderDetail";
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
 import StockEmpPage from "./pages/stock/employee/index";
 import StatusPage from "./pages/LaundryProcess/StatusPage";
+import OrderPage from "./pages/orders/create/index";
 
 {
   /* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */
@@ -59,7 +60,7 @@ const App: React.FC = () => {
 
         {/* Customer routes */}
         <Route path="/customer">
-          <Route path="profile" element={<Profile />} />
+          <Route path="orders" element={<OrderPage/>} />
           {/* เพิ่ม route อื่นของ customer ได้ที่นี่ */}
         </Route>
       </Routes>

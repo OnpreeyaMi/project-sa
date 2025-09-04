@@ -12,7 +12,7 @@ const StatusUpdate: React.FC = () => {
   
 
 useEffect(() => {
-  fetch("http://localhost:8080/ordersdetails")
+  fetch("http://localhost:8000/ordersdetails")
     .then(res => res.json())
     .then(data => {
       setOrders(data);  // จะได้ array ของ order + status
