@@ -10,7 +10,7 @@ type Order struct {
 	Customer   			*Customer `gorm:"foreignKey:CustomerID;"`
 
 	ServiceTypes   		[]*ServiceType `gorm:"many2many:OrderServiceType;"`
-	Detergents 			[]*Detergent `gorm:"many2many:OrderDetergents;"`
+	Detergents 			[]*Detergent `gorm:"many2many:OrderDetergent;"`
 	OrderImage 			string
 	OrderNote 			string
 	LaundryProcesses 	[]*LaundryProcess `gorm:"many2many:OrderProcess;"`
