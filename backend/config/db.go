@@ -135,6 +135,71 @@ func MockData() {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
+
+	// --- Mock Detergent ---
+	detergents := []entity.Detergent{
+		{
+			Name:  "น้ำยาซักเหลว",
+			Type:  "Liquid",
+			InStock: 100,
+			// UserID: 1,
+			CategoryID: 1,
+		},
+		{
+			Name:  "ผงซักฟอก",
+			Type:  "Powder",
+			InStock: 50,
+			// UserID: 1,
+			CategoryID: 2,
+		},
+		{
+			Name:  "น้ำยาซักสูตรพิเศษ",
+			Type:  "Liquid",
+			InStock: 30,
+			// UserID: 2,
+			UserID: 2,
+			CategoryID: 1,
+		},
+		{
+			Name:  "ผงซักฟอกสูตรเข้มข้น",
+			Type:  "Powder",
+			InStock: 20,
+			// UserID: 2,
+			CategoryID: 2,
+		},
+	}
+	for _, d := range detergents {
+		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
+	}
+
+	// --- Mock DetergentCategory ---
+	categories := []entity.DetergentCategory{
+		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
+		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
+	}
+
+	for _, c := range categories {
+		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
+	}
+
+	// --- Mock Payments ---
+	// payments := []entity.Payment{
+	// 	{Bill: 1, PaymentType: "Credit Card", CreatedAtTime: "2025-08-20 10:00", CheckPayment: true, OrderID: 1, StatusPayment: "Paid", Price: 150, TotalAmount: 150},
+	// 	{Bill: 2, PaymentType: "Cash", CreatedAtTime: "2025-08-21 14:00", CheckPayment: false, OrderID: 2, StatusPayment: "Unpaid", Price: 240, TotalAmount: 240},
+	// }
+	// for _, p := range payments {
+	// 	DB.FirstOrCreate(&p, entity.Payment{Bill: p.Bill})
+	// }
+
+	// --- Mock LaundryProcess ---
+	// processes := []entity.Process{
+	// 	{Step: "Washing", StartTime: 9.00, EndTime: 10.00, OrderID: 1, ServiceID: 1, MachineID: 101},
+	// 	{Step: "Drying", StartTime: 10.15, EndTime: 11.00, OrderID: 1, ServiceID: 1, MachineID: 202},
+	// }
+	// for _, lp := range processes {
+	// 	DB.Create(&lp)
+	// }
+	fmt.Println("Mock data added successfully!")
 	// --- Mock Orders ---
 	orders := []entity.Order{
 		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
