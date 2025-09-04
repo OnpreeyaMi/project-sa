@@ -1,21 +1,25 @@
 package entity
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type User struct {
 	gorm.Model
-	Email    string `gorm:"uniqueIndex" json:"email"`
-	Password string `json:"password"` // ส่งกลับ “ค่าแฮช”
-	Status   string `json:"status"`
+	Email    string
+	Password string
+	Status   string
 
-	RoleID uint  `json:"roleId"`
-	Role   *Role `gorm:"foreignKey:RoleID" json:"Role,omitempty"`
+	RoleID uint
+	Role *Role `gorm:"foreignKey:RoleID"`
 
-	CustomerID         uint            `json:"customerId"`
-	Customers          []*Customer     `gorm:"foreignKey:UserID;references:ID" json:"-"`
+	CustomerID uint
+	Customers []*Customer `gorm:"foreignKey:UserID;references:ID"`
 
-	PurchaseDetergent  uint                 `json:"-"`
-	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:UserID;references:ID" json:"-"`
+	PurchaseDetergent uint
+	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:UserID;references:ID"`
+	
+	
+	Employee *Employee `gorm:"foreignKey:UserID"`
 
-	Employee *Employee `gorm:"foreignKey:UserID" json:"Employee,omitempty"`
 }

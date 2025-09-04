@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/controller"
-	"github.com/gin-gonic/gin"
+    "github.com/gin-gonic/gin"
+    "github.com/OnpreeyaMi/project-sa/controller"
+
 )
 
 const port = 8080
-
 func main() {
 	config.ConnectDatabase()
 	config.SetupDatabase()

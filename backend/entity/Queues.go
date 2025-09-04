@@ -17,9 +17,9 @@ type Queue struct {
 	OrderID uint
 	Order *Order `gorm:"foreignKey:OrderID"`
 
-	Queueassignment *QueueAssignment `gorm:"foreignKey:QueueID"`
+	QueueAssignment *QueueAssignment `gorm:"foreignKey:QueueID"`
 
-	Queuehistory []*QueueHistory `gorm:"foreignKey:QueueID"`
+	QueueHistory []*QueueHistory `gorm:"foreignKey:QueueID"`
 	
 	
 }
