@@ -30,7 +30,7 @@ const columns = [
     key: "payment_status",
     render: (payment_status: string) => {
       if (!payment_status) return "-";
-      let color = payment_status === "ชำระเงินแล้ว" ? "green" : "orange";
+      const color = payment_status === "ชำระเงินแล้ว" ? "green" : "orange";
       return <Tag color={color}>{payment_status}</Tag>;
     },
   },

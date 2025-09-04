@@ -53,13 +53,10 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/OnpreeyaMi/project-sa/controller"
 
-	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/controller"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	
 )
 
-const port = 8080
+const port = 8000
 
 func main() {
 	config.ConnectDatabase()
@@ -71,13 +68,13 @@ func main() {
 	// ตัวอย่าง route อื่น
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
-	router.GET("/addresses", controller.GetAddresses)
-	router.GET("/customers/:id", controller.GetCustomerByID)
+	// router.GET("/addresses", controller.GetAddresses)
+
 	
-	router.POST("/detergents", controller.CreateDetergent)
-	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
-	router.GET("/detergents", controller.GetDetergents)
-	router.DELETE("/detergents/:id", controller.DeleteDetergent)
+	// router.POST("/detergents", controller.CreateDetergent)
+	// router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	// router.GET("/detergents", controller.GetDetergents)
+	// router.DELETE("/detergents/:id", controller.DeleteDetergent)
 
 	
 
@@ -96,6 +93,13 @@ func main() {
     router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
+
+	// Customer
+	router.POST("/customers", controller.CreateCustomer) // สร้างลูกค้า
+	router.GET("/customers", controller.GetCustomers)    // ดึงลูกค้าทั้งหมด		
+	router.PUT("/customers/:id", controller.UpdateCustomer) // แก้ไขลูกค้า
+	router.DELETE("/customers/:id", controller.DeleteCustomer) // ลบลูกค้า
+	router.GET("/customers/:id", controller.GetCustomerByID) // ดึงลูกค้าตาม ID
 
     // Machine
     router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
