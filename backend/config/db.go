@@ -166,7 +166,7 @@ func MockData() {
 		},
 	}
 	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
+		DB.FirstOrCreate(&d, entity.Detergent{Type: d.Type})
 	}
 
 	// --- Mock DetergentCategory ---
@@ -178,6 +178,15 @@ func MockData() {
 	for _, c := range categories {
 		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
+
+	// --- Mock Orders ---
+	// orders := []entity.Order{
+	// 	{OrderID: "ORD001", OrderDate: "2025-08-20", Status: "Completed", CustomerID: 1, AddressID: 1, ServiceID: 1},
+	// 	{OrderID: "ORD002", OrderDate: "2025-08-21", Status: "Pending", CustomerID: 2, AddressID: 2, ServiceID: 2},
+	// }
+	// for _, o := range orders {
+	// 	DB.FirstOrCreate(&o, entity.Order{OrderNo: o.OrderNo})
+	// }
 
 	// --- Mock Payments ---
 	// payments := []entity.Payment{
@@ -196,6 +205,16 @@ func MockData() {
 	// for _, lp := range processes {
 	// 	DB.Create(&lp)
 	// }
+
+	// // --- Mock History ---
+	// histories := []entity.OrderHistory{
+	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
+	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
+	// }
+	// for _, h := range histories {
+	// 	DB.Create(&h)
+	// }
+
 	fmt.Println("Mock data added successfully!")
 	// --- Mock Orders ---
 	orders := []entity.Order{
