@@ -27,6 +27,8 @@ const App: React.FC = () => {
             <Route path="/employee/profile" element={<StatusPage />} />
             
             </Routes>
+           
+            
       {/* <Background activeTab={activeTab} setActiveTab={setActiveTab} /> */}
       {/* <AdminSidebar></AdminSidebar> */}
       {/* <EmpSidebar></EmpSidebar> */}
