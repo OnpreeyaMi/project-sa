@@ -1,6 +1,6 @@
 import type{ OrderService ,ServiceType, Detergent, OrderHistory} from "../interfaces/types";
 import axios from "axios";
-const API_BASE = "http://localhost:8080"; // ปรับตาม backend ของคุณ
+const API_BASE = "http://localhost:8000"; // ปรับตาม backend ของคุณ
 
 // ดึงรายการ ServiceType จาก backend
 export const fetchServiceTypes = async (): Promise<ServiceType[]> => {
@@ -33,6 +33,6 @@ export const createOrder = async (orderData: OrderService) => {
 };
 // ดึงประวัติการสั่งซื้อทั้งหมด
 export const fetchOrderHistories = async (): Promise<OrderHistory[]> => {
-  const res = await axios.get("http://localhost:8080/order-histories");
+  const res = await axios.get("http://localhost:8000/order-histories");
   return res.data;
 };

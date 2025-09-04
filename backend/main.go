@@ -28,6 +28,36 @@ func main() {
 	router.PUT("/employees/:id", controller.UpdateEmployee)
 	router.DELETE("/employees/:id", controller.DeleteEmployee)
 
+	// Laundry Process
+    router.POST("/laundry-process", controller.CreateLaundryProcess)      // บันทึก process ใหม่
+    router.GET("/laundry-processes", controller.GetLaundryProcesses)      // ดึงทั้งหมด
+    router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess) //  ดึงล่าสุด
+    router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)    // อัปเดตสถานะ
+    router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
+	router.GET("/orders/:id", controller.GetOrderByID)
+	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
+
+	// Customer
+	router.POST("/customers", controller.CreateCustomer) // สร้างลูกค้า
+	router.GET("/customers", controller.GetCustomers)    // ดึงลูกค้าทั้งหมด		
+	router.PUT("/customers/:id", controller.UpdateCustomer) // แก้ไขลูกค้า
+	router.DELETE("/customers/:id", controller.DeleteCustomer) // ลบลูกค้า
+	router.GET("/customers/:id", controller.GetCustomerByID) // ดึงลูกค้าตาม ID
+	
+	// LaundryCheck
+	router.POST("/laundry-checks", controller.CreateLaundryCheck)
+	router.POST("/laundry-checks/:id/items", controller.AddLaundryItems)
+	router.GET("/laundry-check/orders", controller.ListLaundryOrders)
+	router.GET("/laundry-check/orders/:id", controller.GetLaundryOrderDetail)
+	router.GET("/clothtypes", controller.ListClothTypes)
+	router.GET("/servicetypes", controller.ListServiceTypes)
+	router.GET("/laundry-check/customers", controller.GetLaundryCustomers)
+
+	
+    // Machine
+    router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
+
+	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
 }
 
