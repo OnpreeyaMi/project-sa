@@ -19,6 +19,7 @@ import ComplaintAdminPage from "./pages/complaint/complaintReply";
 import OrderPage from "./pages/orders/create";
 import HistoryPage from "./pages/orders/history";
 import StockAdminPage from "./pages/stock/Admin";
+import CustomerHomePage from "./pages/Home/CustomerHome";
 
 const App: React.FC = () => {
 
@@ -56,6 +57,7 @@ const App: React.FC = () => {
           <Route path="payment" element={<Payment />} />
           <Route path="orders" element={<OrderPage />} />
           <Route path="history" element={<HistoryPage />} />
+          <Route path="home" element={<CustomerHomePage/>}/>
         </Route>
     </Routes>
 

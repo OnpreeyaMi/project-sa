@@ -13,7 +13,7 @@ import (
 func CreateOrder(c *gin.Context) {
 	var req struct {
 		CustomerID     uint   `json:"customer_id"`
-		ServicetypeIDs []uint `json:"servicetype_ids"`
+		ServiceTypeIDs []uint `json:"servicetype_ids"`
 		DetergentIDs   []uint `json:"detergent_ids"`
 		OrderImage     string `json:"order_image"`
 		OrderNote      string `json:"order_note"`
@@ -64,6 +64,11 @@ func CreateOrder(c *gin.Context) {
 		if err := config.DB.Find(&addresses, req.AddressIDs).Error; err == nil {
 			config.DB.Model(&order).Association("Address").Append(addresses)
 		}
+	}
+	// history เริ่มต้น
+	history := entity.OrderHistory{
+		OrderID: order.ID,
+		Status:  "Pending",
 	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
