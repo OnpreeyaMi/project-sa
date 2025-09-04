@@ -10,9 +10,6 @@ import {
 } from '@ant-design/icons';
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-import { LiaUserCogSolid } from "react-icons/lia";
-import { TbSettings } from "react-icons/tb";
-import { RiUserVoiceFill } from "react-icons/ri";
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
@@ -94,27 +91,12 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
         <Menu
           style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          defaultSelectedKeys={['1']}
-          onClick={({ key }) => {
-            if (key === '7') {
-              navigate('/complaint/reply');
-            }
           selectedKeys={[location.pathname]} // ✅ highlight ตาม path ปัจจุบัน
           items={menuItems}
           onClick={({ key }) => {
             const selected = menuItems.find(item => item.key === key);
             if (selected?.onClick) selected.onClick();
           }}
-          items={[
-            { key: '1', icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>},
-            { key: '2', icon: <IoNewspaper style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span> },
-            { key: '3', icon: <MdLocalLaundryService  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>สถานะ</span> },
-            { key: '4', icon: <TbTruckDelivery  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span> },
-            { key: '5', icon: <IoStorefrontSharp  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>คลัง</span> },
-            { key: '6', icon: <FaUserCircle  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span> },
-            { key: '7', icon: <RiUserVoiceFill   style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>ตอบกลับข้อร้องเรียน</span> },
-            
-          ]}
         />
         
       </Sider>

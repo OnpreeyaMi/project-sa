@@ -21,6 +21,7 @@ func ConnectDatabase() {
 
 func SetupDatabase() {
 	// สร้างตารางตามโมเดล (ไม่มีการใส่ mock data)
+	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
 		&entity.ClothType{},
