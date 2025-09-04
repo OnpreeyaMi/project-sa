@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
-import { LiaUserCogSolid } from "react-icons/lia";
-import { RiUserSmileFill } from "react-icons/ri";
-import { HiSpeakerphone } from "react-icons/hi";
-import { RiArchive2Fill } from "react-icons/ri";
 import { FaHome,FaUserFriends } from "react-icons/fa";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { Button, Col, Layout, Menu, theme } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom'; // ✅ นำเข้า
 import iconWashing from '../../../assets/iconwashing.png';
-
+import { LiaUserCogSolid } from "react-icons/lia";
+import { TbSettings } from "react-icons/tb";
 const { Header, Sider, Content } = Layout;
 
 interface SidebarProps {
@@ -20,46 +16,9 @@ interface SidebarProps {
 
 const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate(); // ✅ ใช้งาน useNavigate
-  const location = useLocation(); // ✅ ใช้งาน useLocation
-
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-
-
-  const menuItems = [
-    {
-      key: "/admin/dashboard",
-      icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-      onClick: () => navigate("/admin/dashboard"),
-    },
-    {
-      key: "/admin/employees",
-      icon: <LiaUserCogSolid style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>พนักงาน</span>,
-      onClick: () => navigate("/admin/employees"),
-    },
-    {
-      key: "/admin/customers",
-      icon: <RiUserSmileFill style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>ข้อมูลลูกค้า</span>,
-      onClick: () => navigate("/admin/customers"),
-    },
-        {
-      key: "/admin/promotions",
-      icon: <HiSpeakerphone style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>โปรโมชั่น</span>,
-      onClick: () => navigate("/admin/promotions"),
-    },
-        {
-      key: "/admin/detergents",
-      icon: <RiArchive2Fill style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>อุปกรณ์</span>,
-      onClick: () => navigate("/admin/detergents"),
-    },
-  ];
 
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
@@ -76,31 +35,34 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
         }}
       >
         <div className="demo-logo-vertical" />
-        {!collapsed && (
-          <Col style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+         {!collapsed && (
+          <Col style={{ marginBottom: '20px',display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={iconWashing} alt="Washing Icon" width={100} height={100} />
             <h1
-              style={{
-                color: "white",
-                margin: "-5px",
-                fontSize: "18px",
-                textAlign: "center",
-              }}
-            >
-              NEATII.
-            </h1>
-          </Col>
+            style={{
+              color: "white",
+              margin: "-5px",
+              fontSize: "18px",
+              textAlign: "center",
+            }}
+          >
+            Admin
+    
+          </h1>
+        </Col>
+          
+          
         )}
-
         <Menu
-          style={{ backgroundColor: '#0E4587', color: 'white' }}
+        //   theme="#0E4587"
+          style={{ backgroundColor: '#0E4587', color: 'white' }}  
           mode="inline"
-          selectedKeys={[location.pathname]} // ✅ highlight ตาม path ปัจจุบัน
-          items={menuItems}
-          onClick={({ key }) => {
-            const selected = menuItems.find(item => item.key === key);
-            if (selected?.onClick) selected.onClick();
-          }}
+          defaultSelectedKeys={['1']}
+          items={[
+            { key: '1', icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>},
+            { key: '2', icon: <LiaUserCogSolid  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>พนังงาน</span> },
+            { key: '3', icon: <TbSettings  style={{fontSize: "18px" , color: "#6da3d3"}}/>, label: <span style={{ color: '#6da3d3' }}>จัดการสิทธิ์</span> },
+          ]}
         />
       </Sider>
 

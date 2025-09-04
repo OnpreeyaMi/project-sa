@@ -4,7 +4,6 @@ import type { DescriptionsProps } from 'antd';
 import CustomerSidebar from "../../component/layout/customer/CusSidebar";
 
 const { Step } = Steps;
-
 const { Title, Text } = Typography;
 
 const OrderStatusPage: React.FC = () => {

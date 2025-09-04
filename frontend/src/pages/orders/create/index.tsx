@@ -137,7 +137,7 @@ const OrderPage: React.FC = () => {
                   style={{
                     width: "100%",
                     maxWidth: "200px",
-                    height: 215,
+                    height: 'auto',
                     textAlign: "center",
                     borderRadius: 8,
                     background: selectedDryer === null ? "#F9FBFF" : "#D9D9D9",

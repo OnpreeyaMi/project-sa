@@ -1,3 +1,239 @@
+// import React, { useState } from "react";
+// import EmpSidebar from "../../../component/layout/admin/AdminSidebar";
+// import { Card, Row, Typography, Button, Table, Space, Popconfirm, Modal } from "antd";
+
+// const { Title, Text } = Typography;
+
+// const StockAdminPage: React.FC = () => {
+//   const [stockData, setStockData] = useState([
+//     {
+//       key: 1,
+//       name: "น้ำยาซักผ้า",
+//       quantity: 50,
+//       type: "detergent",
+//       lastUpdated: "2025-08-06T12:00:00Z",
+//       editor: "พนักงาน 1",
+//     },
+//     {
+//       key: 2,
+//       name: "น้ำยาปรับผ้านุ่ม",
+//       quantity: 30,
+//       type: "softener",
+//       lastUpdated: "2025-08-05T10:30:00Z",
+//       editor: "พนักงาน 2",
+//     },
+//     {
+//       key: 3,
+//       name: "น้ำยาอบผ้า",
+//       quantity: 20,
+//       type: "drying",
+//       lastUpdated: "2025-08-04T09:15:00Z",
+//       editor: "พนักงาน 3",
+//     },
+//     {
+//       key: 4,
+//       name: "น้ำยาปรับผ้านุ่ม",
+//       quantity: 0,
+//       type: "softener",
+//       lastUpdated: "2025-08-03T08:45:00Z",
+//       editor: "พนักงาน 4",
+//     },
+//   ]);
+
+//   // const handleQuantityChange = (value: number | null, recordKey: number) => {
+//   //   if (value === null) return;
+//   //   const updatedData = stockData.map((item) =>
+//   //     item.key === recordKey
+//   //       ? {
+//   //           ...item,
+//   //           quantity: value,
+//   //           lastUpdated: new Date().toISOString(),
+//   //           editor: "พนักงานที่แก้ไข",
+//   //         }
+//   //       : item
+//   //   );
+//   //   setStockData(updatedData);
+//   // };
+//   //const { handle}
+//   const handleDelete = (recordKey: number) => {
+//     setStockData(stockData.filter((item) => item.key !== recordKey));
+//   };
+
+//   const columns = [
+//     {
+//       title: "ลําดับ",
+//       dataIndex: "key",
+//       key: "key",
+//     },
+//     {
+//       title: "ชื่อสินค้า",
+//       dataIndex: "name",
+//       key: "name",
+//     },
+//     {
+//       title: "ประเภท",
+//       dataIndex: "type",
+//       key: "type",
+//       render: (type: string) => {
+//         let color = type === "detergent" ? "blue" : type === "drying" ? "green" : "orange";
+//         return <Text style={{ color }}>{type}</Text>;
+//       },
+//     },
+//     {
+//       title: "จำนวนคงเหลือ",
+//       dataIndex: "quantity",
+//       key: "quantity",
+//       render: (quantity: number, record: any, index: number) => (
+//         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+//           <Text>
+//             {quantity}{" "}
+//             {quantity < 10 && quantity > 0 && (
+//               <Text type="danger" style={{ marginLeft: 8 }}>
+//                 ใกล้หมด
+//               </Text>
+//             )}
+//             {quantity === 0 && (
+//               <Text type="danger" style={{ marginLeft: 8 }}>
+//                 หมดแล้ว
+//               </Text>
+//             )}
+//           </Text>
+//           <Button
+//             type="primary"
+//             danger
+//             disabled={quantity <= 0}
+//             onClick={() => {
+//               // ลดจำนวนลง 1
+//               const newQuantity = quantity - 1;
+
+//               // อัปเดต state ของ table
+//               const updatedData = [...stockData];
+//               updatedData[index].quantity = newQuantity;
+//               updatedData[index].editor = "currentUserName"; // สมมติคุณเก็บชื่อผู้แก้ไขใน state
+//               updatedData[index].lastUpdated = new Date().toISOString();
+//               setStockData(updatedData);
+//             }}
+//           >
+//             -
+//           </Button>
+//         </div>
+//       ),
+//     },
+//     {
+//       title: "วันที่แก้ไขล่าสุด",
+//       dataIndex: "lastUpdated",
+//       key: "lastUpdated",
+//       render: (lastUpdated: string) =>
+//         new Date(lastUpdated).toLocaleDateString("th-TH", {
+//           year: "numeric",
+//           month: "2-digit",
+//           day: "2-digit",
+//         }),
+//     },
+//     {
+//       title: "ผู้แก้ไข",
+//       dataIndex: "editor",
+//       key: "editor",
+//       render: (editor: string, record: any) => (
+//         <Space>
+//           <Text>{editor}</Text>
+//           <Popconfirm
+//             title="คุณแน่ใจหรือไม่ที่จะลบสินค้า?"
+//             onConfirm={() => handleDelete(record.key)}
+//             okText="ใช่"
+//             cancelText="ยกเลิก"
+//           >
+//             <Button type="link" danger>
+//               ลบ
+//             </Button>
+//           </Popconfirm>
+//         </Space>
+//       ),
+//     },
+//   ];
+
+//   return (
+//     <EmpSidebar>
+//       <Title level={4} style={{ textAlign: "center", marginTop: 30, marginBottom: 30 }}>
+//         สินค้าที่มีอยู่ในสต็อก
+//       </Title>
+
+//       <Row gutter={[16, 16]} justify="center" style={{ marginBottom: 20 }}>
+//         <Card
+//           style={{
+//             width: "100%",
+//             maxWidth: "400px",
+//             height: "100%",
+//             maxHeight: "300px",
+//             margin: 20,
+//             backgroundColor: "#F9FBFF",
+//           }}
+//         >
+//           <Text style={{ display: "block", textAlign: "center", fontSize: 50, fontWeight: "bold" }}>
+//             30
+//           </Text>
+//           <Text type="secondary" style={{ display: "block", textAlign: "center", fontSize: 16 }}>
+//             ยอดใช้งานวันนี้
+//           </Text>
+//         </Card>
+
+//         <Card
+//           style={{
+//             width: "100%",
+//             maxWidth: "400px",
+//             maxHeight: "300px",
+//             height: "100%",
+//             margin: 20,
+//             backgroundColor: "#F9FBFF",
+//           }}
+//         >
+//           <Text style={{ display: "block", textAlign: "center", fontSize: 50, fontWeight: "bold" }}>
+//             20
+//           </Text>
+//           <Text type="secondary" style={{ display: "block", textAlign: "center", fontSize: 16 }}>
+//             ยอดใช้งานเดือนนี้
+//           </Text>
+//         </Card>
+//       </Row>
+
+//       <Row justify="center" style={{ marginBottom: 20 }}>
+//         <Space>
+//           <Button type="primary" style={{ height: 40, fontSize: 16 }}>
+//             เพิ่มรายการสินค้า
+//           </Button>
+//           <Button type="primary" style={{ height: 40, fontSize: 16 }}>
+//             ซื้อสินค้า
+//           </Button>
+//         </Space>
+//       </Row>
+
+//       <Card
+//         hoverable
+//         style={{
+//           width: "100%",
+//           height: "auto",
+//           textAlign: "center",
+//           borderRadius: 8,
+//           background: "#F9FBFF",
+//         }}
+//       >
+//         <Table
+//           columns={columns}
+//           dataSource={stockData}
+//           pagination={{ pageSize: 5 }}
+//           style={{ margin: "0 auto", width: "80%" }}
+//         />
+//       </Card>
+
+//       <Modal title="เพิ่มรายการสินค้า" visible={false} onCancel={() => {}} footer={null}>
+//         {/* ฟอร์มเพิ่มรายการสินค้า */}
+//       </Modal>
+//     </EmpSidebar>
+//   );
+// };
+
+// export default StockAdminPage;
+
 import React, { useState } from "react";
 import EmpSidebar from "../../../component/layout/admin/AdminSidebar";
 import {
