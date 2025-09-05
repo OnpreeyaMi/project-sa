@@ -8,7 +8,6 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
-
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -34,7 +33,7 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
       key: "/employee/dashboard",
       icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-      onClick: () => navigate("/employee/dashboard"),
+      onClick: () => navigate("/employee"),
     },
     {
       key: "/employee/orders",
@@ -42,6 +41,7 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
       label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
       onClick: () => navigate("/employee/orders"),
     },
+
     {
       key: "/employee/delivery",
       icon: <TbTruckDelivery style={{ fontSize: 18, color: '#6da3d3' }} />,
@@ -138,3 +138,5 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 };
 
 export default EmployeeSidebar;
+
+

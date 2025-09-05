@@ -16,5 +16,6 @@ type SortedClothes struct {
 	SortingRecordID uint
 	SortingRecord   *SortingRecord `gorm:"foreignKey:SortingRecordID"`
 
-
+	ServiceTypeID uint
+	ServiceType   *ServiceType `gorm:"foreignKey:ServiceTypeID"`
 }

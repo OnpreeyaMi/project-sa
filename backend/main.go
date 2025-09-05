@@ -85,6 +85,15 @@ func main() {
 	router.PUT("/employees/:id", controller.UpdateEmployee)
 	router.DELETE("/employees/:id", controller.DeleteEmployee)
 
+	// LaundryCheck
+	router.POST("/laundry-checks", controller.CreateLaundryCheck)
+	router.POST("/laundry-checks/:id/items", controller.AddLaundryItems)
+	router.GET("/laundry-check/orders", controller.ListLaundryOrders)
+	router.GET("/laundry-check/orders/:id", controller.GetLaundryOrderDetail)
+	router.GET("/clothtypes", controller.ListClothTypes)
+	router.GET("/servicetypes", controller.ListServiceTypes)
+	router.GET("/laundry-check/customers", controller.GetLaundryCustomers)
+
 	// Laundry Process
     router.POST("/laundry-process", controller.CreateLaundryProcess)      // บันทึก process ใหม่
     router.GET("/laundry-processes", controller.GetLaundryProcesses)      // ดึงทั้งหมด
