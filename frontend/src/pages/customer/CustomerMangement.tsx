@@ -33,7 +33,7 @@ const CustomerManagement: React.FC = () => {
     const [orderHistoryLoading, setOrderHistoryLoading] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-    const API_URL = 'http://localhost:8080/customers'; // backend URL
+    const API_URL = 'http://localhost:8000/customers'; // backend URL
 
     // ----------------- FETCH -----------------
     const fetchCustomers = async () => {
@@ -126,7 +126,7 @@ const CustomerManagement: React.FC = () => {
         setOrderHistoryLoading(true);
         setOrderHistoryModalVisible(true);
         try {
-            const res = await axios.get(`http://localhost:8080/orders?customerId=${customer.ID}`);
+            const res = await axios.get(`http://localhost:8000/orders?customerId=${customer.ID}`);
             setOrderHistory(res.data);
         } catch (err) {
             message.error("ไม่สามารถดึงประวัติออเดอร์ได้");
