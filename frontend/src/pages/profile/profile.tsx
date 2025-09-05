@@ -168,6 +168,8 @@ const Profile: React.FC = () => {
         }
       },
     });
+    setEditPosition(addr.latlng);
+    setEditModalVisible(true);
   };
 
   // ----- ตั้งค่าเป็นที่อยู่หลัก -----
