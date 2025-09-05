@@ -80,6 +80,7 @@ func MockData() {
 	roles := []entity.Role{
 		{Role_name: "admin"},
 		{Role_name: "customer"},
+		{Role_name: "employee"},
 	}
 	for _, r := range roles {
 		DB.FirstOrCreate(&r, entity.Role{Role_name: r.Role_name})

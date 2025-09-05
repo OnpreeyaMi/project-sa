@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const port = 8080
+const port = 8000
 
 func main() {
 	// เชื่อมต่อฐานข้อมูล
@@ -39,6 +39,7 @@ func main() {
 	router.GET("/customers/:id", controller.GetCustomerByID)
 	router.PUT("/customers/:id", controller.UpdateCustomer)
 	router.DELETE("/customers/:id", controller.DeleteCustomer)
+	router.GET("/customer/profile", controller.GetCustomerProfile)
 
 	// Order routes
 	router.GET("/orders", controller.GetOrders)
