@@ -32,6 +32,8 @@ func SetupDatabase() {
 		&entity.Detergent{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
+		&entity.History{},
+		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
@@ -168,7 +170,7 @@ func MockData() {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-	// --- DetergentCategory ---
+	// --- Mock DetergentCategory ---
 	categories := []entity.DetergentCategory{
 		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
 		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
