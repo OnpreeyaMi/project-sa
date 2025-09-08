@@ -2,11 +2,11 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
 	"github.com/gin-gonic/gin"
-
 )
 
 // CreateOrder รับข้อมูลจาก frontend แล้วบันทึกลง DB
@@ -28,11 +28,11 @@ func CreateOrder(c *gin.Context) {
 
 	// สร้าง order object
 	order := entity.Order{
-		CustomerID:   req.CustomerID,
+		CustomerID: req.CustomerID,
 		//Servicetype: req.ServicetypeID,
 		//Detergent:   req.DetergentID,
-		OrderImage:   req.OrderImage,
-		OrderNote:    req.OrderNote,
+		OrderImage: req.OrderImage,
+		OrderNote:  req.OrderNote,
 		//AddressID:    req.AddressID,
 	}
 
@@ -68,11 +68,22 @@ func CreateOrder(c *gin.Context) {
 	// history เริ่มต้น
 	history := entity.OrderHistory{
 		OrderID: order.ID,
-		Status:  "Pending",
+		Status:  "รอดำเนินการ",
 	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
+	process := entity.LaundryProcess{
+		Status:     "รอดำเนินการ",
+		Start_time: time.Now(),
+		Order:      []*entity.Order{&order},
+	}
+	if err := config.DB.Create(&process).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
 		return
 	}
 
@@ -85,6 +96,15 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// สร้าง pickup queue ทันทีหลังสร้าง order
+    pickupQueue := entity.Queue{
+	    Queue_type: "pickup",
+	    Status:     "waiting",
+	    OrderID:    order.ID,
+    }
+    config.DB.Create(&pickupQueue)
+
+
 
 	c.JSON(http.StatusOK, order)
 }

@@ -92,6 +92,7 @@ func main() {
     router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)    // อัปเดตสถานะ
     router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
 	router.GET("/orders/:id", controller.GetOrderByID)
+	router.GET("/process/:id/order",controller.GetProcessesByOrder) // ดึง process พร้อม order
 	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
 
 	// Customer
@@ -103,6 +104,13 @@ func main() {
 
     // Machine
     router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
+
+	// Queue Routes
+	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
+	router.POST("/queues/pickup", controller.CreatePickupQueue)
+	router.POST("/queues/:id/accept", controller.AcceptQueue)
+	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
+	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))

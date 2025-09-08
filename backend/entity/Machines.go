@@ -12,6 +12,6 @@ type Machine struct {
 	Status string
 	Machine_number uint
 	//Many to Many กับ LaundryProcess
-	LaundryProcess []*LaundryProcess `gorm:"many2many:MachineProcess"`
+	LaundryProcess []*LaundryProcess `gorm:"many2many:machine_process;"`
 
 }
