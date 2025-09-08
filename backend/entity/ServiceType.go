@@ -10,5 +10,7 @@ type ServiceType struct {
 	Price 		float64
 	Capacity 	int
 	Orders 		[]*Order `gorm:"many2many:OrderServiceType;"`
+
+	SortedClothes []*SortedClothes `gorm:"foreignKey:ServiceTypeID"`
 }
 //must add mock data

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, Table, Button, Modal, Descriptions, message, Divider } from 'antd';
-import EmpSidebar from '../../component/layout/employee/empSidebar';
+import EmployeeSidebar from '../../component/layout/employee/empSidebar';
 import './TransportQueuePage.css';
 
 const { Content } = Layout;
@@ -209,7 +209,7 @@ const TransportQueuePage: React.FC = () => {
   ];
 
   return (
-    <EmpSidebar>
+    <EmployeeSidebar>
       <Layout className="transport-layout">
         <Content className="transport-content">
           <Descriptions
@@ -303,7 +303,7 @@ const TransportQueuePage: React.FC = () => {
           </Modal>
         </Content>
       </Layout>
-    </EmpSidebar>
+    </EmployeeSidebar>
   );
 };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Steps, Descriptions, Typography, Divider } from 'antd';
 import type { DescriptionsProps } from 'antd';
-import CustomerSidebar from '../../component/layout/customer/CusSidebar';
+import CustomerSidebar from "../../component/layout/customer/CusSidebar";
 
 const { Step } = Steps;
 

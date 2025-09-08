@@ -39,7 +39,6 @@ export default function RegisterForm() {
                 <option value="3">อื่นๆ</option>
               </select>
             </div>
-
             <button className="btn" onClick={() => setStep(2)}>
               ต่อไป
             </button>
@@ -56,18 +55,12 @@ export default function RegisterForm() {
           <p id="map" className="register-subtitle">กรุณาปักหมุดที่อยู่หลัก</p>
           <div id="map" className="form-group">
             <LeafletMap position={position} setPosition={setPosition} />
-            {/* <input
-                type="text"
-                placeholder={`Lat: ${position.lat}, Lng: ${position.lng}`}
-                className="input"
-                readOnly /> */}
-              <input type="text" placeholder="รายละเอียดที่อยู่" />
-            <button id="back"className="btn" onClick={handleBack}>ย้อนกลับ</button>  
+            <input type="text" placeholder="รายละเอียดที่อยู่" />
+            <button id="back" className="btn" onClick={handleBack}>ย้อนกลับ</button>
             <button className="btn">สมัครสมาชิก</button>
           </div>
         </div>
       )}
     </div>
-
   );
 }

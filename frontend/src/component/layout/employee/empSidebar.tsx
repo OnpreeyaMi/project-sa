@@ -1,20 +1,16 @@
-import { useNavigate , useLocation} from "react-router-dom";
-import React, { useState } from 'react';
-import { FaHome,FaUserFriends,FaUserCircle } from "react-icons/fa";
-import { IoNewspaper,IoStorefrontSharp } from "react-icons/io5";
-// import { MdLocalLaundryService } from "react-icons/md"; 
+import React, { useState, type ReactNode } from 'react';
+import { FaHome } from "react-icons/fa";
+import { IoNewspaper } from "react-icons/io5";
+import { MdLocalLaundryService } from "react-icons/md";
 import { TbTruckDelivery } from "react-icons/tb";
-
-
+import { FaShirt } from "react-icons/fa6";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
-
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
-
-
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 
@@ -22,23 +18,49 @@ interface SidebarProps {
   children?: React.ReactNode;
 }
 
-const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const getSelectedKey = () => {
-    if (location.pathname.startsWith("/Home")) return "1";;
-    if (location.pathname.startsWith("/order")) return "2";
-    if (location.pathname.startsWith("/TransportQueuePage")) return "3";
-    if (location.pathname.startsWith("/store")) return "4";
-    if (location.pathname.startsWith("/profile")) return "5";
-    return "1"; // default
-  };
-
-
+const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate(); // ✅ ใช้งาน useNavigate
+  const location = useLocation(); // ✅ ใช้งาน useLocation
+
   const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
+      token: { colorBgContainer, borderRadiusLG },
+    } = theme.useToken();
+
+  // ✅ เมนูพร้อม navigate
+  const menuItems = [
+    {
+      key: "/employee/dashboard",
+      icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
+      onClick: () => navigate("/employee"),
+    },
+    {
+      key: "/employee/orders",
+      icon: <IoNewspaper style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
+      onClick: () => navigate("/employee/orders"),
+    },
+    {
+      key: "/employee/delivery",
+      icon: <TbTruckDelivery style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span>,
+      onClick: () => navigate("/employee/delivery"),
+    },
+    {
+      key: "/employee/check",
+      icon: <FaShirt style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>รับผ้า</span>,
+      onClick: () => navigate("/employee/check"),
+    },
+    {
+      key: "/employee/inventory",
+      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
+      onClick: () => navigate("/employee/inventory"),
+    },
+
+  ];
 
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
@@ -55,65 +77,31 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
         }}
       >
         <div className="demo-logo-vertical" />
-         {!collapsed && (
-          <Col style={{ marginBottom: '20px',display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        {!collapsed && (
+          <Col style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={iconWashing} alt="Washing Icon" width={100} height={100} />
             <h1
-            style={{
-              color: "white",
-              margin: "3px",
-              fontSize: "18px",
-              textAlign: "center",
-            }}
-          >
-            พนักงาน
-    
-          </h1>
-        </Col>
-          
-          
+              style={{
+                color: "white",
+                margin: "-5px",
+                fontSize: "18px",
+                textAlign: "center",
+              }}
+            >
+              NEATII.
+            </h1>
+          </Col>
         )}
+
         <Menu
-        //   theme="#0E4587"
-          style={{ backgroundColor: '#0E4587', color: 'white' }}  
+          style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          selectedKeys={[getSelectedKey()]}
-          items={[
-            { 
-              key: '1', 
-              icon: <FaHome style={{fontSize: "18px" , color: "#6da3d3"}} />, 
-              label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-              onClick: () => {
-                navigate('/Home'); //หน้าหลัก
-              }},
-            { 
-              key: '2', 
-              icon: <IoNewspaper style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
-              label: <span style={{ color: '#6da3d3' }}>ออเดอร์</span>,
-              onClick: () => {
-                navigate('/order'); //ออเดอร์
-              }},
-            
-            { key: '3', 
-              icon: <TbTruckDelivery  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
-              label: <span style={{ color: '#6da3d3' }}>คิวขนส่ง</span>,
-              onClick: () => {
-                navigate('/TransportQueuePage'); //คิวขนส่ง
-              }},
-            { key: '4', 
-              icon: <IoStorefrontSharp  style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
-              label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
-              onClick: () => {
-                navigate('/store'); //คลัง
-              }},
-            { key: '5', 
-              icon: <FaUserCircle  
-              style={{fontSize: "18px" , color: "#6da3d3"}}/>, 
-              label: <span style={{ color: '#6da3d3' }}>โปรไฟล์</span>,
-              onClick: () => {
-                navigate('/profile'); //โปรไฟล์
-              }},
-          ]}
+          selectedKeys={[location.pathname]} // ✅ highlight ตาม path ปัจจุบัน
+          items={menuItems}
+          onClick={({ key }) => {
+            const selected = menuItems.find(item => item.key === key);
+            if (selected?.onClick) selected.onClick();
+          }}
         />
       </Sider>
 
@@ -129,7 +117,8 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
               height: 64,
             }}
           />
-            <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>Employee Dashboard</span>
+          <span style={{ color: '#0E4587', fontSize: '20px', marginLeft: '16px' }}>
+          </span>
         </Header>
         <Content
           style={{
@@ -139,7 +128,6 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
-          
         >
           {children}
         </Content>
@@ -148,4 +136,6 @@ const EmpSidebar: React.FC<SidebarProps> = ({ children }) => {
   );
 };
 
-export default EmpSidebar;
+export default EmployeeSidebar;
+
+
