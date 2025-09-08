@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
@@ -13,7 +12,7 @@ import (
 func CreateOrder(c *gin.Context) {
 	var req struct {
 		CustomerID     uint   `json:"customer_id"`
-		ServiceTypeIDs []uint `json:"service_type_ids"`
+		ServiceTypeIDs []uint `json:"servicetype_ids"`
 		DetergentIDs   []uint `json:"detergent_ids"`
 		OrderImage     string `json:"order_image"`
 		OrderNote      string `json:"order_note"`
@@ -61,6 +60,11 @@ func CreateOrder(c *gin.Context) {
 		OrderID: order.ID,
 		Status:  "รอดำเนินการ",
 	}
+	// history เริ่มต้น
+	history := entity.OrderHistory{
+		OrderID: order.ID,
+		Status:  "Pending",
+	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -76,32 +80,6 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
-	if len(req.DetergentIDs) > 0 {
-		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
-			return
-		}
-	}
-	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
-	process := entity.LaundryProcess{
-		Status:     "รอดำเนินการ",
-		Start_time: time.Now(),
-		Order:      []*entity.Order{&order},
-	}
-	if err := config.DB.Create(&process).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
-		return
-	}
-	// สร้าง pickup queue ทันทีหลังสร้าง order
-    pickupQueue := entity.Queue{
-	    Queue_type: "pickup",
-	    Status:     "waiting",
-	    OrderID:    order.ID,
-    }
-    config.DB.Create(&pickupQueue)
-
 
 	c.JSON(http.StatusOK, order)
 }
@@ -119,6 +97,25 @@ func GetOrderHistories(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, histories)
+}
+
+func GetOrders(c *gin.Context) {
+	var orders []entity.Order
+	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, orders)
+}
+
+// ดึงที่อยู่ทั้งหมด
+func GetAddresses(c *gin.Context) {
+	var addresses []entity.Address
+	if err := config.DB.Preload("Customer").Find(&addresses).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, addresses)
 }
 // ดึงออเดอร์ทั้งหมด
 func GetOrders(c *gin.Context) {
