@@ -15,4 +15,5 @@ type Detergent struct {
 	User 		*User `gorm:"foreignKey:UserID;"`
 	CategoryID 	uint
 	DetergentCategory *DetergentCategory `gorm:"foreignKey:CategoryID;"`
+	DetergentUsageHistories []DetergentUsageHistory `gorm:"foreignKey:DetergentID"`
 }

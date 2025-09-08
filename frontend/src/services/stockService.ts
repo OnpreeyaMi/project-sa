@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_BASE = "http://localhost:8080"; // ปรับตาม backend ของคุณ
+const API_BASE = "http://localhost:8000"; // ปรับตาม backend ของคุณ
 
 export interface Detergent {
   Name: string;
@@ -33,5 +33,29 @@ export async function getAllDetergents() {
 
 export async function deleteDetergent(id: number) {
   const response = await axios.delete(`${API_BASE}/detergents/${id}`);
+  return response.data;
+}
+
+export async function getPurchaseDetergentHistory() {
+  const response = await axios.get(`${API_BASE}/detergents/purchase-history`);
+  return response.data;
+}
+export async function getDetergentUsageHistory() {
+  const response = await axios.get(`${API_BASE}/detergents/usage-history`);
+  return response.data;
+}
+
+export async function useDetergent({ user_id, detergent_id, quantity, reason }: {
+  user_id: number;
+  detergent_id: number;
+  quantity: number;
+  reason: string;
+}) {
+  const response = await axios.post(`${API_BASE}/detergents/use`, {
+    user_id,
+    detergent_id,
+    quantity,
+    reason
+  });
   return response.data;
 }

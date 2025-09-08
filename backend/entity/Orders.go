@@ -13,7 +13,7 @@ type Order struct {
 	Detergents 			[]*Detergent `gorm:"many2many:OrderDetergent;"`
 	OrderImage 			string
 	OrderNote 			string
-	LaundryProcesses 	[]*LaundryProcess `gorm:"many2many:OrderProcess;"`
+	LaundryProcesses 	[]*LaundryProcess `gorm:"many2many:process_order;"`
 	OrderHistories 		[]*OrderHistory `gorm:"foreignKey:OrderID;"`
 	AddressID 			uint
 	Address 			*Address `gorm:"foreignKey:AddressID;"`

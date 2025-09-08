@@ -17,12 +17,15 @@ import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
 import { BiSolidWasher, BiSolidDryer } from "react-icons/bi";
 import { FaJugDetergent } from "react-icons/fa6";
 import { TbWashDrycleanOff } from "react-icons/tb";
-import { createOrder } from '../../../services/orderService';
-import { fetchAddresses, fetchCustomerById } from '../../../services/orderService';
+import { createOrder, fetchDetergentsByType } from '../../../services/orderService';
+import { fetchAddresses, fetchCustomerNameById,  createAddress, setMainAddress } from '../../../services/orderService';
 import { CheckCircleFilled } from '@ant-design/icons';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 const descriptionsWashing: Record<number, string> =  {
   10: "เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น",
@@ -51,7 +54,6 @@ const { Title, Text } = Typography;
 const OrderPage: React.FC = () => {
   const [selectedWasher, setSelectedWasher] = useState<number | null>(null);
   const [selectedDryer, setSelectedDryer] = useState<number | null>(null);
-  const [selectDetergent, setSelectDetergent] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [orderNote, setOrderNote] = useState("");
   const [orderImage, setOrderImage] = useState<string | null>(null);
@@ -65,6 +67,11 @@ const OrderPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   // เพิ่ม state สำหรับ address หลัก
   const [primaryAddressId, setPrimaryAddressId] = useState<number | null>(null);
+  const [detergentsWashing, setDetergentsWashing] = useState<any[]>([]);
+  const [detergentsSoftener, setDetergentsSoftener] = useState<any[]>([]);
+  const [selectedWashingId, setSelectedWashingId] = useState<number | null>(null);
+  const [selectedSoftenerId, setSelectedSoftenerId] = useState<number | null>(null);
+  const [newIsPrimary, setNewIsPrimary] = useState(false); // state สำหรับ checkbox ตั้งเป็นที่อยู่หลัก
 
   // Mapping KG → ServiceType ID
   const washerIdMap: Record<number, number> = { 10: 1, 14: 2, 18: 3, 28: 4 };
@@ -88,11 +95,11 @@ const OrderPage: React.FC = () => {
     if (selectedDryer !== null) serviceTypeIds.push(dryerIdMap[selectedDryer] ?? 7);
 
     const detergentIds: number[] = [];
-    if (selectDetergent === "home") detergentIds.push(1);
-    if (selectDetergent === "shop") detergentIds.push(2);
+    if (selectedWashingId) detergentIds.push(selectedWashingId);
+    if (selectedSoftenerId) detergentIds.push(selectedSoftenerId);
 
     const orderData = {
-      customer_id: 1,
+      customer_id: currentUser?.ID || 1,
       service_type_ids: serviceTypeIds, // ส่งเป็น array ของ id จริง
       detergent_ids: detergentIds,
       order_image: orderImage,
@@ -112,9 +119,30 @@ const OrderPage: React.FC = () => {
     }
   };
 
+  const handleSaveNewAddress = async () => {
+    if (!newAddress.trim()) return;
+    try {
+      await createAddress({
+        addressDetails: newAddress,
+        latitude: newLat,
+        longitude: newLng,
+        customerId: currentUser?.ID || 1,
+      });
+      // ดึง address ใหม่จาก backend
+      const arr = await fetchAddresses(currentUser?.ID || 1);
+      setAddresses(arr);
+      setAddingNewAddress(false);
+      setNewAddress("");
+      setNewLat(13.7563);
+      setNewLng(100.5018);
+    } catch (err) {
+      AntdModal.error({ title: "บันทึกที่อยู่ไม่สำเร็จ" });
+    }
+  };
+
   useEffect(() => {
     const fetch = async () => {
-      const arr = await fetchAddresses();
+      const arr = await fetchAddresses(currentUser?.ID || 1);
       const customerId = currentUser?.ID || 1;
       const filtered = arr.filter((a: any) => a.CustomerID === customerId);
       setAddresses(filtered);
@@ -136,14 +164,38 @@ const OrderPage: React.FC = () => {
     // สมมุติใช้ customer id 1 (หรือดึงจาก auth จริง)
     const fetchUser = async () => {
       try {
-        const res = await fetchCustomerById(1);
-        setCurrentUser(res.data || null);
+        const res = await fetchCustomerNameById(1);
+        // ถ้า response เป็น { firstName, lastName, ... }
+        if (res && (res.firstName || res.lastName)) {
+          setCurrentUser(res);
+        } else if (res && res.data && (res.data.firstName || res.data.lastName)) {
+          setCurrentUser(res.data);
+        } else {
+          setCurrentUser(null);
+        }
       } catch (err) {
         setCurrentUser(null);
       }
     };
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    // โหลดน้ำยาซักผ้าและปรับผ้านุ่มแยกประเภท
+    const fetchDetergentOptions = async () => {
+      console.log("Washing:", detergentsWashing);
+      console.log("Softener:", detergentsSoftener);
+      try {
+        const washing = await fetchDetergentsByType("detergent");
+        const softener = await fetchDetergentsByType("softener");
+        setDetergentsWashing(washing || []);
+        setDetergentsSoftener(softener || []);
+      } catch {}
+    };
+    fetchDetergentOptions();
+  }, []);
+
+  const customerName = currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() : "-";
 
   return (
     <CustomerSidebar>
@@ -247,49 +299,54 @@ const OrderPage: React.FC = () => {
             ))}
             </Row>
 
-            {/* น้ำยาซักผ้า */}
-            <Title level={4}>เลือกน้ำยาซักผ้าที่ต้องการ</Title>
+            {/* น้ำยาซักผ้า/ปรับผ้านุ่ม */}
+            <Title level={4}>เลือกน้ำยาซักผ้า/ปรับผ้านุ่มที่ต้องการ</Title>
             <Row gutter={[16, 16]} justify="center">
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Card
-                  hoverable
-                  onClick={() => setSelectDetergent("home")}
-                  style={{
-                    width: "100%",
-                    maxWidth: "200px",
-                    textAlign: "center",
-                    borderRadius: 8,
-                    background: selectDetergent === "home" ? "#F9FBFF" : "#D9D9D9",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 16,
-                  }}
-                >
-                <FaJugDetergent size={75} style={{ color: selectDetergent === "home" ? "#3CAEA3" : "#6DA3D3" }} />
-                <Text style={{ fontSize: 16 }}>ทางบ้าน</Text>
+              <Col xs={12} sm={12} md={8} lg={8}>
+                <Card style={{ borderRadius: 8, padding: 16 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 600 }}>น้ำยาซักผ้า</Text>
+                  <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1}>
+                    {detergentsWashing.map((brand: any) => (
+                      <div key={brand.ID || brand.id}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                          <FaJugDetergent size={75} style={{ color: "#3CAEA3" }} />
+                          <Text style={{ fontSize: 18, marginTop: 8 }}>{brand.Name || brand.name}</Text>
+                          <Button
+                            type={selectedWashingId === (brand.ID || brand.id) ? "primary" : "default"}
+                            style={{ marginTop: 10, background: (brand.InStock === 0 || brand.inStock === 0) ? '#ED553B' : undefined, color: (brand.InStock === 0 || brand.inStock === 0) ? '#fff' : undefined }}
+                            onClick={() => setSelectedWashingId(brand.ID || brand.id)}
+                            disabled={brand.InStock === 0 || brand.inStock === 0}
+                          >{(brand.InStock === 0 || brand.inStock === 0) ? "หมดแล้ว" : "เลือกน้ำยานี้"}</Button>
+                          <div style={{ marginTop: 8, background: '#f6f6f6', borderRadius: 6, padding: 8 }}>
+                            <b>คงเหลือ:</b> {brand.InStock || brand.inStock}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </Slider>
                 </Card>
               </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Card
-                  hoverable
-                  onClick={() => setSelectDetergent("shop")}
-                  style={{
-                    width: "100%",
-                    maxWidth: "200px",
-                    textAlign: "center",
-                    borderRadius: 8,
-                    background: selectDetergent === "shop" ? "#F9FBFF" : "#D9D9D9",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 16,
-                  }}
-                >
-                  <FaJugDetergent size={75} style={{ color: selectDetergent === "shop" ? "#ED553B" : "#6DA3D3" }} />
-                <Text style={{ fontSize: 16 }}>ทางร้าน</Text>
+              <Col xs={24} sm={12} md={8} lg={8}>
+                <Card style={{ borderRadius: 8, padding: 16 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 600 }}>น้ำยาปรับผ้านุ่ม</Text>
+                  <Slider dots infinite speed={500} slidesToShow={1} slidesToScroll={1}>
+                    {detergentsSoftener.map((brand: any) => (
+                      <div key={brand.ID || brand.id}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                          <FaJugDetergent size={75} style={{ color: "#ED553B" }} />
+                          <Text style={{ fontSize: 18, marginTop: 8 }}>{brand.Name || brand.name}</Text>
+                          <Button
+                            type={selectedSoftenerId === (brand.ID || brand.id) ? "primary" : "default"}
+                            style={{ marginTop: 10 }}
+                            onClick={() => setSelectedSoftenerId(brand.ID || brand.id)}
+                          >เลือกน้ำยานี้</Button>
+                          <div style={{ marginTop: 8, background: '#f6f6f6', borderRadius: 6, padding: 8 }}>
+                            <b>คงเหลือ:</b> {brand.InStock || brand.inStock}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </Slider>
                 </Card>
               </Col>
             </Row>
@@ -303,7 +360,7 @@ const OrderPage: React.FC = () => {
 
             {/* ชื่อผู้รับ */}
             <Title level={5}>
-              คุณ {currentUser ? `${currentUser.FirstName || ''} ${currentUser.LastName || ''}`.trim() : "-"}
+              คุณ {customerName}
             </Title>
             {/*<Text style={{ display: "block", marginBottom: 15 }}>สมใจ</Text>*/}
 
@@ -377,6 +434,31 @@ const OrderPage: React.FC = () => {
                           {addr.ID === primaryAddressId && (
                             <div style={{ color: '#43a047', fontWeight: 500, marginTop: 6 }}>ที่อยู่หลัก</div>
                           )}
+                          {/* ปุ่มแก้ไข/ลบ/ตั้งเป็นที่อยู่หลัก */}
+                          <div style={{ position: 'absolute', bottom: 12, right: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginLeft: 8 }}>
+                              <input
+                                type="checkbox"
+                                checked={addr.ID === primaryAddressId}
+                                onChange={async e => {
+                                  e.stopPropagation();
+                                  if (e.target.checked) {
+                                    setPrimaryAddressId(addr.ID);
+                                    try {
+                                      await setMainAddress(currentUser?.ID || 1, addr.ID);
+                                      // อัปเดต addresses ใหม่หลังตั้งที่อยู่หลัก
+                                      const arr = await fetchAddresses(currentUser?.ID || 1);
+                                      setAddresses(arr);
+                                    } catch (err) {
+                                      AntdModal.error({ title: "ตั้งที่อยู่หลักไม่สำเร็จ" });
+                                    }
+                                  }
+                                }}
+                                style={{ marginRight: 4 }}
+                              />
+                              ตั้งเป็นที่อยู่หลัก
+                            </label>
+                          </div>
                         </div>
                       );
                     })}
@@ -407,6 +489,16 @@ const OrderPage: React.FC = () => {
                     value={newAddress}
                     onChange={e => setNewAddress(e.target.value)}
                   />
+                  {/* Checkbox ตั้งเป็นที่อยู่หลัก */}
+                  <label style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={newAddress === '' ? false : !!newIsPrimary}
+                      onChange={e => setNewIsPrimary(e.target.checked)}
+                      style={{ marginRight: 6 }}
+                    />
+                    ตั้งเป็นที่อยู่หลัก
+                  </label>
                   <div style={{ fontWeight: 500, marginBottom: 8 }}>ปักหมุดตำแหน่ง (Leaflet)</div>
                   <div style={{ width: '100%', height: 250, marginBottom: 12 }}>
                     <MapContainer center={[newLat, newLng]} zoom={15} style={{ width: '100%', height: '100%' }}>
@@ -424,22 +516,11 @@ const OrderPage: React.FC = () => {
                       setNewAddress("");
                       setNewLat(13.7563);
                       setNewLng(100.5018);
+                      setNewIsPrimary(false);
                     }}>ยกเลิก</Button>
-                    <Button type="primary" onClick={() => {
-                      if (!newAddress.trim()) return;
-                      const newId = Date.now();
-                      setAddresses([...addresses, {
-                        ID: newId,
-                        AddressDetails: newAddress,
-                        Latitude: newLat,
-                        Longitude: newLng,
-                        CustomerID: currentUser?.ID || 1
-                      }]);
-                      setAddingNewAddress(false);
-                      setNewAddress("");
-                      setNewLat(13.7563);
-                      setNewLng(100.5018);
-                    }}>บันทึก</Button>
+                    <Button type="primary" onClick={handleSaveNewAddress}>
+                      บันทึก
+                    </Button>
                   </div>
                 </div>
               )}
@@ -505,49 +586,29 @@ const OrderPage: React.FC = () => {
         width={480}
       >
         <div style={{ textAlign: "left" }}>
-          <div style={{ marginBottom: 14 }}><b>คุณ:</b> {currentUser ? `${currentUser.FirstName || ''} ${currentUser.LastName || ''}`.trim() : "-"}</div>
+          <div style={{ marginBottom: 14 }}><b>คุณ:</b> {customerName}</div>
           <div style={{ marginBottom: 14 }}><b>ที่อยู่:</b> {selectedAddress ? addresses.find((address) => address.ID === selectedAddress)?.AddressDetails : "ไม่ได้เลือก"}</div>
           <div style={{ marginBottom: 14 }}><b>ถังซัก:</b> {selectedWasher ? `${selectedWasher} KG` : "ไม่ได้เลือก"}</div>
           <div style={{ marginBottom: 14 }}><b>ถังอบ:</b> {selectedDryer ? `${selectedDryer} KG` : "NO"}</div>
-          <div style={{ marginBottom: 14 }}><b>น้ำยาซักผ้า:</b> {selectDetergent === "home" ? "ทางบ้าน" : selectDetergent === "shop" ? "ทางร้าน" : "ไม่ได้เลือก"}</div>
+          <div style={{ marginBottom: 14 }}>
+            <b>น้ำยาซักผ้า:</b> {
+              (() => {
+                const selected = detergentsWashing.find((d: any) => (d.ID || d.id) === selectedWashingId);
+                return selected ? `${selected.Name || selected.name} (คงเหลือ: ${selected.InStock || selected.inStock})` : "ไม่ได้เลือก";
+              })()
+            }
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <b>น้ำยาปรับผ้านุ่ม:</b> {
+              (() => {
+                const selected = detergentsSoftener.find((d: any) => (d.ID || d.id) === selectedSoftenerId);
+                return selected ? `${selected.Name || selected.name} (คงเหลือ: ${selected.InStock || selected.inStock})` : "ไม่ได้เลือก";
+              })()
+            }
+          </div>
           <div style={{ marginBottom: 0 }}><b>หมายเหตุ:</b> {orderNote || "ไม่มีหมายเหตุ"}</div>
         </div>
       </Modal>
-      {/* Modal เลือกที่อยู่บน Google Map
-      <Modal
-        title="เลือกตำแหน่งบนแผนที่"
-        open={isMapModal}
-        onOk={() => setIsMapModal(false)}
-        onCancel={() => setIsMapModal(false)}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-        width={800}
-        centered
-      >
-        {isLoaded ? (
-          <GoogleMap
-            center={markerPosition}
-            zoom={15}
-            mapContainerStyle={{ width: "100%", height: "400px" }}
-            onClick={(e) => {
-              if (e.latLng) {
-                setMarkerPosition({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-              } 
-            }}
-          >
-            <Marker position={markerPosition} />
-          </GoogleMap>
-        ) : (
-          <p>Loading map...</p>
-        )}
-        <Input.TextArea
-          rows={2}
-          placeholder="รายละเอียดที่อยู่ (เช่น ซอย ถนน)"
-          value={newAddress}
-          onChange={(e) => setNewAddress(e.target.value)}
-          style={{ marginTop: 10 }}
-        />
-      </Modal> */}
     </CustomerSidebar>
   );
 };

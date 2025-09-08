@@ -4,9 +4,8 @@
 // 	"fmt"
 // 	"github.com/gin-gonic/gin"
 //     "github.com/OnpreeyaMi/project-sa/backend/config"
-    
-//     "github.com/OnpreeyaMi/project-sa/backend/controller"
 
+//     "github.com/OnpreeyaMi/project-sa/backend/controller"
 
 // )
 
@@ -50,10 +49,8 @@ import (
 	"fmt"
 
 	"github.com/OnpreeyaMi/project-sa/config"
-    "github.com/gin-gonic/gin"
-    "github.com/OnpreeyaMi/project-sa/controller"
-
-	
+	"github.com/OnpreeyaMi/project-sa/controller"
+	"github.com/gin-gonic/gin"
 )
 
 const port = 8000
@@ -65,19 +62,24 @@ func main() {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 
-	// ตัวอย่าง route อื่น
+	// Order CRUD
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
-	// router.GET("/addresses", controller.GetAddresses)
+	router.GET("/addresses", controller.GetAddresses)
+	router.GET("/customers/name/:id", controller.GetCustomerNameByID)
+	router.POST("/orderaddress", controller.CreateAddress)
+	router.GET("/detergents/type/:type", controller.GetDetergentsByType)
+	router.PUT("/addresses/set-main", controller.UpdateMainAddress)
 
-	
-	// router.POST("/detergents", controller.CreateDetergent)
-	// router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
-	// router.GET("/detergents", controller.GetDetergents)
-	// router.DELETE("/detergents/:id", controller.DeleteDetergent)
-
-	
-
+	// Detergent CRUD
+	router.POST("/detergents", controller.CreateDetergent)
+	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	router.GET("/detergents", controller.GetDetergents)
+	router.DELETE("/detergents/:id", controller.DeleteDetergent)
+	router.GET("/detergents/purchase-history", controller.GetPurchaseDetergentHistory)
+	router.POST("/detergents/use", controller.UseDetergent) // ลด stock
+	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
+	// router.GET("/detergents/daily-usage", controller.GetDailyDetergentUsage) --- IGNORE ---
 	// Employee CRUD
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
@@ -86,24 +88,23 @@ func main() {
 	router.DELETE("/employees/:id", controller.DeleteEmployee)
 
 	// Laundry Process
-    router.POST("/laundry-process", controller.CreateLaundryProcess)      // บันทึก process ใหม่
-    router.GET("/laundry-processes", controller.GetLaundryProcesses)      // ดึงทั้งหมด
-    router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess) //  ดึงล่าสุด
-    router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)    // อัปเดตสถานะ
-    router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
+	router.POST("/laundry-process", controller.CreateLaundryProcess)                 // บันทึก process ใหม่
+	router.GET("/laundry-processes", controller.GetLaundryProcesses)                 // ดึงทั้งหมด
+	router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess)        //  ดึงล่าสุด
+	router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)               // อัปเดตสถานะ
+	router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess) //  เลือกเครื่อง
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
 
 	// Customer
-	router.POST("/customers", controller.CreateCustomer) // สร้างลูกค้า
-	router.GET("/customers", controller.GetCustomers)    // ดึงลูกค้าทั้งหมด		
-	router.PUT("/customers/:id", controller.UpdateCustomer) // แก้ไขลูกค้า
+	router.POST("/customers", controller.CreateCustomer)       // สร้างลูกค้า
+	router.GET("/customers", controller.GetCustomers)          // ดึงลูกค้าทั้งหมด
+	router.PUT("/customers/:id", controller.UpdateCustomer)    // แก้ไขลูกค้า
 	router.DELETE("/customers/:id", controller.DeleteCustomer) // ลบลูกค้า
-	router.GET("/customers/:id", controller.GetCustomerByID) // ดึงลูกค้าตาม ID
+	router.GET("/customers/:id", controller.GetCustomerByID)   // ดึงลูกค้าตาม ID
 
-    // Machine
-    router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
-
+	// Machine
+	router.GET("/machines", controller.GetMachines) // ดึงเครื่องทั้งหมด
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
 }

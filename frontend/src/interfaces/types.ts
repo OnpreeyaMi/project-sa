@@ -18,7 +18,7 @@ export interface ServiceType {
 export interface Detergent {
   id: number;
   name: string;
-  type: "Liquid" | "Powder";
+  type: "Liquid" | "Softener";
   inStock: number;
 }
 
@@ -37,4 +37,14 @@ export interface OrderHistory {
     service_types: { id: number; name: string; price?: number }[];
     detergents: { id: number; name: string; type: "Liquid"|"Powder"; inStock: number }[];
   }
+};
+
+// เพิ่ม interface สำหรับที่อยู่
+export interface Address {
+  id: number;
+  customer_id: number;
+  address_details: string;
+  latitude: number;
+  longitude: number;
+  is_default: boolean;
 }
