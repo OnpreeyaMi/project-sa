@@ -55,6 +55,7 @@ func SetupDatabase() {
 		&entity.Promotion{},
 		&entity.PromotionCondition{},
 		&entity.PromotionUsage{},
+		&entity.ComplaintAttachment{},  //เพิ่มตาราง เก็บการอัปโหลด ไฟล์เพิ่มเติม
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)

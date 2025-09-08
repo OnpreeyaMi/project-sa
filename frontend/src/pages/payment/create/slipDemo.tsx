@@ -47,8 +47,8 @@ export default function PaymentSuccessModal({
   title = "ชำระเงินสำเร็จ!",
   subtitle = "ขอบคุณสำหรับการสั่งซื้อ เราได้รับการชำระเงินเรียบร้อยแล้ว",
   shopName,
-  orderId = 1234,
-  amount = 0,
+  orderId = undefined,//
+  amount = undefined,  //
   currency = "THB",
   paidAt = new Date(),
   statusText = "ชำระเงินแล้ว",

@@ -52,13 +52,16 @@ import (
 	"github.com/OnpreeyaMi/project-sa/config"
     "github.com/gin-gonic/gin"
     "github.com/OnpreeyaMi/project-sa/controller"
-
+	
+	 "github.com/joho/godotenv"
 	
 )
 
 const port = 8000
 
 func main() {
+	
+	_ = godotenv.Load() // โหลด .env จากโฟลเดอร์เดียวกับ binary/โค้ด
 	config.ConnectDatabase()
 	config.SetupDatabase()
 
@@ -103,6 +106,19 @@ func main() {
 
     // Machine
     router.GET("/machines", controller.GetMachines)   // ดึงเครื่องทั้งหมด
+
+	//Payment
+	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
+
+	//complaint
+	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
+	router.Static("/uploads", "./uploads")
+	router.POST("/complaints", controller.CreateComplaint)
+	// complaints := router.Group("/complaints", middlewares.Authorizes())
+	// {
+    // complaints.POST("", controller.CreateComplaint)
+    // complaints.GET("/:publicId", controller.GetComplaintByPublicID)
+	// }
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))

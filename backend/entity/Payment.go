@@ -38,10 +38,10 @@ type Payment struct {
 
 	// วิธีชำระ เช่น "PromptPay"
 	PaymentType   string    `json:"payment_type"`
-	CreatedDate   time.Time `json:"created_date"`
+	// CreatedDate   time.Time `json:"created_date"`     //ไม่จำเป็นให้gorm เเทน
 
-	// เก็บภาพสลิป (BLOB) — จะใส่หรือไม่ก็ได้
-	CheckPayment  []byte    `json:"check_payment" gorm:"type:blob"`
+	// เก็บภาพสลิปเพื่อเช็ค 
+	 CheckPaymentB64 string `gorm:"type:text" json:"check_payment_b64,omitempty"` // <- เก็บ Base64 (ไม่ใส่ใน JSON เวลาปกติได้ด้วย omitempty)     เเก้ไขจาก main 8/9/68
 
 	// ยอดที่คาดหวัง (ฝั่งระบบของคุณ)
 	TotalAmount   int       `json:"total_amount"`
