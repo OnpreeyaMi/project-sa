@@ -33,7 +33,6 @@ func parseDateThaiAware(s string) (time.Time, error) {
 	if s == "" {
 		return time.Time{}, errors.New("empty date")
 	}
-	// รองรับปี พ.ศ. รูปแบบ dd/mm/yyyy
 	if strings.Count(s, "/") == 2 {
 		parts := strings.Split(s, "/")
 		if len(parts) == 3 {
@@ -97,7 +96,6 @@ func modifyPositionCount(tx *gorm.DB, positionID uint, delta int) error {
 		).Error
 }
 
-// คำอธิบายสถานะดีฟอลต์ (สะกดให้ตรงกัน: ปฏิบัติงาน)
 func defaultStatusDescription(name string) string {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "active":
@@ -111,7 +109,6 @@ func defaultStatusDescription(name string) string {
 	}
 }
 
-// หา/สร้าง/อัปเดตคำอธิบายสถานะ (ใช้ชื่อฟิลด์ใน struct เพื่อความสม่ำเสมอ)
 func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	desc = strings.TrimSpace(desc)
@@ -145,8 +142,7 @@ func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	}
 }
 
-// --------- DTO (อินพุตจาก Frontend) ---------
-// controller/employee_controller.go
+// --------- DTO ---------
 type EmployeePayload struct {
 	Code              string
 	FirstName         string
@@ -163,7 +159,6 @@ type EmployeePayload struct {
 	StatusDescription string
 	UserID            uint
 }
-
 
 // --------- Handlers ---------
 
@@ -214,10 +209,11 @@ func CreateEmployee(c *gin.Context) {
 	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
 	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": "hash password failed"}); return }
-	u := entity.User{Email: p.Email, Password: string(hashed), Status: "active"}
+	// ไม่มี field Status ใน entity.User แล้ว
+	u := entity.User{Email: p.Email, Password: string(hashed)}
 	if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// employee code (ถ้าส่งมา ต้องไม่ซ้ำ)
+	// employee code (optional & unique)
 	code := strings.TrimSpace(p.Code)
 	if code != "" {
 		var dup entity.Employee
@@ -241,7 +237,7 @@ func CreateEmployee(c *gin.Context) {
 	}
 	if err := tx.Create(&emp).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// gen code ถ้าไม่ได้ส่งมา
+	// gen code
 	if emp.Code == "" {
 		gen := fmt.Sprintf("EMP%03d", emp.ID)
 		if err := tx.Model(&entity.Employee{}).Where("id = ?", emp.ID).Update("code", gen).Error; err != nil {
@@ -250,7 +246,7 @@ func CreateEmployee(c *gin.Context) {
 		emp.Code = gen
 	}
 
-	// ปรับยอดตำแหน่ง
+	// adjust position count
 	if posID != 0 {
 		if err := modifyPositionCount(tx, posID, 1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 	}
@@ -312,7 +308,7 @@ func UpdateEmployee(c *gin.Context) {
 		return
 	}
 
-	// employeeCode (optional & unique)
+	// code
 	if code := strings.TrimSpace(p.Code); code != "" && code != e.Code {
 		var dup entity.Employee
 		if err := tx.Where("code = ?", code).First(&dup).Error; err == nil && dup.ID != e.ID {
@@ -341,7 +337,7 @@ func UpdateEmployee(c *gin.Context) {
 		e.StartDate = t
 	}
 
-	// status (upsert; default desc if empty)
+	// status
 	if strings.TrimSpace(p.Status) != "" {
 		if strings.TrimSpace(p.StatusDescription) == "" {
 			p.StatusDescription = defaultStatusDescription(p.Status)
@@ -351,7 +347,7 @@ func UpdateEmployee(c *gin.Context) {
 		e.EmployeeStatusID = statusID
 	}
 
-	// employee fields
+	// fields
 	e.FirstName  = p.FirstName
 	e.LastName   = p.LastName
 	e.Gender     = strings.ToLower(strings.TrimSpace(p.Gender))
@@ -386,7 +382,7 @@ func UpdateEmployee(c *gin.Context) {
 		}
 		hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
 		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"hash password failed"}); return }
-		u := entity.User{Email: p.Email, Password: string(hashed), Status:"active"}
+		u := entity.User{Email: p.Email, Password: string(hashed)}
 		if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 		e.UserID = u.ID
 	}
@@ -395,7 +391,7 @@ func UpdateEmployee(c *gin.Context) {
 		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
 	}
 
-	// ปรับยอดตำแหน่ง เมื่อมีการย้าย
+	// adjust position count
 	if oldPosID != newPosID {
 		if oldPosID != 0 {
 			if err := modifyPositionCount(tx, oldPosID, -1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
@@ -440,7 +436,7 @@ func DeleteEmployee(c *gin.Context) {
 	if err := tx.Delete(&entity.Employee{}, uint(id)).Error; err != nil {
 		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
 	}
-	// เลือก “ลบ user” ถ้าผูกอยู่ (ถ้าจะเปลี่ยนเป็น inactive ก็แก้ตรงนี้)
+	// ตัวอย่างนี้ลบ user ที่ผูกกันออกไปด้วย
 	if userID != 0 {
 		if err := tx.Delete(&entity.User{}, userID).Error; err != nil {
 			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return

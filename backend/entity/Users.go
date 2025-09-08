@@ -6,7 +6,7 @@ type User struct {
 	gorm.Model
 	Email    string `gorm:"uniqueIndex" json:"email"`
 	Password string `json:"password"` // ส่งกลับ “ค่าแฮช”
-	Status   string `json:"status"`
+
 
 	RoleID uint  `json:"roleId"`
 	Role   *Role `gorm:"foreignKey:RoleID" json:"Role,omitempty"`

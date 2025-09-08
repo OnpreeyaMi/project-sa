@@ -35,7 +35,6 @@ func CreateCustomer(c *gin.Context) {
 	user := entity.User{
 		Email:    payload.Email,
 		Password: string(hashedPassword),
-		Status:   "active",
 		RoleID:   1, // ให้เป็น Role ลูกค้าอัตโนมัติ
 	}
 	if err := config.DB.Create(&user).Error; err != nil {

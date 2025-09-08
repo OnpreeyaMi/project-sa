@@ -21,6 +21,7 @@ import OrderPage from "./pages/orders/create";
 import HistoryPage from "./pages/orders/history";
 import StockAdminPage from "./pages/stock/Admin";
 import CustomerHomePage from "./pages/Home/CustomerHome";
+import EmployeeProfile from "./pages/employee/EmployeeProfile";
 
 const App: React.FC = () => {
 
@@ -40,7 +41,7 @@ const App: React.FC = () => {
         <Route path="check" element={<LaundryCheckPage />} />
         <Route path="/employee/laundry-history" element={<LaundryHistoryPage />} />
         <Route path="inventory" element={<StockEmpPage />} />
-        <Route path="profile" element={<StatusPage />} />
+        <Route path="profile" element={<EmployeeProfile />} />
         <Route path="complaint" element={<ComplaintAdminPage />} />
       </Route>
 

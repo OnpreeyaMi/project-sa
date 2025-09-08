@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"time"
 )
 
 var DB *gorm.DB
@@ -20,8 +21,6 @@ func ConnectDatabase() {
 }
 
 func SetupDatabase() {
-	// สร้างตารางตามโมเดล (ไม่มีการใส่ mock data)
-	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
 		&entity.ClothType{},
@@ -57,7 +56,6 @@ func SetupDatabase() {
 		&entity.PromotionUsage{},
 		&entity.Role{},
 		&entity.DiscountType{},
-
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
@@ -65,52 +63,42 @@ func SetupDatabase() {
 		fmt.Println("AutoMigrate completed successfully.")
 	}
 
-	// ใส่ mock data หลัง AutoMigrate
 	MockData()
 }
 
 func MockData() {
-	// --- Mock Customers ---
+	// Customers
 	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1,  IsVerified: true},
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, IsVerified: true},
 		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false},
 	}
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
 
-	//--- Mock Address ---
-	// --- Mock Role ---
-	roles := []entity.Role{
-		{Role_name: "admin"},
-		{Role_name: "customer"},
-	}
+	// Roles
+	roles := []entity.Role{{Role_name: "admin"}, {Role_name: "customer"}}
 	for _, r := range roles {
 		DB.FirstOrCreate(&r, entity.Role{Role_name: r.Role_name})
 	}
 
-	// --- Mock User ---
+	// Users (ตัด Status ออกให้ตรง entity.User)
 	users := []entity.User{
-		{Email: "admin@example.com", Password: "hashedpassword", Status: "active", RoleID: 1},
-		{Email: "customer1@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
-		{Email: "customer2@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
+		{Email: "admin@example.com", Password: "hashedpassword", RoleID: 1},
+		{Email: "customer1@example.com", Password: "hashedpassword", RoleID: 2},
+		{Email: "customer2@example.com", Password: "hashedpassword", RoleID: 2},
 	}
 	for _, u := range users {
 		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
 	}
 
-	// --- Mock Gender ---
-	genders := []entity.Gender{
-		{Name: "ชาย"},
-		{Name: "หญิง"},
-		{Name: "อืนๆ"},
-	}
+	// Genders
+	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
 
-
-	// --- Mock Address ---
+	// Addresses
 	addresses := []entity.Address{
 		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
 		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
@@ -119,7 +107,7 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
-	// --- Mock ServiceType ---
+	// Service Types
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
@@ -128,50 +116,26 @@ func MockData() {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
+	// Detergents & Categories
+	categories := []entity.DetergentCategory{
+		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
+		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
+	}
+	for _, c := range categories {
+		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
+	}
 
-	// --- Mock Detergent ---
 	detergents := []entity.Detergent{
-		{
-			Name:  "น้ำยาซักเหลว",
-			Type:  "Liquid",
-			InStock: 100,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอก",
-			Type:  "Powder",
-			InStock: 50,
-			CategoryID: 2,
-		},
-		{
-			Name:  "น้ำยาซักสูตรพิเศษ",
-			Type:  "Liquid",
-			InStock: 30,
-			UserID: 2,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอกสูตรเข้มข้น",
-			Type:  "Powder",
-			InStock: 20,
-			CategoryID: 2,
-		},
+		{Name: "น้ำยาซักเหลว", Type: "Liquid", InStock: 100, CategoryID: 1},
+		{Name: "ผงซักฟอก", Type: "Powder", InStock: 50, CategoryID: 2},
+		{Name: "น้ำยาซักสูตรพิเศษ", Type: "Liquid", InStock: 30, UserID: 2, CategoryID: 1},
+		{Name: "ผงซักฟอกสูตรเข้มข้น", Type: "Powder", InStock: 20, CategoryID: 2},
 	}
 	for _, d := range detergents {
 		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
 	}
 
-	// --- Mock DetergentCategory ---
-	categories := []entity.DetergentCategory{
-		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
-		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
-	}
-
-	for _, c := range categories {
-		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
-	}
-
-	// --- Mock Orders ---
+	// Orders
 	orders := []entity.Order{
 		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
 		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
@@ -180,7 +144,7 @@ func MockData() {
 		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
 	}
 
-	// --- Mock DiscountType ---
+	// Discount Types
 	discountTypes := []entity.DiscountType{
 		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
 		{TypeName: "จำนวนเงิน", Description: "ลดเป็นจำนวนเงิน"},
@@ -189,7 +153,7 @@ func MockData() {
 		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
 	}
 
-	// --- Mock Promotion ---
+	// Promotions
 	promotions := []entity.Promotion{
 		{
 			PromotionName:  "โปรลดหน้าฝน",
@@ -216,7 +180,7 @@ func MockData() {
 		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
 	}
 
-	// --- Mock PromotionCondition ---
+	// Promotion Conditions
 	conds := []entity.PromotionCondition{
 		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
 		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
@@ -225,47 +189,32 @@ func MockData() {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
 
-	// --- Mock LaundryProcess ---
+	// Laundry Processes
 	processes := []entity.LaundryProcess{
-    {Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}}, // ใช้ ID ของ Order
-    {Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
+		{Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}},
+		{Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
 	}
-
 	for _, lp := range processes {
 		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status, Order: lp.Order})
 	}
-	
-	// --- Mock Machines ---
+
+	// Machines
 	machines := []entity.Machine{
-	{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
-	{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 3, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
+		{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "drying", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "drying", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "drying", Machine_number: 3, Capacity_kg: 12, Status: "available"},
 	}
 	for _, m := range machines {
-	DB.FirstOrCreate(
-		&m,
-		entity.Machine{
+		DB.FirstOrCreate(&m, entity.Machine{
 			Machine_type: m.Machine_type,
-			Capacity_kg:  m.Capacity_kg, 
+			Capacity_kg:  m.Capacity_kg,
 			Status:       m.Status,
-		},
-		)
+		})
 	}
-	// // --- Mock History ---
-	// histories := []entity.OrderHistory{
-	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
-	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
-	// }
-	// for _, h := range histories {
-	// 	DB.Create(&h)
-	// }
-
-	fmt.Println("Mock data added successfully!")
-	
 
 	fmt.Println("✅ Mock data added successfully!")
 }
