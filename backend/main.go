@@ -17,10 +17,24 @@ func main() {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 
-	// ตัวอย่างเดิม ...
+	// Order CRUD
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
+	router.GET("/addresses", controller.GetAddresses)
+	router.GET("/customers/name/:id", controller.GetCustomerNameByID)
+	router.POST("/orderaddress", controller.CreateAddress)
+	router.GET("/detergents/type/:type", controller.GetDetergentsByType)
+	router.PUT("/addresses/set-main", controller.UpdateMainAddress)
 
+	// Detergent CRUD
+	router.POST("/detergents", controller.CreateDetergent)
+	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	router.GET("/detergents", controller.GetDetergents)
+	router.DELETE("/detergents/:id", controller.DeleteDetergent)
+	router.GET("/detergents/purchase-history", controller.GetPurchaseDetergentHistory)
+	router.POST("/detergents/use", controller.UseDetergent) // ลด stock
+	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
+	// router.GET("/detergents/daily-usage", controller.GetDailyDetergentUsage) --- IGNORE ---
 	// Employee CRUD
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
@@ -48,7 +62,8 @@ func main() {
 	router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)
 	router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess)
 	router.GET("/orders/:id", controller.GetOrderByID)
-	router.GET("/ordersdetails", controller.GetOrdersdetails)
+	router.GET("/process/:id/order",controller.GetProcessesByOrder) // ดึง process พร้อม order
+	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
 
 	// Customer
 	router.POST("/customers", controller.CreateCustomer)
@@ -59,6 +74,13 @@ func main() {
 
 	// Machine
 	router.GET("/machines", controller.GetMachines)
+
+	// Queue Routes
+	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
+	router.POST("/queues/pickup", controller.CreatePickupQueue)
+	router.POST("/queues/:id/accept", controller.AcceptQueue)
+	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
+	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 
 	router.Run(fmt.Sprintf(":%d", port))
 }

@@ -30,6 +30,8 @@ func SetupDatabase() {
 		&entity.Detergent{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
+		&entity.History{},
+		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
@@ -56,6 +58,7 @@ func SetupDatabase() {
 		&entity.PromotionUsage{},
 		&entity.Role{},
 		&entity.DiscountType{},
+		&entity.DetergentUsageHistory{},
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
@@ -98,53 +101,30 @@ func MockData() {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
 
-	// Addresses
-	addresses := []entity.Address{
-		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	}
-	for _, a := range addresses {
-		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
-	}
-
-	// Service Types
+	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
+		{Type: "ซัก 18kg", Price: 90, Capacity: 18},
+		{Type: "ซัก 28kg", Price: 120, Capacity: 28},
+		{Type: "อบ 14kg", Price: 50, Capacity: 14},
+		{Type: "อบ 25kg", Price: 70, Capacity: 25},
+		{Type: "ไม่อบ", Price: 0, Capacity: 0},
 	}
 	for _, s := range services {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-	// Detergents & Categories
+	// --- Mock DetergentCategory ---
 	categories := []entity.DetergentCategory{
 		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
 		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
 	}
+
 	for _, c := range categories {
 		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
-
-	detergents := []entity.Detergent{
-		{Name: "น้ำยาซักเหลว", Type: "Liquid", InStock: 100, CategoryID: 1},
-		{Name: "ผงซักฟอก", Type: "Powder", InStock: 50, CategoryID: 2},
-		{Name: "น้ำยาซักสูตรพิเศษ", Type: "Liquid", InStock: 30, UserID: 2, CategoryID: 1},
-		{Name: "ผงซักฟอกสูตรเข้มข้น", Type: "Powder", InStock: 20, CategoryID: 2},
-	}
-	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
-	}
-
-	// Orders
-	orders := []entity.Order{
-		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
-		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
-	}
-	for _, o := range orders {
-		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
-	}
-
-	// Discount Types
+	// --- Mock DiscountType ---
 	discountTypes := []entity.DiscountType{
 		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
 		{TypeName: "จำนวนเงิน", Description: "ลดเป็นจำนวนเงิน"},
@@ -188,17 +168,8 @@ func MockData() {
 	for _, c := range conds {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
-
-	// Laundry Processes
-	processes := []entity.LaundryProcess{
-		{Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}},
-		{Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
-	}
-	for _, lp := range processes {
-		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status, Order: lp.Order})
-	}
-
-	// Machines
+	
+	// --- Mock Machines ---
 	machines := []entity.Machine{
 		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
 		{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
@@ -211,10 +182,17 @@ func MockData() {
 	for _, m := range machines {
 		DB.FirstOrCreate(&m, entity.Machine{
 			Machine_type: m.Machine_type,
-			Capacity_kg:  m.Capacity_kg,
-			Status:       m.Status,
-		})
+			Capacity_kg:  m.Capacity_kg, 
+		},
+		)
 	}
-
+	// // --- Mock History ---
+	// histories := []entity.OrderHistory{
+	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
+	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
+	// }
+	// for _, h := range histories {
+	// 	DB.Create(&h)
+	// }
 	fmt.Println("✅ Mock data added successfully!")
 }

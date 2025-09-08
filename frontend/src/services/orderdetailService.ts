@@ -41,7 +41,12 @@ export const orderdeailService = {
     if (!res.ok) throw new Error("Failed to fetch order");
     return res.json();
   },
+  getProcessesByOrder: async (orderId:string ) => {
+    const res = await fetch(`${API_BASE}/process/${orderId}/order`);
+    if (!res.ok) throw new Error("Failed to fetch processes by order");
+    return res.json();
 
+  },
   // ดึงเครื่องซัก/อบทั้งหมด
   getMachines: async (): Promise<Machine[]> => {
     const res = await fetch(`${API_BASE}/machines` );
@@ -50,22 +55,23 @@ export const orderdeailService = {
   },
 
   // บันทึกเครื่องซัก/อบสำหรับ LaundryProcess
-    saveMachines: async (processId: number, machine_ids: number[]) => {
+  saveMachines: async (processId: number | string, machine_ids: number[]) => {
+    // เปลี่ยนชื่อ key เป็น MachineIDs ให้ตรงกับ backend
     const res = await fetch(`${API_BASE}/laundry-process/${processId}/machines`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ machine_ids }),
-    });
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ MachineIDs: machine_ids }),
+    },);
     if (!res.ok) throw new Error("Failed to save machines");
     return res.json();
-    },
+  },
 
   // อัปเดตสถานะ LaundryProcess พร้อมหมายเหตุ
-  updateStatus: async (processId: number, status: string, status_note: string) => {
+  updateStatus: async (processId: number, status: string, description: string) => {
     const res = await fetch(`${API_BASE}/laundry-process/${processId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, status_note }),
+      body: JSON.stringify({ status, status_note: description }),
     });
     if (!res.ok) throw new Error("Failed to update status");
     return res.json();

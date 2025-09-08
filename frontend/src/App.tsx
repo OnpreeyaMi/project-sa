@@ -22,6 +22,8 @@ import HistoryPage from "./pages/orders/history";
 import StockAdminPage from "./pages/stock/Admin";
 import CustomerHomePage from "./pages/Home/CustomerHome";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
+import PurchaseHistoryPage from './pages/stock/Admin/history'; 
+import StockEmployeePage from "./pages/stock/employee";
 
 const App: React.FC = () => {
 
@@ -43,6 +45,7 @@ const App: React.FC = () => {
         <Route path="inventory" element={<StockEmpPage />} />
         <Route path="profile" element={<EmployeeProfile />} />
         <Route path="complaint" element={<ComplaintAdminPage />} />
+        <Route path="stock" element={<StockEmployeePage />} />
       </Route>
 
       {/* Admin routes */}
@@ -51,6 +54,7 @@ const App: React.FC = () => {
         <Route path="customers" element={<CustomerManagement />} />
         <Route path="promotions" element={<PromotionManagement />} />
         <Route path="stock" element={<StockAdminPage />} />
+        <Route path="stock/history" element={<PurchaseHistoryPage />} />
       </Route>
 
       {/* Customer routes */}
@@ -61,6 +65,7 @@ const App: React.FC = () => {
           <Route path="orders" element={<OrderPage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="home" element={<CustomerHomePage/>}/>
+          <Route path="status" element={<StatusPage />}/>
         </Route>
     </Routes>
 
