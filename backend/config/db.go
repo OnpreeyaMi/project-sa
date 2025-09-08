@@ -31,6 +31,8 @@ func SetupDatabase() {
 		&entity.Detergent{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
+		&entity.History{},
+		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
@@ -49,13 +51,16 @@ func SetupDatabase() {
 		&entity.SortingHistory{},
 		&entity.TimeSlot{},
 		&entity.User{},
-		&entity.Role{},
 		&entity.Gender{},
-		&entity.DiscountType{},
+		&entity.History{},
+		&entity.HistoryComplain{},
 		&entity.Promotion{},
 		&entity.PromotionCondition{},
 		&entity.PromotionUsage{},
 		&entity.ComplaintAttachment{},  //เพิ่มตาราง เก็บการอัปโหลด ไฟล์เพิ่มเติม
+		&entity.Role{},
+		&entity.DiscountType{},
+		&entity.DetergentUsageHistory{},
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
@@ -78,32 +83,58 @@ func MockData() {
 	}
 
 	//--- Mock Address ---
-	addresses := []entity.Address{
-		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	// --- Mock Role ---
+	roles := []entity.Role{
+		{Role_name: "admin"},
+		{Role_name: "customer"},
 	}
-	for _, a := range addresses {
-		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
+	for _, r := range roles {
+		DB.FirstOrCreate(&r, entity.Role{Role_name: r.Role_name})
+	}
+
+	// --- Mock User ---
+	users := []entity.User{
+		{Email: "admin@example.com", Password: "hashedpassword", Status: "active", RoleID: 1},
+		{Email: "customer1@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
+		{Email: "customer2@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
+	}
+	for _, u := range users {
+		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
+	}
+
+	// --- Mock Gender ---
+	genders := []entity.Gender{
+		{Name: "ชาย"},
+		{Name: "หญิง"},
+		{Name: "อืนๆ"},
+	}
+	for _, g := range genders {
+		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
 
 	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
+		{Type: "ซัก 18kg", Price: 90, Capacity: 18},
+		{Type: "ซัก 28kg", Price: 120, Capacity: 28},
+		{Type: "อบ 14kg", Price: 50, Capacity: 14},
+		{Type: "อบ 25kg", Price: 70, Capacity: 25},
+		{Type: "ไม่อบ", Price: 0, Capacity: 0},
 	}
 	for _, s := range services {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-	// --- Mock Orders ---
-	orders := []entity.Order{
-		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
-		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
-	}
-	for _, o := range orders {
-		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
+	// --- Mock DetergentCategory ---
+	categories := []entity.DetergentCategory{
+		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
+		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
 	}
 
+	for _, c := range categories {
+		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
+	}
 	// --- Mock DiscountType ---
 	discountTypes := []entity.DiscountType{
 		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
@@ -148,16 +179,6 @@ func MockData() {
 	for _, c := range conds {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
-
-	// --- Mock LaundryProcess ---
-	processes := []entity.LaundryProcess{
-    {Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}}, // ใช้ ID ของ Order
-    {Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
-	}
-
-	for _, lp := range processes {
-		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status, Order: lp.Order})
-	}
 	
 	// --- Mock Machines ---
 	machines := []entity.Machine{
@@ -175,9 +196,16 @@ func MockData() {
 		entity.Machine{
 			Machine_type: m.Machine_type,
 			Capacity_kg:  m.Capacity_kg, 
-			Status:       m.Status,
 		},
 		)
 	}
+	// // --- Mock History ---
+	// histories := []entity.OrderHistory{
+	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
+	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
+	// }
+	// for _, h := range histories {
+	// 	DB.Create(&h)
+	// }
 	fmt.Println("✅ Mock data added successfully!")
 }

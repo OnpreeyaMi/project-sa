@@ -1,11 +1,9 @@
-import React, { useState } from "react";
-import EmpSidebar from "../../../component/layout/admin/AdminSidebar";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Row,
   Typography,
   Button,
-  Table,
   Space,
   Popconfirm,
   Modal,
@@ -13,7 +11,16 @@ import {
   InputNumber,
   Form,
   Select,
+  message,
 } from "antd";
+import {
+  createDetergentWithPurchase,
+  getAllDetergents,
+  deleteDetergent, // เพิ่ม import
+} from "../../../services/stockService";
+import { useNavigate } from "react-router-dom";
+import AdminSidebar from "../../../component/layout/admin/AdminSidebar";
+import { RiDeleteBin5Line } from "react-icons/ri";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -28,158 +35,107 @@ interface StockItem {
 }
 
 const StockAdminPage: React.FC = () => {
-  const [stockData, setStockData] = useState<StockItem[]>([
-    {
-      key: 1,
-      name: "น้ำยาซักผ้า",
-      quantity: 50,
-      type: "detergent",
-      lastUpdated: "2025-08-06T12:00:00Z",
-      editor: "พนักงาน 1",
-    },
-    {
-      key: 2,
-      name: "น้ำยาปรับผ้านุ่ม",
-      quantity: 30,
-      type: "softener",
-      lastUpdated: "2025-08-05T10:30:00Z",
-      editor: "พนักงาน 2",
-    },
-    {
-      key: 3,
-      name: "น้ำยาอบผ้า",
-      quantity: 20,
-      type: "drying",
-      lastUpdated: "2025-08-04T09:15:00Z",
-      editor: "พนักงาน 3",
-    },
-    {
-      key: 4,
-      name: "น้ำยาปรับผ้านุ่ม",
-      quantity: 0,
-      type: "softener",
-      lastUpdated: "2025-08-03T08:45:00Z",
-      editor: "พนักงาน 4",
-    },
-  ]);
-
+  const [stockData, setStockData] = useState<StockItem[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [useItemModal, setUseItemModal] = useState<{visible: boolean, item?: StockItem}>({visible: false});
   const [form] = Form.useForm();
+  const [useItemForm] = Form.useForm();
+  const navigate = useNavigate();
 
-  const handleDelete = (key: number) => {
-    setStockData(stockData.filter((item) => item.key !== key));
+  useEffect(() => {
+    fetchStockData();
+    // eslint-disable-next-line
+  }, []);
+
+  const fetchStockData = async () => {
+    try {
+      const res = await getAllDetergents();
+      const detergents = res.data || [];
+      setStockData(
+        detergents.map((d: any, idx: number) => ({
+          key: d.ID || idx + 1,
+          name: d.Name,
+          type: d.Type,
+          quantity: d.InStock,
+          lastUpdated: d.UpdatedAt,
+          editor: d.UserID ? `User ${d.UserID}` : "-",
+        }))
+      );
+    } catch (err) {
+      // สามารถแจ้งเตือน error ได้
+    }
   };
 
-  const handleAddStock = (values: any) => {
-    const newItem: StockItem = {
-      key: stockData.length
-        ? Math.max(...stockData.map((i) => i.key)) + 1
-        : 1,
-      name: values.name,
-      type: values.type, // ใช้ type จาก Select
-      quantity: values.quantity,
-      lastUpdated: new Date().toISOString(),
-      editor: "currentUserName",
-    };
-    setStockData([...stockData, newItem]);
-    setIsModalVisible(false);
-    form.resetFields();
+  const handleDelete = async (key: number) => {
+    try {
+      await deleteDetergent(key);
+      message.success("ลบสินค้าสำเร็จ");
+      fetchStockData(); // refresh ข้อมูลใหม่
+    } catch (err) {
+      message.error("เกิดข้อผิดพลาดในการลบสินค้า");
+    }
   };
 
-  const columns = [
-    { title: "ลำดับ", dataIndex: "key", key: "key" },
-    { title: "ชื่อสินค้า", dataIndex: "name", key: "name" },
-    {
-      title: "ประเภท",
-      dataIndex: "type",
-      key: "type",
-      render: (type: string) => {
-        const color =
-          type === "detergent"
-            ? "blue"
-            : type === "drying"
-            ? "green"
-            : "orange";
-        return <Text style={{ color }}>{type}</Text>;
-      },
-    },
-    {
-      title: "จำนวนคงเหลือ",
-      dataIndex: "quantity",
-      key: "quantity",
-      render: (quantity: number, record: StockItem) => (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Text>
-            {quantity}{" "}
-            {quantity < 10 && quantity > 0 && (
-              <Text type="danger">ใกล้หมด</Text>
-            )}
-            {quantity === 0 && <Text type="danger">หมดแล้ว</Text>}
-          </Text>
-          <Button
-            type="primary"
-            danger
-            disabled={quantity <= 0}
-            onClick={() => {
-              const updatedData = stockData.map((item) =>
-                item.key === record.key
-                  ? {
-                      ...item,
-                      quantity: item.quantity - 1,
-                      lastUpdated: new Date().toISOString(),
-                      editor: "currentUserName",
-                    }
-                  : item
-              );
-              setStockData(updatedData);
-            }}
-          >
-            -
-          </Button>
-        </div>
-      ),
-    },
-    {
-      title: "วันที่แก้ไขล่าสุด",
-      dataIndex: "lastUpdated",
-      key: "lastUpdated",
-      render: (lastUpdated: string) =>
-        new Date(lastUpdated).toLocaleDateString("th-TH", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }),
-    },
-    {
-      title: "ผู้แก้ไข",
-      dataIndex: "editor",
-      key: "editor",
-      render: (editor: string, record: StockItem) => (
-        <Space>
-          <Text>{editor}</Text>
-          <Popconfirm
-            title="คุณแน่ใจหรือไม่ที่จะลบสินค้า?"
-            onConfirm={() => handleDelete(record.key)}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button type="link" danger>
-              ลบ
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const handleAddStock = async (values: any) => {
+    try {
+      // สมมุติ UserID และ CategoryID เป็น 1 (ควรดึงจริงจากระบบ)
+      const detergentTypeMap: Record<string, number> = {
+        detergent: 1, // น้ำยาซักผ้า
+        softener: 2,  // น้ำยาปรับผ้านุ่ม
+      };
+      const categoryId = detergentTypeMap[values.type] || 1;
+      const userId = 1; // สมมุติ admin id
+
+      await createDetergentWithPurchase({
+        detergent: {
+          Name: values.name,
+          Type: values.type,
+          InStock: values.quantity,
+          UserID: userId,
+          CategoryID: categoryId,
+        },
+        purchase: {
+          Quantity: values.quantity,
+          Price: values.price,
+          Supplier: values.supplier || "",
+          UserID: userId,
+        },
+      });
+      message.success("เพิ่มสินค้าและบันทึกการจัดซื้อสำเร็จ");
+      setIsModalVisible(false);
+      form.resetFields();
+      fetchStockData(); // เพิ่มบรรทัดนี้เพื่อ refresh ข้อมูลทันทีหลังเพิ่ม
+    } catch (err) {
+      message.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+    }
+  };
+
+  const handleUseItem = (item: StockItem) => {
+    setUseItemModal({visible: true, item});
+  };
+
+  const handleUseItemSubmit = async (values: any) => {
+    const item = useItemModal.item;
+    if (!item) return;
+    if (values.quantity <= 0) {
+      message.error("จำนวนที่ใช้ต้องมากกว่า 0");
+      return;
+    }
+    if (values.quantity > item.quantity) {
+      message.error("สินค้าไม่เพียงพอ");
+      return;
+    }
+    // TODO: call backend to decrease stock and log usage
+    // ตัวอย่าง mock
+    // await useDetergent({ id: item.key, quantity: values.quantity, reason: values.reason, orderId: values.orderId });
+    message.success("บันทึกการใช้สินค้าเรียบร้อย");
+    setUseItemModal({visible: false});
+    useItemForm.resetFields();
+    fetchStockData();
+  };
 
   return (
-    <EmpSidebar>
+    <AdminSidebar>
       <Title
         level={4}
         style={{ textAlign: "center", marginTop: 30, marginBottom: 30 }}
@@ -249,35 +205,83 @@ const StockAdminPage: React.FC = () => {
           >
             เพิ่มรายการสินค้า
           </Button>
-          <Button type="primary" style={{ height: 40, fontSize: 16 }}>
-            ซื้อสินค้า
+          <Button
+            type="primary"
+            style={{ height: 40, fontSize: 16 }}
+            onClick={() => navigate("/admin/stock/history")}
+          >
+            ประวัติการซื้อสินค้า
           </Button>
         </Space>
       </Row>
 
-      <Card
-        hoverable
-        style={{
-          width: "100%",
-          textAlign: "center",
-          borderRadius: 8,
-          background: "#F9FBFF",
-        }}
-      >
-        <Table
-          columns={columns}
-          dataSource={stockData}
-          pagination={{ pageSize: 5 }}
-          style={{ margin: "0 auto", width: "80%" }}
-        />
-      </Card>
+      {/* Card List แสดงรายการสินค้า */}
+      <div style={{ background: '#f6f6f8', minHeight: '100vh', padding: '32px 0' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          {stockData.map(item => (
+            <div
+              key={item.key}
+              style={{
+                background: '#fff',
+                borderRadius: 18,
+                boxShadow: '0 2px 12px #eee',
+                marginBottom: 22,
+                padding: '22px 28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                {/* ไอคอนสินค้า */}
+                <div style={{ width: 54, height: 54, borderRadius: 12, background: item.type === 'detergent' ? '#e3f2fd' : '#fff3e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {/* สามารถเปลี่ยนเป็นไอคอนจริงตามประเภทสินค้าได้ */}
+                  <span style={{ fontSize: 32 }}>{item.type === 'detergent' ? '🧴' : item.type === 'softener' ? '🧴' : '📦'}</span>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 20 }}>{item.name}</div>
+                  <div style={{ color: '#888', fontSize: 15 }}>{item.type === 'detergent' ? 'น้ำยาซักผ้า' : item.type === 'softener' ? 'น้ำยาปรับผ้านุ่ม' : item.type}</div>
+                  <div style={{ color: '#222', fontSize: 15, marginTop: 2 }}>
+                    จำนวนคงเหลือ: <b>{item.quantity}</b>
+                    {item.quantity < 10 && item.quantity > 0 && (
+                      <span style={{ color: '#ED553B', fontWeight: 600, marginLeft: 8, fontSize: 15, background: '#fff3e0', borderRadius: 6, padding: '2px 10px' }}>ใกล้หมด</span>
+                    )}
+                  </div>
+                  <div style={{ color: '#aaa', fontSize: 13, marginTop: 2 }}>แก้ไขล่าสุด: {new Date(item.lastUpdated).toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' })}</div>
+                  <div style={{ color: '#aaa', fontSize: 13 }}>ผู้แก้ไข: {item.editor}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Button
+                  type="default"
+                  size="small"
+                  style={{ borderRadius: 8, border: '1.5px solid #ED553B', color: '#ED553B', minWidth: 90 }}
+                  disabled={item.quantity === 0}
+                  onClick={() => handleUseItem(item)}
+                >ใช้สินค้า</Button>
+                <Popconfirm
+                  title="คุณแน่ใจหรือไม่ที่จะลบสินค้า?"
+                  onConfirm={() => handleDelete(item.key)}
+                  okText="ใช่"
+                  cancelText="ยกเลิก"
+                >
+                  <RiDeleteBin5Line type="link"  style={{ minWidth: 90 ,height: 20, color: '#ED553B' }}>ลบ</RiDeleteBin5Line>
+                </Popconfirm>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <Modal
-        title={<span style={{ color: "#20639B", fontWeight: "bold", fontSize: "20px" }}>เพิ่มรายการสินค้า</span>} 
+        title={<span style={{ color: '#20639B', fontWeight: 'bold', fontSize: '20px' }}>เพิ่มรายการสินค้า</span>} 
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
+        okText="บันทึก"
+        cancelText="ยกเลิก"
+
         onOk={() => form.submit()}
-        style={{ top: "15%", textAlign: "center" }}
+        style={{ top: '15%', textAlign: 'center' }}
         
       >
         <Form form={form} layout="vertical" onFinish={handleAddStock}>
@@ -296,7 +300,6 @@ const StockAdminPage: React.FC = () => {
             <Select placeholder="เลือกประเภทสินค้า">
               <Option value="detergent">น้ำยาซักผ้า</Option>
               <Option value="softener">น้ำยาปรับผ้านุ่ม</Option>
-              <Option value="drying">น้ำยาอบผ้า</Option>
             </Select>
           </Form.Item>
           <Form.Item
@@ -318,7 +321,35 @@ const StockAdminPage: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </EmpSidebar>
+
+      <Modal
+        title={<span style={{ color: '#ED553B', fontWeight: 'bold', fontSize: '20px' }}>ใช้สินค้า</span>}
+        open={useItemModal.visible}
+        onCancel={() => { setUseItemModal({visible: false}); useItemForm.resetFields(); }}
+        onOk={() => useItemForm.submit()}
+        okText="ยืนยัน"
+        cancelText="ยกเลิก"
+        style={{ top: '15%', textAlign: 'center' }}
+      >
+        <Form form={useItemForm} layout="vertical" onFinish={handleUseItemSubmit}>
+          <Form.Item name="quantity" label="จำนวนที่ใช้" rules={[{ required: true, message: 'กรุณากรอกจำนวนที่ใช้' }]}> <InputNumber min={1} max={useItemModal.item?.quantity || 1} style={{ width: '100%' }} /> </Form.Item>
+          <Form.Item name="reason" label="เหตุผล" rules={[{ required: true, message: 'กรุณาเลือกเหตุผล' }]}> <Select placeholder="เลือกเหตุผล"> <Option value="ล้างเครื่อง">ล้างเครื่อง</Option> <Option value="ทดลอง">ทดลอง</Option> <Option value="เสียหาย">เสียหาย</Option> <Option value="อื่น ๆ">อื่น ๆ</Option> </Select> </Form.Item>
+          <Form.Item name="orderId" label="เลข Order (ถ้ามี)"> <Input placeholder="กรอกเลข Order หรือเลือกจากรายการ" /> </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Add styles for row backgrounds */}
+      <style>
+      {`
+      .detergent-row {
+        background-color: #f4fbff !important; /* ฟ้าอ่อนมาก */
+      }
+      .softener-row {
+        background-color: #fff8f0 !important; /* ส้มอ่อนมาก */
+      }
+      `}
+      </style>
+    </AdminSidebar>
   );
 };
 

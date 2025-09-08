@@ -14,7 +14,7 @@ type LaundryProcess struct {
 	Description string
 
 	//many to many เชื่อกับ Order
-	Order []*Order `gorm:"many2many:process_orders"`
+	Order []*Order `gorm:"many2many:process_order"`
 	//many to one กับ Employee
 	EmployeeID uint
 	Employee   *Employee `gorm:"foreignKey:EmployeeID"`
@@ -22,5 +22,5 @@ type LaundryProcess struct {
 	SortingID  uint
 	SortingRecord    *SortingRecord `gorm:"foreignKey:SortingID"`
 	//many to many กับ Machine
-	Machine []*Machine `gorm:"many2many:MachineProcess"`
+	Machine []*Machine `gorm:"many2many:machine_process;"`
 }
