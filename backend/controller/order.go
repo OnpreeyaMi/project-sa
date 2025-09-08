@@ -69,7 +69,7 @@ func CreateOrder(c *gin.Context) {
 	// history เริ่มต้น
 	history := entity.OrderHistory{
 		OrderID: order.ID,
-		Status:  "Pending",
+		Status:  "รอดำเนินการ",
 	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
@@ -107,6 +107,14 @@ func CreateOrder(c *gin.Context) {
 
 
 
+	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
+	if len(req.DetergentIDs) > 0 {
+		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, order)
 }
 
@@ -134,12 +142,120 @@ func GetOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
-// ดึงที่อยู่ทั้งหมด
+// ดึงที่อยู่ทั้งหมดของลูกค้าที่ใช้งาน
 func GetAddresses(c *gin.Context) {
+	customerID := c.Query("customer_id")
 	var addresses []entity.Address
-	if err := config.DB.Preload("Customer").Find(&addresses).Error; err != nil {
+	if customerID != "" {
+		if err := config.DB.Where("customer_id = ?", customerID).Preload("Customer").Find(&addresses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	} else {
+		if err := config.DB.Preload("Customer").Find(&addresses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	c.JSON(http.StatusOK, addresses)
+}
+
+// ดึงชื่อ-นามสกุลลูกค้าจาก ID
+func GetCustomerNameByID(c *gin.Context) {
+	id := c.Param("id")
+	var customer entity.Customer
+	if err := config.DB.Preload("User").First(&customer, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+	firstName := customer.FirstName
+	lastName := customer.LastName
+
+	c.JSON(http.StatusOK, gin.H{
+		"firstName": firstName,
+		"lastName":  lastName,
+	})
+}
+
+// เพิ่มฟังก์ชันสร้าง address ใหม่และเชื่อมกับลูกค้า
+func CreateAddress(c *gin.Context) {
+	var req struct {
+		AddressDetails string  `json:"addressDetails"`
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		CustomerID     uint    `json:"customerId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	address := entity.Address{
+		AddressDetails: req.AddressDetails,
+		Latitude:       req.Latitude,
+		Longitude:      req.Longitude,
+		CustomerID:     req.CustomerID,
+	}
+	if err := config.DB.Create(&address).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, addresses)
+	c.JSON(http.StatusOK, address)
+}
+
+// อัพเดตที่อยู่หลักของลูกค้า
+func UpdateMainAddress(c *gin.Context) {
+	var req struct {
+		CustomerID uint `json:"customer_id"`
+		AddressID  uint `json:"address_id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// อัพเดตที่อยู่ทั้งหมดของลูกค้าให้ไม่ใช่ที่อยู่หลัก
+	if err := config.DB.Model(&entity.Address{}).
+		Where("customer_id = ?", req.CustomerID).
+		Update("is_default", false).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// อัพเดตที่อยู่ที่เลือกให้เป็นที่อยู่หลัก
+	if err := config.DB.Model(&entity.Address{}).
+		Where("id = ? AND customer_id = ?", req.AddressID, req.CustomerID).
+		Update("is_default", true).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "อัพเดตที่อยู่หลักสำเร็จ"})
+}
+
+// ลดจำนวน InStock ของน้ำยาทางร้านเมื่อมีการสร้างออเดอร์
+func DecreaseDetergentStock(detergentIDs []uint) error {
+	for _, id := range detergentIDs {
+		var detergent entity.Detergent
+		if err := config.DB.First(&detergent, id).Error; err != nil {
+			return err
+		}
+		if detergent.InStock > 0 {
+			detergent.InStock -= 1
+			if err := config.DB.Save(&detergent).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// GetDetergentsByType handles GET /detergents/type/:type for fetching detergents by type (e.g. Liquid, Softener)
+func GetDetergentsByType(c *gin.Context) {
+	detType := c.Param("type")
+	var detergents []entity.Detergent
+	if err := config.DB.Where("LOWER(type) = ?", detType).Find(&detergents).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": detergents})
 }

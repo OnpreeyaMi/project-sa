@@ -31,6 +31,8 @@ func SetupDatabase() {
 		&entity.Detergent{},
 		&entity.Employee{},
 		&entity.EmployeeStatus{},
+		&entity.History{},
+		&entity.HistoryComplain{},
 		&entity.LaundryProcess{},
 		&entity.Machine{},
 		&entity.Order{},
@@ -58,6 +60,7 @@ func SetupDatabase() {
 		&entity.Role{},
 		&entity.DiscountType{},
 
+		&entity.DetergentUsageHistory{},
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
@@ -109,56 +112,18 @@ func MockData() {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
 
-
-	// --- Mock Address ---
-	addresses := []entity.Address{
-		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	}
-	for _, a := range addresses {
-		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
-	}
-
 	// --- Mock ServiceType ---
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
+		{Type: "ซัก 18kg", Price: 90, Capacity: 18},
+		{Type: "ซัก 28kg", Price: 120, Capacity: 28},
+		{Type: "อบ 14kg", Price: 50, Capacity: 14},
+		{Type: "อบ 25kg", Price: 70, Capacity: 25},
+		{Type: "ไม่อบ", Price: 0, Capacity: 0},
 	}
 	for _, s := range services {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
-	}
-
-
-	// --- Mock Detergent ---
-	detergents := []entity.Detergent{
-		{
-			Name:  "น้ำยาซักเหลว",
-			Type:  "Liquid",
-			InStock: 100,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอก",
-			Type:  "Powder",
-			InStock: 50,
-			CategoryID: 2,
-		},
-		{
-			Name:  "น้ำยาซักสูตรพิเศษ",
-			Type:  "Liquid",
-			InStock: 30,
-			UserID: 2,
-			CategoryID: 1,
-		},
-		{
-			Name:  "ผงซักฟอกสูตรเข้มข้น",
-			Type:  "Powder",
-			InStock: 20,
-			CategoryID: 2,
-		},
-	}
-	for _, d := range detergents {
-		DB.FirstOrCreate(&d, entity.Detergent{Name: d.Name, Type: d.Type})
 	}
 
 	// --- Mock DetergentCategory ---

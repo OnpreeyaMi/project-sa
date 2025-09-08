@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
-import { Card, Table, Tag, Spin, message } from "antd";
-// import axios from "axios";
+import { Card, Tag, Button, Spin, message } from "antd";
 import { fetchOrderHistories } from "../../../services/orderService";
 import type { OrderHistory } from "../../../interfaces/types";
 
@@ -59,23 +58,64 @@ const HistoryPage: React.FC = () => {
 
   return (
     <CustomerSidebar>
-      <h1>History</h1>
-      <Card
-        hoverable
-        style={{
-          width: "100%",
-          height: "auto",
-          textAlign: "center",
-          borderRadius: 8,
-          background: "#F9FBFF",
-        }}
-      >
+      <h1 style={{ textAlign: "left", marginTop: 20, marginBottom: 20, fontSize: "20px" }}>
+        ประวัติการสั่งซื้อ
+      </h1>
+      <div style={{ width: "100%", maxWidth: 600, margin: "0 auto" }}>
         {loading ? (
           <Spin tip="กำลังโหลด..." />
         ) : (
-          <Table columns={columns} dataSource={data} rowKey="id" />
+          data.map((item) => {
+            const order = item.Order || {};
+            return (
+              <Card
+                key={item.key}
+                hoverable
+                style={{ marginBottom: 18, borderRadius: 12, boxShadow: "0 2px 8px #eee", textAlign: "left" }}
+                bodyStyle={{ padding: 18 }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ marginBottom: 4 }}>
+                      <b>วันที่สั่งซื้อ:</b> {dayjs(item.CreatedAt).format("DD/MM/YYYY")}
+                    </div>
+                    <div style={{ color: "#888", fontSize: 15, marginBottom: 4 }}>
+                      รหัสคำสั่ง: {item.OrderID || "-"}
+                    </div>
+                    <div style={{ marginBottom: 4 }}>
+                      <b>ประเภทบริการ:</b> {order.ServiceTypes && order.ServiceTypes.length > 0
+                        ? order.ServiceTypes.map((st: any) => st.name || st.type || "-").join(", ")
+                        : "-"}
+                    </div>
+                    <div style={{ marginBottom: 4 }}>
+                      <b>น้ำยา:</b> {order.detergents && order.detergents.length > 0
+                        ? order.detergents.map((dt: any) => dt.name || dt.type || "-").join(", ")
+                        : "-"}
+                    </div>
+                    <div style={{ marginBottom: 4 }}>
+                      <b>ราคา:</b> {
+                        order.service_types && order.service_types.length > 0
+                          ? `${order.service_types.reduce((sum: number, st: any) => sum + (st.price || 0), 0)} บาท`
+                          : "-"
+                      }
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ marginBottom: 6 }}>
+                      <Tag color={item.status === "เสร็จสิ้น" ? "green" : item.status === "กำลังดำเนินการ" ? "blue" : "orange"}>
+                        {item.status || "-"}
+                      </Tag>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                  <Button type="primary" ghost>ซื้ออีกครั้ง</Button>
+                </div>
+              </Card>
+            );
+          })
         )}
-      </Card>
+      </div>
     </CustomerSidebar>
   );
 };
