@@ -18,4 +18,5 @@ type User struct {
 	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:UserID;references:ID" json:"-"`
 
 	Employee *Employee `gorm:"foreignKey:UserID" json:"Employee,omitempty"`
+	DetergentUsageHistories []DetergentUsageHistory `gorm:"foreignKey:UserID"`
 }
