@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"time"
 )
 
 var DB *gorm.DB
@@ -20,8 +21,6 @@ func ConnectDatabase() {
 }
 
 func SetupDatabase() {
-	// สร้างตารางตามโมเดล (ไม่มีการใส่ mock data)
-	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
 		&entity.ClothType{},
@@ -67,12 +66,11 @@ func SetupDatabase() {
 		fmt.Println("AutoMigrate completed successfully.")
 	}
 
-	// ใส่ mock data หลัง AutoMigrate
 	MockData()
 }
 
 func MockData() {
-	// --- Mock Customers ---
+	// Customers
 	customers := []entity.Customer{
 		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, IsVerified: true, UserID: 2},
 		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false, UserID: 3},
@@ -104,12 +102,8 @@ func MockData() {
 		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
 	}
 
-	// --- Mock Gender ---
-	genders := []entity.Gender{
-		{Name: "ชาย"},
-		{Name: "หญิง"},
-		{Name: "อืนๆ"},
-	}
+	// Genders
+	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
@@ -122,7 +116,7 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
-	// --- Mock ServiceType ---
+	// Service Types
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
@@ -154,7 +148,7 @@ func MockData() {
 		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
 	}
 
-	// --- Mock Promotion ---
+	// Promotions
 	promotions := []entity.Promotion{
 		{
 			PromotionName:  "โปรลดหน้าฝน",
@@ -181,7 +175,7 @@ func MockData() {
 		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
 	}
 
-	// --- Mock PromotionCondition ---
+	// Promotion Conditions
 	conds := []entity.PromotionCondition{
 		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
 		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
@@ -201,9 +195,7 @@ func MockData() {
 		{Machine_type: "drying", Machine_number: 3, Capacity_kg: 12, Status: "available"},
 	}
 	for _, m := range machines {
-	DB.FirstOrCreate(
-		&m,
-		entity.Machine{
+		DB.FirstOrCreate(&m, entity.Machine{
 			Machine_type: m.Machine_type,
 			Capacity_kg:  m.Capacity_kg, 
 		},

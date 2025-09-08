@@ -2,62 +2,33 @@ import React, { useMemo, useState, useEffect } from "react";
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaTrash } from "react-icons/fa";
 import { Modal, Form, Input, Select, Button, Popconfirm, message, Divider } from "antd";
 import AdminSidebar from "../../component/layout/admin/AdminSidebar";
-import api from "../../lib/Employee/api";
+import { EmployeeService, type EmployeeUpsert } from "../../services/Employee";
 
 type EmpStatus = "active" | "inactive" | "onleave";
 type EmpGender = "male" | "female" | "other";
 
-// ---------- Types (ใช้แบบ PascalCase ให้ตรงกับ Go) ----------
 type Employee = {
   ID: number;
   Code?: string;
-
   FirstName?: string;
   LastName?: string;
   Gender?: EmpGender | string;
-
   Phone?: string;
-
-  StartDate?: string; // ISO string จาก Go
-
-  User?: {
-    ID?: number;
-    Email?: string;
-    Status?: string;
-  };
-
+  StartDate?: string;
+  User?: { ID?: number; Email?: string };
   PositionID?: number;
-  Position?: {
-    ID: number;
-    PositionName: string;
-  };
-
-  EmployeeStatus?: {
-    ID: number;
-    StatusName: EmpStatus | string;
-    StatusDescription?: string;
-  };
-};
-
-type EmployeeUpsert = Partial<Employee> & {
-  Email?: string;
-  Password?: string;
-  // ช่องกรอก JoinDate ในฟอร์ม -> ส่ง JoinDate/StartDate เป็น PascalCase
-  JoinDate?: string;
-  Status?: EmpStatus;
-  StatusDescription?: string;
+  Position?: { ID: number; PositionName: string };
+  EmployeeStatus?: { ID: number; StatusName: EmpStatus | string; StatusDescription?: string };
 };
 
 const initialEmployees: Employee[] = [];
 
-// ---------- UI metadata ----------
 const statusMeta: Record<EmpStatus, { label: string; badge: string; dot: string }> = {
   active: { label: "ออนไลน์", badge: "bg-green-100 text-green-700", dot: "bg-green-500" },
   inactive: { label: "ออฟไลน์", badge: "bg-gray-200 text-gray-600", dot: "bg-gray-400" },
   onleave: { label: "ลาพัก", badge: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-500" },
 };
 
-// คำอธิบายสถานะแบบลิงก์อัตโนมัติ
 const STATUS_DESC: Record<EmpStatus, string> = {
   active: "กำลังปฎิบัติงาน",
   inactive: "ยังไม่ปฎิบัติงาน",
@@ -67,26 +38,16 @@ const STATUS_DESC: Record<EmpStatus, string> = {
 const genderLabel = (g?: EmpGender | string) => (g === "male" ? "ชาย" : g === "female" ? "หญิง" : "อื่น ๆ");
 const fullName = (e: Employee) => `${e.FirstName || ""} ${e.LastName || ""}`.trim();
 const initialsOf = (e: Employee) => [e.FirstName?.trim()?.[0], e.LastName?.trim()?.[0]].filter(Boolean).join("");
-
-// ดึงชื่อแผนก/ตำแหน่งจาก Relation
 const positionNameOf = (e: Employee) => e.Position?.PositionName || "";
-
-// ดึง status (normalized)
 const statusOf = (e: Employee): EmpStatus => {
   const s = (e.EmployeeStatus?.StatusName || "inactive").toString().toLowerCase();
   return (["active", "inactive", "onleave"].includes(s) ? s : "inactive") as EmpStatus;
 };
-
-// ดึงคำอธิบายสถานะ (ถ้า DB ว่าง ให้ใช้ mapping)
 const statusDescOf = (e: Employee) => e.EmployeeStatus?.StatusDescription || STATUS_DESC[statusOf(e)];
-
-// วันที่เข้าร่วม (โชว์แบบ yyyy-mm-dd)
 const joinDateOf = (e: Employee) => (e.StartDate ? String(e.StartDate).slice(0, 10) : "");
 
-// ---------- Component ----------
 const EmployeePage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-
   type StatusFilter = EmpStatus | "all";
   type GenderFilter = EmpGender | "all";
 
@@ -99,31 +60,17 @@ const EmployeePage: React.FC = () => {
   const [form] = Form.useForm();
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-  // ---------- Transform raw (กันกรณี backend เก่าหลงมา) ----------
   const transformRaw = (raw: any): Employee => {
     const posObj = raw.Position || raw.position || {};
-    const posName =
-      posObj.PositionName || posObj.positionName || raw.position || "";
-
+    const posName = posObj.PositionName || posObj.positionName || raw.position || "";
     const statusName: string =
-      raw.EmployeeStatus?.StatusName ||
-      raw.employeeStatus?.statusName ||
-      raw.Status ||
-      raw.status ||
-      "inactive";
-
+      raw.EmployeeStatus?.StatusName || raw.employeeStatus?.statusName || raw.Status || raw.status || "inactive";
     const statusDescFromDB: string | undefined =
-      raw.EmployeeStatus?.StatusDescription ||
-      raw.employeeStatus?.statusDescription ||
-      undefined;
-
+      raw.EmployeeStatus?.StatusDescription || raw.employeeStatus?.statusDescription || undefined;
     const startDateStr = raw.StartDate || raw.startDate || raw.start_date;
-
-    // ปรับรูปแบบ User.Email ให้พร้อมใช้งาน
     const userObj = raw.User || raw.user || undefined;
     if (userObj) userObj.Email = userObj.Email ?? userObj.email;
 
-    // Build in PascalCase
     const emp: Employee = {
       ID: raw.ID ?? raw.id ?? 0,
       Code: raw.Code ?? raw.code,
@@ -132,18 +79,10 @@ const EmployeePage: React.FC = () => {
       Gender: (raw.Gender ?? raw.gender ?? "").toLowerCase(),
       Phone: raw.Phone ?? raw.phone,
       StartDate: startDateStr,
-
       User: userObj,
       PositionID: raw.PositionID ?? raw.positionID ?? posObj.ID ?? posObj.id,
-      Position: raw.Position
-        ? {
-            ID: raw.Position.ID ?? raw.Position.id,
-            PositionName: posName,
-          }
-        : posName
-        ? { ID: raw.PositionID ?? 0, PositionName: posName }
-        : undefined,
-
+      Position: raw.Position ? { ID: raw.Position.ID ?? raw.Position.id, PositionName: posName } :
+        posName ? { ID: raw.PositionID ?? 0, PositionName: posName } : undefined,
       EmployeeStatus: raw.EmployeeStatus
         ? {
             ID: raw.EmployeeStatus.ID ?? raw.EmployeeStatus.id,
@@ -156,16 +95,13 @@ const EmployeePage: React.FC = () => {
             StatusDescription: statusDescFromDB,
           },
     };
-
     return emp;
   };
 
-  // ---------- API calls ----------
   const fetchEmployees = async () => {
     try {
-      const res = await api.get("/employees");
-      const list = Array.isArray(res.data) ? res.data.map(transformRaw) : [];
-      setEmployees(list);
+      const list = await EmployeeService.list();
+      setEmployees(Array.isArray(list) ? list.map(transformRaw) : []);
     } catch (err) {
       console.error("fetch employees:", err);
       message.error("ไม่สามารถดึงข้อมูลพนักงานได้");
@@ -178,12 +114,10 @@ const EmployeePage: React.FC = () => {
 
   const createEmployeeAPI = async (payload: EmployeeUpsert) => {
     try {
-      // ส่งเป็น PascalCase ให้ตรง DTO (สามารถส่ง StartDate จาก JoinDate ได้)
-      const res = await api.post("/employees", { ...payload, StartDate: payload.JoinDate });
-      const created = transformRaw(res.data);
+      const created = await EmployeeService.create(payload);
       await fetchEmployees();
       message.success("เพิ่มพนักงานเรียบร้อย");
-      return created;
+      return transformRaw(created);
     } catch (err: any) {
       console.error("createEmployeeAPI:", err);
       message.error(err?.response?.data?.error || "สร้างพนักงานไม่สำเร็จ");
@@ -193,11 +127,10 @@ const EmployeePage: React.FC = () => {
 
   const updateEmployeeAPI = async (id: number, payload: EmployeeUpsert) => {
     try {
-      const res = await api.put(`/employees/${id}`, { ...payload, StartDate: payload.JoinDate });
-      const updated = transformRaw(res.data);
+      const updated = await EmployeeService.update(id, payload);
       await fetchEmployees();
       message.success("อัปเดตข้อมูลเรียบร้อย");
-      return updated;
+      return transformRaw(updated);
     } catch (err: any) {
       console.error("updateEmployeeAPI:", err);
       message.error(err?.response?.data?.error || "อัปเดตไม่สำเร็จ");
@@ -207,7 +140,7 @@ const EmployeePage: React.FC = () => {
 
   const deleteEmployeeAPI = async (id: number) => {
     try {
-      await api.delete(`/employees/${id}`);
+      await EmployeeService.remove(id);
       await fetchEmployees();
       message.success("ลบข้อมูลพนักงานเรียบร้อย");
     } catch (err: any) {
@@ -217,7 +150,6 @@ const EmployeePage: React.FC = () => {
     }
   };
 
-  // ---------- Filtering ----------
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       const term = search.toLowerCase();
@@ -232,15 +164,12 @@ const EmployeePage: React.FC = () => {
       const hit = possibleStrings.some((f) => f.toLowerCase().includes(term));
       const s = statusOf(emp);
       const statusOk = statusFilter === "all" || s === statusFilter;
-      const genderOk =
-        genderFilter === "all" || (emp.Gender || "").toLowerCase() === genderFilter;
-      const positionOk =
-        positionFilter === "all" || positionNameOf(emp) === positionFilter;
+      const genderOk = genderFilter === "all" || (emp.Gender || "").toLowerCase() === genderFilter;
+      const positionOk = positionFilter === "all" || positionNameOf(emp) === positionFilter;
       return hit && statusOk && genderOk && positionOk;
     });
   }, [employees, search, statusFilter, genderFilter, positionFilter]);
 
-  // ---------- Edit handler ----------
   const handleEditClick = (emp: Employee) => {
     setEditingEmployee(emp);
     form.setFieldsValue({
@@ -257,7 +186,6 @@ const EmployeePage: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // ---------- Delete helpers ----------
   const handleConfirmDelete = async (id: number) => { try { await deleteEmployeeAPI(id); } catch {} };
   const handleDeleteInModal = async () => {
     if (!editingEmployee) return;
@@ -267,7 +195,6 @@ const EmployeePage: React.FC = () => {
     form.resetFields();
   };
 
-  // ---------- Save handler ----------
   const handleSaveEmployee = async (values: any) => {
     const statusVal = values.Status as EmpStatus;
     const payload: EmployeeUpsert = {
@@ -275,11 +202,11 @@ const EmployeePage: React.FC = () => {
       FirstName: values.FirstName,
       LastName: values.LastName,
       Gender: values.Gender,
-      Position: values.Position,     // ถ้าคุณใช้ Select เป็น ID ให้ตั้งค่า PositionID แทน/เพิ่มได้
+      Position: values.Position,
       Email: values.Email,
       Password: values.Password ?? "",
       Phone: values.Phone,
-      JoinDate: values.JoinDate,     // ฝั่ง Go รองรับ JoinDate หรือ StartDate
+      JoinDate: values.JoinDate,
       Status: statusVal,
       StatusDescription: values.StatusDescription || STATUS_DESC[statusVal],
     };
@@ -303,13 +230,6 @@ const EmployeePage: React.FC = () => {
     } catch {}
   };
 
-  // ---------- Derived ----------
-  const statusCounts = useMemo(() => ({
-    active: employees.filter((e) => statusOf(e) === "active").length,
-    inactive: employees.filter((e) => statusOf(e) === "inactive").length,
-    onleave: employees.filter((e) => statusOf(e) === "onleave").length,
-  }), [employees]);
-
   const positionCounts = useMemo(() => {
     return employees.reduce<Record<string, number>>((acc, cur) => {
       const p = positionNameOf(cur) || "ไม่ระบุ";
@@ -327,19 +247,6 @@ const EmployeePage: React.FC = () => {
     [employees]
   );
 
-  const statusOptions = [
-    { value: "active", label: "active" },
-    { value: "inactive", label: "inactive" },
-    { value: "onleave", label: "onleave" },
-  ];
-
-  const genderOptions = [
-    { value: "male", label: "ชาย" },
-    { value: "female", label: "หญิง" },
-    { value: "other", label: "อื่น ๆ" },
-  ];
-
-  // ---------- Render ----------
   return (
     <AdminSidebar>
       <div className="min-h-screen p-8 font-sans bg-gray-50">
@@ -368,13 +275,21 @@ const EmployeePage: React.FC = () => {
               value={statusFilter}
               onChange={(v) => setStatusFilter(v as any)}
               className="w-full"
-              options={[{ value: "all", label: "สถานะทั้งหมด" }, ...statusOptions]}
+              options={[{ value: "all", label: "สถานะทั้งหมด" },
+                { value: "active", label: "active" },
+                { value: "inactive", label: "inactive" },
+                { value: "onleave", label: "onleave" }]}
             />
             <Select
               value={genderFilter}
               onChange={(v) => setGenderFilter(v as any)}
               className="w-full"
-              options={[{ value: "all", label: "เพศทั้งหมด" }, ...genderOptions]}
+              options={[
+                { value: "all", label: "เพศทั้งหมด" },
+                { value: "male", label: "ชาย" },
+                { value: "female", label: "หญิง" },
+                { value: "other", label: "อื่น ๆ" },
+              ]}
             />
             <Select
               value={positionFilter}
@@ -445,9 +360,9 @@ const EmployeePage: React.FC = () => {
           <div className="bg-white rounded-2xl shadow p-5">
             <div className="grid grid-cols-4 gap-4 text-center text-sm font-medium text-gray-700">
               <div><p className="text-blue-600 text-xl font-bold">{employees.length}</p>ทั้งหมด</div>
-              <div><p className="text-green-600 text-xl font-bold">{statusCounts.active}</p>ออนไลน์</div>
-              <div><p className="text-gray-600 text-xl font-bold">{statusCounts.inactive}</p>ออฟไลน์</div>
-              <div><p className="text-yellow-600 text-xl font-bold">{statusCounts.onleave}</p>ลาพัก</div>
+              <div><p className="text-green-600 text-xl font-bold">{employees.filter(e=>statusOf(e)==="active").length}</p>ออนไลน์</div>
+              <div><p className="text-gray-600 text-xl font-bold">{employees.filter(e=>statusOf(e)==="inactive").length}</p>ออฟไลน์</div>
+              <div><p className="text-yellow-600 text-xl font-bold">{employees.filter(e=>statusOf(e)==="onleave").length}</p>ลาพัก</div>
             </div>
           </div>
 
