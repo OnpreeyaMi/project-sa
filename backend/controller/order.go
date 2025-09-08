@@ -107,6 +107,14 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
+	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
+	if len(req.DetergentIDs) > 0 {
+		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, order)
 }
 

@@ -82,7 +82,6 @@ func main() {
 	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 
-	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
 }
 
