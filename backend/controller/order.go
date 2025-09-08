@@ -7,18 +7,17 @@ import (
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
 	"github.com/gin-gonic/gin"
-
 )
 
 // CreateOrder รับข้อมูลจาก frontend แล้วบันทึกลง DB
 func CreateOrder(c *gin.Context) {
 	var req struct {
 		CustomerID     uint   `json:"customer_id"`
-		ServiceTypeIDs []uint `json:"servicetype_ids"`
+		ServiceTypeIDs []uint `json:"service_type_ids"`
 		DetergentIDs   []uint `json:"detergent_ids"`
 		OrderImage     string `json:"order_image"`
 		OrderNote      string `json:"order_note"`
-		AddressIDs     []uint `json:"address_ids"`
+		AddressID      uint   `json:"address_id"`
 	}
 
 	// Bind JSON จาก request body
@@ -37,7 +36,7 @@ func CreateOrder(c *gin.Context) {
 		//AddressID:    req.AddressID,
 	}
 
-	// บันทึกลง DB
+	// บันทึก order
 	if err := config.DB.Create(&order).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -51,7 +50,7 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
-	// map detergents
+	// ความสัมพันธ์ detergents
 	if len(req.DetergentIDs) > 0 {
 		var detergents []entity.Detergent
 		if err := config.DB.Find(&detergents, req.DetergentIDs).Error; err == nil {
@@ -59,18 +58,6 @@ func CreateOrder(c *gin.Context) {
 		}
 	}
 
-	// map addresses
-	if len(req.AddressIDs) > 0 {
-		var addresses []entity.Address
-		if err := config.DB.Find(&addresses, req.AddressIDs).Error; err == nil {
-			config.DB.Model(&order).Association("Address").Append(addresses)
-		}
-	}
-	// history เริ่มต้น
-	history := entity.OrderHistory{
-		OrderID: order.ID,
-		Status:  "รอดำเนินการ",
-	}
 	// history เริ่มต้น
 	history := entity.OrderHistory{
 		OrderID: order.ID,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -6,7 +6,6 @@ import {
   Button,
   Upload,
   Input,
-  Radio,
   Typography,
   Divider,
   Modal as AntdModal,
@@ -29,7 +28,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 const descriptionsWashing: Record<number, string> =  {
-  10: `เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น`,
+  10: "เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น",
   14: "เสื้อยืด ผ้าบาง 20 ชิ้น\n ผ้าหนา ยีนส์ 10 ชิ้น\n ชุดเครื่องนอน 3 ฟุต",
   18: "เสื้อยืด ผ้าบาง 25 ชิ้น\n ผ้าหนา ยีนส์ 15 ชิ้น\n ชุดเครื่องนอน 5 ฟุต",
   28: "เสื้อยืด ผ้าบาง 35 ชิ้น\n ผ้าหนา ยีนส์ 20 ชิ้น\n ชุดเครื่องนอน 6 ฟุต",
@@ -109,17 +108,16 @@ const OrderPage: React.FC = () => {
       detergent_ids: detergentIds,
       order_image: orderImage,
       order_note: orderNote,
-      address_id: 1,
+      address_id: selectedAddress ?? 0, // fallback เป็น 0 ถ้า null
     };
 
     try {
       await createOrder(orderData);
       console.log(orderData, "Order created successfully");
-      Modal.success({ title: "สร้างออเดอร์สำเร็จ!" });
-      
+      AntdModal.success({ title: "สร้างออเดอร์สำเร็จ!" });
     } catch (err) {
       console.error(err);
-      Modal.error({ title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์" });
+      AntdModal.error({ title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์" });
     } finally {
       setIsModalVisible(false);
     }
@@ -269,7 +267,10 @@ const OrderPage: React.FC = () => {
                     alignItems: "center",
                   }}
                 >
-                <Text type="danger" style={{ fontSize: 16 }}>NO</Text>
+                  <div style={{ height: 75, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                    <TbWashDrycleanOff size={60} style={{ color: selectedDryer === null ? "#ED553B" : "#6DA3D3" }} />
+                  </div>
+                  <Text style={{ fontSize: 16, color: selectedDryer === null ? "#ED553B" : undefined }}>NO</Text>
                 </Card>
               </Col>
             {[14, 25].map((kg) => (
@@ -369,10 +370,41 @@ const OrderPage: React.FC = () => {
 
             {/* ที่อยู่ */}
             <Title level={5}>ที่อยู่</Title>
-            <Radio.Group
-              style={{ display: "block", marginBottom: 15 }}
-              onChange={(e) => setSelectedAddress(e.target.value)}
-              value={selectedAddress}
+            <div style={{ marginBottom: 15 }}>
+              {(() => {
+                const addr = addresses.find(a => a.ID === selectedAddress);
+                return addr ? (
+                  <span>{addr.AddressDetails}</span>
+                ) : (
+                  <span style={{ color: '#aaa' }}>กรุณาเลือกที่อยู่จัดส่ง</span>
+                );
+              })()}
+              <Button style={{ marginLeft: 16 }} onClick={() => setIsMapModal(true)}>
+                เปลี่ยนที่อยู่
+              </Button>
+            </div>
+            {/* Modal สำหรับเลือก/เปลี่ยนที่อยู่หลัก */}
+            <AntdModal
+              title="เลือกที่อยู่จัดส่ง"
+              open={isMapModal}
+              onCancel={() => {
+                setIsMapModal(false);
+                setAddingNewAddress(false);
+                setNewAddress("");
+                setNewLat(13.7563);
+                setNewLng(100.5018);
+              }}
+              footer={[
+                !addingNewAddress && (
+                  <Button key="ok" type="primary" onClick={() => {
+                    setIsMapModal(false);
+                    // setSelectedAddress(selectedAddress) // ไม่ต้อง set ซ้ำ เพราะเลือกแล้ว
+                  }} disabled={!selectedAddress}>
+                    ยืนยันที่อยู่
+                  </Button>
+                )
+              ]}
+              width={480}
             >
               {!addingNewAddress ? (
                 <>
@@ -555,7 +587,7 @@ const OrderPage: React.FC = () => {
           </div>
         }
         style={{ top: "20%", textAlign: "center" }}
-        width={400}
+        width={480}
       >
         <div style={{ textAlign: "left" }}>
           <div style={{ marginBottom: 14 }}><b>คุณ:</b> {customerName}</div>
@@ -584,5 +616,22 @@ const OrderPage: React.FC = () => {
     </CustomerSidebar>
   );
 };
+
+// เพิ่ม helper component สำหรับปักหมุดและ reverse geocode
+function LocationMarker({ setLat, setLng, setAddress }: { setLat: (lat: number) => void, setLng: (lng: number) => void, setAddress: (addr: string) => void }) {
+  useMapEvents({
+    click(e: any) {
+      setLat(e.latlng.lat);
+      setLng(e.latlng.lng);
+      // reverse geocode ด้วย Nominatim
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.display_name) setAddress(data.display_name);
+        });
+    },
+  });
+  return null;
+}
 
 export default OrderPage;
