@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
-<<<<<<< HEAD
 import { Card, Tag, Button, Spin, message } from "antd";
-=======
-import { Card, Table, Tag, Spin, message } from "antd";
-// import axios from "axios";
->>>>>>> 885b7cc (Revert "Merge branch 'main' of https://github.com/OnpreeyaMi/project-sa")
 import { fetchOrderHistories } from "../../../services/orderService";
 import type { OrderHistory } from "../../../interfaces/types";
 

@@ -24,6 +24,8 @@ import CustomerHomePage from "./pages/Home/CustomerHome";
 import PurchaseHistoryPage from './pages/stock/Admin/history'; 
 import StockEmployeePage from "./pages/stock/employee";
 import CustomerHomePage from "./pages/Home/CustomerHome";
+import PurchaseHistoryPage from './pages/stock/Admin/history'; 
+import StockEmployeePage from "./pages/stock/employee";
 
 const App: React.FC = () => {
 
