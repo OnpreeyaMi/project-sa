@@ -134,16 +134,6 @@ func MockData() {
 	for _, c := range categories {
 		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
-
-	// --- Mock Orders ---
-	orders := []entity.Order{
-		{CustomerID: 1, AddressID: 1, OrderNote: "Test order 1"},
-		{CustomerID: 2, AddressID: 2, OrderNote: "Test order 2"},
-	}
-	for _, o := range orders {
-		DB.FirstOrCreate(&o, entity.Order{CustomerID: o.CustomerID, AddressID: o.AddressID})
-	}
-
 	// --- Mock DiscountType ---
 	discountTypes := []entity.DiscountType{
 		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},

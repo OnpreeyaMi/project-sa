@@ -29,11 +29,9 @@ func CreateOrder(c *gin.Context) {
 	// สร้าง order object
 	order := entity.Order{
 		CustomerID: req.CustomerID,
-		//Servicetype: req.ServicetypeID,
-		//Detergent:   req.DetergentID,
 		OrderImage: req.OrderImage,
 		OrderNote:  req.OrderNote,
-		//AddressID:    req.AddressID,
+		AddressID:  req.AddressID,
 	}
 
 	// บันทึก order
@@ -69,6 +67,23 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
+	// preload ก่อนส่งกลับ
+	if err := config.DB.Preload("Customer").
+		Preload("ServiceTypes").
+		Preload("Detergents").
+		Preload("Address").
+		First(&order, order.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
+	if len(req.DetergentIDs) > 0 {
+		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
+			return
+		}
+	}
 	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
 	process := entity.LaundryProcess{
 		Status:     "รอดำเนินการ",
@@ -79,16 +94,6 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
 		return
 	}
-
-	// preload ก่อนส่งกลับ
-	if err := config.DB.Preload("Customer").
-		Preload("ServiceTypes").
-		Preload("Detergents").
-		Preload("Address").
-		First(&order, order.ID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
 	// สร้าง pickup queue ทันทีหลังสร้าง order
     pickupQueue := entity.Queue{
 	    Queue_type: "pickup",
@@ -97,23 +102,6 @@ func CreateOrder(c *gin.Context) {
     }
     config.DB.Create(&pickupQueue)
 
-
-
-	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
-	if len(req.DetergentIDs) > 0 {
-		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
-			return
-		}
-	}
-
-	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
-	if len(req.DetergentIDs) > 0 {
-		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
-			return
-		}
-	}
 
 	c.JSON(http.StatusOK, order)
 }
