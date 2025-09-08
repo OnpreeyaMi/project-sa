@@ -100,7 +100,7 @@ const OrderPage: React.FC = () => {
 
     const orderData = {
       customer_id: currentUser?.ID || 1,
-      service_type_ids: serviceTypeIds, // ส่งเป็น array ของ id จริง
+      servicetype_ids: serviceTypeIds, // ส่งเป็น array ของ id จริง
       detergent_ids: detergentIds,
       order_image: orderImage,
       order_note: orderNote,

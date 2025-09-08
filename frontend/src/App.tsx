@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import EmployeePage from "./pages/employee";
 import LaundryCheckPage from "./pages/laundryCheck";
+import LaundryHistoryPage from "./pages/laundryCheck/LaundryHistoryPage";
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
 import Login from "./pages/login/login";
 import RegisterForm from "./pages/register/register";
@@ -19,6 +20,7 @@ import ComplaintAdminPage from "./pages/complaint/complaintReply";
 import OrderPage from "./pages/orders/create";
 import HistoryPage from "./pages/orders/history";
 import StockAdminPage from "./pages/stock/Admin";
+import CustomerHomePage from "./pages/Home/CustomerHome";
 import PurchaseHistoryPage from './pages/stock/Admin/history'; 
 import StockEmployeePage from "./pages/stock/employee";
 
@@ -38,6 +40,7 @@ const App: React.FC = () => {
         <Route path="orders/:orderId" element={<OrderDetail />} />
         <Route path="delivery" element={<TransportQueuePage />} />
         <Route path="check" element={<LaundryCheckPage />} />
+        <Route path="/employee/laundry-history" element={<LaundryHistoryPage />} />
         <Route path="inventory" element={<StockEmpPage />} />
         <Route path="profile" element={<StatusPage />} />
         <Route path="complaint" element={<ComplaintAdminPage />} />
@@ -60,6 +63,7 @@ const App: React.FC = () => {
           <Route path="payment" element={<Payment />} />
           <Route path="orders" element={<OrderPage />} />
           <Route path="history" element={<HistoryPage />} />
+          <Route path="home" element={<CustomerHomePage/>}/>
         </Route>
     </Routes>
 

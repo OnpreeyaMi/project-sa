@@ -32,7 +32,7 @@ export interface Order {
   LaundryProcesses?: LaundryProcess[];
 }
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = "http://localhost:8000";
 
 export const orderdeailService = {
   // ดึง Order ตาม ID
