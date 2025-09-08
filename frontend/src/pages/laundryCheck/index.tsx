@@ -205,6 +205,19 @@ const LaundryCheckPage: React.FC = () => {
       })),
     };
 
+    const staffNote: string = form.getFieldValue("StaffNote") || "";
+
+    const payload: LaundryCheckInput = {
+      CustomerID: selectedCustomer.ID,
+      AddressID: selectedCustomer.AddressID!,
+      StaffNote: staffNote,
+      Items: items.map<LaundryItemInput>(x => ({
+        ClothTypeID: x.clothTypeId!,
+        ServiceTypeID: x.serviceTypeId!,
+        Quantity: x.quantity,
+      })),
+    };
+
     try {
       setSaving(true);
       const { OrderID } = await UpsertLaundryCheck(activeOrderId, payload);
@@ -469,7 +482,6 @@ const LaundryCheckPage: React.FC = () => {
                       <InputNumber min={1} value={it.quantity} onChange={(v)=>updateItem(it.id, "quantity", v || 1)} size="small" style={{ width: 60, textAlign: "center" }} />
                       <Button size="small" onClick={()=> updateItem(it.id, "quantity", (it.quantity||0)+1) }>+</Button>
                     </Space>
-
                     <Popconfirm title="ลบรายการนี้?" onConfirm={()=>removeItem(it.id)} okText="ลบ" cancelText="ยกเลิก">
                       <Button danger size="small" icon={<DeleteOutlined />} />
                     </Popconfirm>
@@ -620,7 +632,6 @@ const LaundryCheckPage: React.FC = () => {
               <Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>{billRecord.OrderNote}</Descriptions.Item>
             ) : null}
           </Descriptions>
-
           <Divider style={{ margin: "12px 0" }} />
           <Table
             dataSource={(billRecord?.Items || []).map((it, idx)=>({ key: it.ID, No: idx+1, ...it }))}

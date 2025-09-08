@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FaHome } from "react-icons/fa";
 import { LiaUserCogSolid } from "react-icons/lia";
 import { RiUserSmileFill } from "react-icons/ri";
 import { HiSpeakerphone } from "react-icons/hi";

@@ -61,6 +61,11 @@ func CreateOrder(c *gin.Context) {
 		OrderID: order.ID,
 		Status:  "รอดำเนินการ",
 	}
+	// history เริ่มต้น
+	history := entity.OrderHistory{
+		OrderID: order.ID,
+		Status:  "Pending",
+	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
