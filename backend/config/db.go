@@ -59,11 +59,6 @@ func SetupDatabase() {
 		&entity.PromotionUsage{},
 		&entity.Role{},
 		&entity.DiscountType{},
-
-		&entity.DetergentUsageHistory{},
-		&entity.Role{},
-		&entity.DiscountType{},
-
 		&entity.DetergentUsageHistory{},
 	)
 	if err != nil {

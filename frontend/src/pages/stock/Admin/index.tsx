@@ -42,8 +42,28 @@ const StockAdminPage: React.FC = () => {
   const [useItemForm] = Form.useForm();
   const navigate = useNavigate();
 
-  const handleDelete = (key: number) => {
-    setStockData(stockData.filter((item) => item.key !== key));
+  useEffect(() => {
+    fetchStockData();
+    // eslint-disable-next-line
+  }, []);
+
+  const fetchStockData = async () => {
+    try {
+      const res = await getAllDetergents();
+      const detergents = res.data || [];
+      setStockData(
+        detergents.map((d: any, idx: number) => ({
+          key: d.ID || idx + 1,
+          name: d.Name,
+          type: d.Type,
+          quantity: d.InStock,
+          lastUpdated: d.UpdatedAt,
+          editor: d.UserID ? `User ${d.UserID}` : "-",
+        }))
+      );
+    } catch (err) {
+      // สามารถแจ้งเตือน error ได้
+    }
   };
 
   const handleDelete = async (key: number) => {

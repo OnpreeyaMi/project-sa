@@ -39,6 +39,7 @@ export const createOrder = async (orderData: OrderService) => {
 
   return res.json(); // คืนค่า order object จาก backend
 };
+// src/services/orderService.ts
 // ดึงประวัติการสั่งซื้อทั้งหมด
 export const fetchOrderHistories = async (): Promise<OrderHistory[]> => {
   try {
