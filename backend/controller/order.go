@@ -84,24 +84,6 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 	}
-	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
-	process := entity.LaundryProcess{
-		Status:     "รอดำเนินการ",
-		Start_time: time.Now(),
-		Order:      []*entity.Order{&order},
-	}
-	if err := config.DB.Create(&process).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
-		return
-	}
-	// สร้าง pickup queue ทันทีหลังสร้าง order
-    pickupQueue := entity.Queue{
-	    Queue_type: "pickup",
-	    Status:     "waiting",
-	    OrderID:    order.ID,
-    }
-    config.DB.Create(&pickupQueue)
-
 
 	c.JSON(http.StatusOK, order)
 }
@@ -165,30 +147,30 @@ func GetCustomerNameByID(c *gin.Context) {
 	})
 }
 
-// // เพิ่มฟังก์ชันสร้าง address ใหม่และเชื่อมกับลูกค้า
-// func CreateAddress(c *gin.Context) {
-// 	var req struct {
-// 		AddressDetails string  `json:"addressDetails"`
-// 		Latitude       float64 `json:"latitude"`
-// 		Longitude      float64 `json:"longitude"`
-// 		CustomerID     uint    `json:"customerId"`
-// 	}
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	address := entity.Address{
-// 		AddressDetails: req.AddressDetails,
-// 		Latitude:       req.Latitude,
-// 		Longitude:      req.Longitude,
-// 		CustomerID:     req.CustomerID,
-// 	}
-// 	if err := config.DB.Create(&address).Error; err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, address)
-// }
+// เพิ่มฟังก์ชันสร้าง address ใหม่และเชื่อมกับลูกค้า
+func CreateAddress(c *gin.Context) {
+	var req struct {
+		AddressDetails string  `json:"addressDetails"`
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		CustomerID     uint    `json:"customerId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	address := entity.Address{
+		AddressDetails: req.AddressDetails,
+		Latitude:       req.Latitude,
+		Longitude:      req.Longitude,
+		CustomerID:     req.CustomerID,
+	}
+	if err := config.DB.Create(&address).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, address)
+}
 
 // อัพเดตที่อยู่หลักของลูกค้า
 func UpdateMainAddress(c *gin.Context) {
