@@ -33,7 +33,7 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
       key: "/employee/dashboard",
       icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-      onClick: () => navigate("/employee"),
+      onClick: () => navigate("/employee/dashboard"),
     },
     {
       key: "/employee/orders",
