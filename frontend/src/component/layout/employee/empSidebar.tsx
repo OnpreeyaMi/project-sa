@@ -4,6 +4,7 @@ import { IoNewspaper } from "react-icons/io5";
 import { MdLocalLaundryService } from "react-icons/md";
 import { TbTruckDelivery } from "react-icons/tb";
 import { FaShirt } from "react-icons/fa6";
+import { RiUserVoiceFill as RiUserVoiceFilll } from "react-icons/ri";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -59,6 +60,12 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
       label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
       onClick: () => navigate("/employee/inventory"),
     },
+    {
+      key: "/employee/complaint",
+      icon: <RiUserVoiceFilll style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ตอบกลับข้อร้องเรียน</span>,
+      onClick: () => navigate("/employee/complaint"),
+    }
 
   ];
 

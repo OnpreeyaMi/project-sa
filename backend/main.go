@@ -90,15 +90,20 @@ func main() {
 	//Payment
 	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
 
-	//complaint
+	//complaintCreate
 	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
 	router.Static("/uploads", "./uploads")
 	router.POST("/complaints", controller.CreateComplaint)
-	// complaints := router.Group("/complaints", middlewares.Authorizes())
-	// {
-    // complaints.POST("", controller.CreateComplaint)
-    // complaints.GET("/:publicId", controller.GetComplaintByPublicID)
-	// }
+	//complaintReply
+	emp := router.Group("/employee")
+	{
+		emp.GET("/complaints", controller.ListComplaintsForEmployee)
+		emp.GET("/complaints/:publicId", controller.GetComplaintDetail)
+		emp.GET("/complaints/:publicId/replies", controller.ListReplies)
+		emp.POST("/complaints/:publicId/replies", controller.AddReplyToComplaint)
+		emp.PATCH("/complaints/:publicId/status", controller.SetComplaintStatus)
+	}
+
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
