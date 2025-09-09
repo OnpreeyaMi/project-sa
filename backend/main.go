@@ -49,6 +49,8 @@ func main() {
 	router.GET("/laundry-check/orders", controller.ListLaundryOrders)
 	router.GET("/laundry-check/orders/:id", controller.GetLaundryOrderDetail)
 	router.GET("/laundry-check/orders/:id/history", controller.GetOrderHistory)
+	router.PUT("/laundry-checks/:orderId/items/:itemId", controller.UpdateSortedClothes)   // <-- Update
+	router.DELETE("/laundry-checks/:orderId/items/:itemId", controller.DeleteSortedClothes) // <-- Delete
 	// Lookups
 	router.GET("/clothtypes", controller.ListClothTypes)
 	router.GET("/servicetypes", controller.ListServiceTypes)

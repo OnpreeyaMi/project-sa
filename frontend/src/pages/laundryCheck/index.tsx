@@ -1,31 +1,28 @@
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Button, Input, Typography, Form, Space, Select, InputNumber, Popconfirm,
+  Button, Input, Typography, Form, Space, InputNumber, Popconfirm,
   Card, Table, message, Modal, Descriptions, Divider, Tag, Drawer, AutoComplete,
-  Tooltip,
+  Tooltip, Alert, Select,
 } from "antd";
 import {
-  UserOutlined, PlusOutlined, SaveOutlined, ShoppingOutlined, DeleteOutlined,
+  PlusOutlined, SaveOutlined, ShoppingOutlined, DeleteOutlined,
   PrinterOutlined, EyeOutlined, ReloadOutlined, LinkOutlined, SearchOutlined,
-  ProfileOutlined,
+  ProfileOutlined, EditOutlined
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import type { ColumnsType } from "antd/es/table";
 
 import {
-  FetchClothTypes, FetchServiceTypes,
-  UpsertLaundryCheck, FetchOrderDetail, FetchOrders, FetchCustomers,
+  FetchClothTypes, UpsertLaundryCheck, FetchOrderDetail, FetchOrders, FetchCustomers,
+  UpdateSortedItem, DeleteSortedItem
 } from "../../services/LaundryCheck";
 
 import type {
-  ClothType, ServiceType,
-  UpsertLaundryCheckInput, OrderDetail, OrderSummary,
+  ClothType, UpsertLaundryCheckInput, OrderDetail, OrderSummary,
 } from "../../interfaces/LaundryCheck/types";
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
 
 interface LaundryItemLocal {
   id: number;
@@ -36,11 +33,10 @@ interface LaundryItemLocal {
 
 const QUICK_TYPES = ["ผ้าทั่วไป", "ผ้าขาว", "อื่นๆ"];
 
-// helper แสดงแท็กบริการ
 const renderServiceTags = (detail?: OrderDetail | null) => {
   const list = (detail as any)?.ServiceTypes as { ID: number; Name: string }[] | undefined;
   if (Array.isArray(list) && list.length > 0) {
-    return list.map(st => <Tag key={st.ID}>{st.Name}</Tag>);
+    return list.map(st => <Tag key={st.ID} color="processing" style={{ marginBottom: 4 }}>{st.Name}</Tag>);
   }
   return <span>-</span>;
 };
@@ -53,9 +49,6 @@ const LaundryCheckPage: React.FC = () => {
   const [activeDetail, setActiveDetail] = useState<OrderDetail | null>(null);
 
   const [clothTypes, setClothTypes] = useState<ClothType[]>([]);
-  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
-  const [customers, setCustomers] = useState<{ID:number;Name:string;Phone:string}[]>([]);
-
   const [items, setItems] = useState<LaundryItemLocal[]>([]);
   const totalItems = items.length;
   const totalQuantity = items.reduce((s, x) => s + (x.quantity || 0), 0);
@@ -73,25 +66,41 @@ const LaundryCheckPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Drawer edit modal
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<{ ClothTypeName: string; ServiceTypeID?: number; Quantity: number }>({
+    ClothTypeName: "", ServiceTypeID: undefined, Quantity: 1
+  });
+
+  const serviceOptions = activeDetail?.ServiceTypes ?? [];
+  const [defaultServiceId, setDefaultServiceId] = useState<number | undefined>();
+
   useEffect(() => {
     (async () => {
       try {
-        const [cts, sts, os, cs] = await Promise.all([
+        const [cts, os] = await Promise.all([
           FetchClothTypes(),
-          FetchServiceTypes(),
-          FetchOrders(),
-          FetchCustomers(),
+          FetchOrders({ unprocessedOnly: true }), // เฉพาะที่ยังไม่บันทึก
         ]);
         setClothTypes(cts);
-        setServiceTypes(sts);
         setOrders(os);
-        setCustomers(cs.map(c=>({ID:c.ID, Name:c.Name, Phone:c.Phone})));
       } catch (e) {
         console.error(e);
         message.error("โหลดข้อมูลเริ่มต้นไม่สำเร็จ");
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (serviceOptions.length > 0) setDefaultServiceId(serviceOptions[0].ID);
+    else setDefaultServiceId(undefined);
+  }, [activeDetail]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!defaultServiceId) return;
+    setItems(prev => prev.map(it => it.serviceTypeId ? it : ({ ...it, serviceTypeId: defaultServiceId })));
+  }, [defaultServiceId]);
 
   const filteredOrders = useMemo(() => {
     const q = searchText.trim().toLowerCase();
@@ -100,11 +109,14 @@ const LaundryCheckPage: React.FC = () => {
       String(o.ID).includes(q) ||
       (o.CustomerName || "").toLowerCase().includes(q) ||
       (o.Phone || "").includes(q) ||
-      (o.OrderNote || "").toLowerCase().includes(q)
+      (o.OrderNote || "").toLowerCase().includes(q) ||
+      (o.ServiceTypes ?? []).some(st => (st.Name || "").toLowerCase().includes(q))
     );
   }, [orders, searchText]);
 
-  const addItem = (preset?: string) => setItems(prev => [...prev, { id: Date.now(), quantity: 1, clothTypeName: preset }]);
+  const addItem = (preset?: string) =>
+    setItems(prev => [...prev, { id: Date.now(), quantity: 1, clothTypeName: preset, serviceTypeId: defaultServiceId }]);
+
   const updateItem = (id: number, field: keyof LaundryItemLocal, value: any) => {
     setItems(prev => prev.map(x => x.id === id ? { ...x, [field]: value } : x));
   };
@@ -113,7 +125,7 @@ const LaundryCheckPage: React.FC = () => {
   const refreshOrders = async () => {
     try {
       setLoadingOrders(true);
-      setOrders(await FetchOrders());
+      setOrders(await FetchOrders({ unprocessedOnly: true }));
     } catch {
       message.error("โหลดออเดอร์ไม่สำเร็จ");
     } finally {
@@ -127,7 +139,7 @@ const LaundryCheckPage: React.FC = () => {
       setLoadingDetail(true);
       const detail = await FetchOrderDetail(orderId);
       setActiveOrderId(orderId);
-      setActiveDetail(detail);
+      setActiveDetail({ ...detail, ServiceTypes: detail.ServiceTypes ?? [] });
       setItems([]);
       form.resetFields(["StaffNote"]);
       message.success(`โหลดออเดอร์ #${orderId} สำเร็จ`);
@@ -144,7 +156,7 @@ const LaundryCheckPage: React.FC = () => {
 
   const openDetail = async (orderId: number) => {
     const detail = await FetchOrderDetail(orderId);
-    setDetailRecord(detail);
+    setDetailRecord({ ...detail, ServiceTypes: detail.ServiceTypes ?? [] });
     setDetailOpen(true);
   };
 
@@ -153,7 +165,11 @@ const LaundryCheckPage: React.FC = () => {
       message.warning("โปรดระบุเลขที่ออเดอร์ก่อน");
       return;
     }
-    if (!items.length || items.some(x => !x.clothTypeName?.trim() || !x.serviceTypeId || !x.quantity || x.quantity < 1)) {
+    if ((activeDetail?.ServiceTypes?.length || 0) === 0) {
+      message.warning("ออเดอร์นี้ยังไม่มีบริการที่ผูกไว้ — ไม่สามารถบันทึกได้");
+      return;
+    }
+    if (!items.length || items.some(x => !x.clothTypeName?.trim() || !x.quantity || x.quantity < 1 || !x.serviceTypeId)) {
       message.warning("โปรดกรอกประเภท/บริการ/จำนวน ให้ครบถ้วน");
       return;
     }
@@ -173,10 +189,11 @@ const LaundryCheckPage: React.FC = () => {
       message.success("บันทึกข้อมูลการรับผ้าสำเร็จ");
 
       const detail = await FetchOrderDetail(OrderID);
-      setBillRecord(detail);
+      setBillRecord({ ...detail, ServiceTypes: detail.ServiceTypes ?? [] });
       setBillOpen(true);
 
-      refreshOrders();
+      // ลบออกจาก "ออเดอร์ล่าสุด" ทันที
+      setOrders(prev => prev.filter(o => o.ID !== OrderID));
       setItems([]);
     } catch (e) {
       console.error(e);
@@ -186,7 +203,6 @@ const LaundryCheckPage: React.FC = () => {
     }
   };
 
-  // 🔻 เอาคอลัมน์ "รวมชิ้น" ออกจากตารางออเดอร์ล่าสุด
   const orderColumns: ColumnsType<OrderSummary> = [
     {
       title: "เลขที่ออเดอร์",
@@ -230,15 +246,9 @@ const LaundryCheckPage: React.FC = () => {
       <div className="max-w-6xl mx-auto p-6 space-y-6 font-sans">
         <header className="bg-blue-300 rounded-lg p-4 flex items-center gap-4">
           <ShoppingOutlined style={{ fontSize: 24, color: "#1d4ed8" }} />
-          <div>
-            <Title level={4} className="mb-0 text-blue-900">รับผ้า/แยกผ้า</Title>
-          </div>
-
-        {/* ปุ่มประวัติ */}
+          <div><Title level={4} className="mb-0 text-blue-900">รับผ้า/แยกผ้า</Title></div>
           <div className="ml-auto">
-            <Button icon={<ProfileOutlined />} onClick={() => navigate("/employee/laundry-history")}>
-              ประวัติ
-            </Button>
+            <Button icon={<ProfileOutlined />} onClick={() => navigate("/employee/laundry-history")}>ประวัติ</Button>
           </div>
         </header>
 
@@ -265,9 +275,7 @@ const LaundryCheckPage: React.FC = () => {
                 <Descriptions.Item label="ลูกค้า">{activeDetail.CustomerName}</Descriptions.Item>
                 <Descriptions.Item label="เบอร์">{activeDetail.Phone}</Descriptions.Item>
                 <Descriptions.Item label="ที่อยู่" span={2}>{activeDetail.Address}</Descriptions.Item>
-                <Descriptions.Item label="บริการ" span={2}>
-                  {renderServiceTags(activeDetail)}
-                </Descriptions.Item>
+                <Descriptions.Item label="บริการ" span={2}>{renderServiceTags(activeDetail)}</Descriptions.Item>
                 {activeDetail.OrderNote && <Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>{activeDetail.OrderNote}</Descriptions.Item>}
               </Descriptions>
             )}
@@ -280,11 +288,34 @@ const LaundryCheckPage: React.FC = () => {
               <Title level={5} className="m-0"><ShoppingOutlined /> เพิ่มรายการผ้า</Title>
               <Space wrap>
                 {QUICK_TYPES.map(q => (
-                  <Button key={q} onClick={()=>addItem(q)} disabled={!activeOrderId}>{q}</Button>
+                  <Button key={q} onClick={()=>addItem(q)} disabled={!activeOrderId || (activeDetail?.ServiceTypes.length||0)===0}>{q}</Button>
                 ))}
-                <Button type="primary" icon={<PlusOutlined />} onClick={()=>addItem()} disabled={!activeOrderId}>เพิ่มรายการ</Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={()=>addItem()} disabled={!activeOrderId || (activeDetail?.ServiceTypes.length||0)===0}>เพิ่มรายการ</Button>
               </Space>
             </div>
+
+            {activeDetail && (
+              <div className="mb-3">
+                <Space wrap size="middle">
+                  <Text strong>บริการของออเดอร์:</Text> {renderServiceTags(activeDetail)}
+                  {(activeDetail.ServiceTypes?.length || 0) > 1 && (
+                    <>
+                      <span style={{ color: "#666" }}>บริการเริ่มต้น:</span>
+                      <Select
+                        size="small"
+                        value={defaultServiceId}
+                        onChange={setDefaultServiceId}
+                        options={activeDetail.ServiceTypes.map(s => ({ label: s.Name, value: s.ID }))}
+                        style={{ minWidth: 200 }}
+                      />
+                    </>
+                  )}
+                </Space>
+                {(activeDetail.ServiceTypes?.length || 0) === 0 && (
+                  <div className="mt-2"><Alert type="warning" showIcon message="ออเดอร์นี้ยังไม่มีบริการที่ผูกไว้ — ไม่สามารถเพิ่ม/บันทึกรายการได้" /></div>
+                )}
+              </div>
+            )}
 
             {items.length === 0 ? (
               <div className="text-center text-gray-400 py-14 select-none">
@@ -304,14 +335,17 @@ const LaundryCheckPage: React.FC = () => {
                       <Input placeholder="ประเภทผ้า (พิมพ์เอง เช่น ผ้าขาว / ผ้าทั่วไป / อื่นๆ)" />
                     </AutoComplete>
 
-                    <Select
-                      placeholder="บริการ"
-                      value={it.serviceTypeId}
-                      onChange={(v)=>updateItem(it.id, "serviceTypeId", v)}
-                      style={{ minWidth: 180 }}
-                    >
-                      {serviceTypes.map(s => (<Option key={s.ID} value={s.ID}>{s.Name}</Option>))}
-                    </Select>
+                    {(activeDetail?.ServiceTypes.length || 0) > 1 ? (
+                      <Select
+                        placeholder="บริการ"
+                        value={it.serviceTypeId}
+                        onChange={(v)=>updateItem(it.id, "serviceTypeId", v)}
+                        options={activeDetail?.ServiceTypes.map(s => ({ label: s.Name, value: s.ID }))}
+                        style={{ minWidth: 200 }}
+                      />
+                    ) : (
+                      <Tag color="processing">{activeDetail?.ServiceTypes?.[0]?.Name || "ไม่มีบริการ"}</Tag>
+                    )}
 
                     <Space size={0} align="center" style={{ border: "1px solid #ccc", borderRadius: 6 }}>
                       <Button size="small" onClick={()=>{ if ((it.quantity||1) > 1) updateItem(it.id, "quantity", (it.quantity||1)-1); }}>–</Button>
@@ -338,7 +372,7 @@ const LaundryCheckPage: React.FC = () => {
               </div>
               <div className="md:col-span-1">
                 <Form.Item label="หมายเหตุสำหรับพนักงาน" name="StaffNote">
-                  <TextArea autoSize={{ minRows: 2, maxRows: 5 }} placeholder="เช่น คราบ/ข้อควรระวัง" disabled={!activeOrderId} />
+                  <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} placeholder="เช่น คราบ/ข้อควรระวัง" disabled={!activeOrderId} />
                 </Form.Item>
               </div>
             </div>
@@ -350,7 +384,7 @@ const LaundryCheckPage: React.FC = () => {
                 block
                 htmlType="submit"
                 size="large"
-                disabled={!activeOrderId || items.length===0}
+                disabled={!activeOrderId || items.length===0 || (activeDetail?.ServiceTypes.length||0)===0}
                 loading={saving}
               >
                 บันทึกและพิมพ์ออเดอร์
@@ -359,18 +393,18 @@ const LaundryCheckPage: React.FC = () => {
           </div>
         </Form>
 
-        {/* ออเดอร์ล่าสุด */}
+        {/* ออเดอร์ล่าสุด (เฉพาะที่ยังไม่บันทึก) */}
         <Card className="shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <Title level={5} className="mb-0">ออเดอร์ล่าสุด</Title>
+            <Title level={5} className="mb-0">ออเดอร์ล่าสุด (ยังไม่บันทึก)</Title>
             <Space>
               <Input
                 allowClear
-                placeholder="ค้นหา เลขที่/ชื่อลูกค้า/เบอร์/หมายเหตุ"
+                placeholder="ค้นหา เลขที่/ชื่อลูกค้า/เบอร์/หมายเหตุ/บริการ"
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={(e)=>setSearchText(e.target.value)}
-                style={{ width: 320 }}
+                style={{ width: 360 }}
               />
               <Button icon={<ReloadOutlined />} onClick={refreshOrders} loading={loadingOrders}>รีเฟรช</Button>
             </Space>
@@ -386,10 +420,10 @@ const LaundryCheckPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Drawer รายละเอียด (ไม่มีประวัติ) */}
+      {/* Drawer รายละเอียด + แก้/ลบแถวที่บันทึกแล้ว */}
       <Drawer
         title={<Space><EyeOutlined /><span>รายละเอียดคำสั่ง</span>{detailRecord && <Tag color="blue">#{detailRecord.ID}</Tag>}</Space>}
-        width={720}
+        width={800}
         open={detailOpen}
         onClose={()=>setDetailOpen(false)}
       >
@@ -400,15 +434,14 @@ const LaundryCheckPage: React.FC = () => {
               <Descriptions.Item label="ลูกค้า">{detailRecord.CustomerName}</Descriptions.Item>
               <Descriptions.Item label="เบอร์">{detailRecord.Phone}</Descriptions.Item>
               <Descriptions.Item label="ที่อยู่">{detailRecord.Address}</Descriptions.Item>
-              <Descriptions.Item label="บริการ">
-                {renderServiceTags(detailRecord)}
-              </Descriptions.Item>
+              <Descriptions.Item label="บริการ">{renderServiceTags(detailRecord)}</Descriptions.Item>
               {detailRecord.OrderNote && <Descriptions.Item label="หมายเหตุ (ลูกค้า)">{detailRecord.OrderNote}</Descriptions.Item>}
+              {detailRecord.StaffNote && <Descriptions.Item label="หมายเหตุ (พนักงาน)">{detailRecord.StaffNote}</Descriptions.Item>}
             </Descriptions>
 
             <Divider />
 
-            <Title level={5}>รายการผ้า</Title>
+            <Title level={5}>รายการผ้าที่บันทึกแล้ว</Title>
             <Table
               size="small"
               rowKey={(r)=>String(r.ID)}
@@ -416,38 +449,108 @@ const LaundryCheckPage: React.FC = () => {
               columns={[
                 { title: "ลำดับ", dataIndex: "No", width: 70, align: "center" as const },
                 { title: "ประเภทผ้า", dataIndex: "ClothTypeName" },
-                { title: "บริการ", dataIndex: "ServiceType" },
+                { title: "บริการ", dataIndex: "ServiceType", width: 180 },
                 { title: "จำนวน (ชิ้น)", dataIndex: "Quantity", width: 140, align: "right" as const },
+                {
+                  title: "จัดการ",
+                  width: 160,
+                  render: (_, r) => (
+                    <Space>
+                      <Button
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={()=>{
+                          setEditingItemId(r.ID);
+                          setEditForm({ ClothTypeName: r.ClothTypeName, ServiceTypeID: r.ServiceTypeID, Quantity: r.Quantity });
+                          setEditOpen(true);
+                        }}
+                      >แก้ไข</Button>
+                      <Popconfirm
+                        title="ลบรายการนี้?"
+                        onConfirm={async ()=>{
+                          if (!detailRecord) return;
+                          try {
+                            await DeleteSortedItem(detailRecord.ID, r.ID);
+                            message.success("ลบสำเร็จ");
+                            const d = await FetchOrderDetail(detailRecord.ID);
+                            setDetailRecord(d);
+                          } catch (e:any) {
+                            message.error(e?.message || "ลบไม่สำเร็จ");
+                          }
+                        }}
+                        okText="ลบ" cancelText="ยกเลิก"
+                      >
+                        <Button size="small" danger icon={<DeleteOutlined />} />
+                      </Popconfirm>
+                    </Space>
+                  )
+                }
               ]}
               pagination={false}
             />
-
-            <div className="mt-4">
-              <Descriptions column={2} size="small" bordered>
-                <Descriptions.Item label="รวมจำนวนรายการ">{detailRecord.TotalItems}</Descriptions.Item>
-                <Descriptions.Item label="รวมจำนวนชิ้น">{detailRecord.TotalQuantity}</Descriptions.Item>
-              </Descriptions>
-            </div>
-
-            {detailRecord.StaffNote && (
-              <>
-                <Divider />
-                <Descriptions bordered size="small" column={1}>
-                  <Descriptions.Item label="หมายเหตุ (พนักงาน)">{detailRecord.StaffNote}</Descriptions.Item>
-                </Descriptions>
-              </>
-            )}
           </>
         )}
       </Drawer>
 
-      {/* Modal ใบเสร็จ (ไม่มีประวัติ) */}
+      {/* Modal แก้ไขแถวใน Drawer */}
+      <Modal
+        title="แก้ไขรายการ"
+        open={editOpen}
+        onCancel={()=> setEditOpen(false)}
+        okText="บันทึก"
+        cancelText="ยกเลิก"
+        onOk={async ()=>{
+          if (!detailRecord || !editingItemId) return;
+          try {
+            await UpdateSortedItem(detailRecord.ID, editingItemId, {
+              ClothTypeName: editForm.ClothTypeName?.trim(),
+              ServiceTypeID: editForm.ServiceTypeID,
+              Quantity: editForm.Quantity,
+            });
+            message.success("บันทึกการแก้ไขสำเร็จ");
+            const d = await FetchOrderDetail(detailRecord.ID);
+            setDetailRecord(d);
+            setEditOpen(false);
+          } catch (e:any) {
+            message.error(e?.message || "บันทึกไม่สำเร็จ");
+          }
+        }}
+      >
+        <Space direction="vertical" className="w-full">
+          <AutoComplete
+            options={clothTypes.map(ct => ({ value: ct.Name }))}
+            value={editForm.ClothTypeName}
+            onChange={(v)=> setEditForm(s => ({ ...s, ClothTypeName: v }))}
+            style={{ width: "100%" }}
+          >
+            <Input placeholder="ประเภทผ้า" />
+          </AutoComplete>
+
+          {(detailRecord?.ServiceTypes?.length || 0) > 1 && (
+            <Select
+              value={editForm.ServiceTypeID}
+              onChange={(v)=> setEditForm(s => ({ ...s, ServiceTypeID: v }))}
+              options={(detailRecord?.ServiceTypes || []).map(s => ({ label: s.Name, value: s.ID }))}
+              style={{ width: "100%" }}
+              placeholder="บริการ"
+            />
+          )}
+
+          <InputNumber
+            min={1}
+            value={editForm.Quantity}
+            onChange={(v)=> setEditForm(s => ({ ...s, Quantity: Number(v || 1) }))}
+            style={{ width: "100%" }}
+          />
+        </Space>
+      </Modal>
+
+      {/* Modal ใบเสร็จ */}
       <Modal
         title={<span>ใบเสร็จรับผ้า — <Text type="secondary">{billRecord?.ID ?? '-'}</Text></span>}
         open={billOpen}
         onCancel={()=>setBillOpen(false)}
         footer={[
-          billRecord ? <Button key="detail" onClick={()=> billRecord && openDetail(billRecord.ID)} className="no-print" icon={<EyeOutlined />}>ดูรายละเอียด</Button> : null,
           <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={()=>window.print()} className="no-print">พิมพ์</Button>,
         ]}
         width={900}
@@ -464,12 +567,8 @@ const LaundryCheckPage: React.FC = () => {
             <Descriptions.Item label="ลูกค้า">{billRecord?.CustomerName}</Descriptions.Item>
             <Descriptions.Item label="เบอร์">{billRecord?.Phone}</Descriptions.Item>
             <Descriptions.Item label="ที่อยู่" span={2}>{billRecord?.Address}</Descriptions.Item>
-            <Descriptions.Item label="บริการ" span={2}>
-              {renderServiceTags(billRecord)}
-            </Descriptions.Item>
-            {billRecord?.OrderNote ? (
-              <Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>{billRecord.OrderNote}</Descriptions.Item>
-            ) : null}
+            <Descriptions.Item label="บริการ" span={2}>{renderServiceTags(billRecord)}</Descriptions.Item>
+            {billRecord?.OrderNote ? (<Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>{billRecord.OrderNote}</Descriptions.Item>) : null}
           </Descriptions>
 
           <Divider style={{ margin: "12px 0" }} />

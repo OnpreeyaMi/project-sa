@@ -13,68 +13,72 @@ import (
 
 // ===================== DTO =====================
 type LaundryItemInput struct {
-	ClothTypeName string
-	ServiceTypeID uint
-	Quantity      int
+	ClothTypeName string `json:"ClothTypeName"`
+	ServiceTypeID uint   `json:"ServiceTypeID"`
+	Quantity      int    `json:"Quantity"`
 }
 
 type UpsertLaundryCheckInput struct {
-	StaffNote string
-	Items     []LaundryItemInput
+	StaffNote string             `json:"StaffNote"`
+	Items     []LaundryItemInput `json:"Items"`
+}
+
+type UpdateSortedClothesInput struct {
+	ClothTypeName *string `json:"ClothTypeName,omitempty"`
+	ServiceTypeID *uint   `json:"ServiceTypeID,omitempty"`
+	Quantity      *int    `json:"Quantity,omitempty"`
 }
 
 type ServiceTypeMini struct {
-	ID   uint
-	Name string
+	ID   uint   `json:"ID"`
+	Name string `json:"Name"`
 }
 
 type OrderSummary struct {
-	ID              uint
-	CreatedAt       time.Time
-	CustomerName    string
-	Phone           string
-	OrderNote       string
-	HistoryCount    int
-	LatestHistoryAt *time.Time
-	TotalItems      int
-	TotalQuantity   int
-	// (ถ้าต้องการโชว์บริการในตารางรายการออเดอร์ด้วย ให้เปิดใช้ field นี้ฝั่ง FE)
-	ServiceTypes []ServiceTypeMini
+	ID              uint              `json:"ID"`
+	CreatedAt       time.Time         `json:"CreatedAt"`
+	CustomerName    string            `json:"CustomerName"`
+	Phone           string            `json:"Phone"`
+	OrderNote       string            `json:"OrderNote"`
+	HistoryCount    int               `json:"HistoryCount"`
+	LatestHistoryAt *time.Time        `json:"LatestHistoryAt"`
+	TotalItems      int               `json:"TotalItems"`
+	TotalQuantity   int               `json:"TotalQuantity"`
+	ServiceTypes    []ServiceTypeMini `json:"ServiceTypes"`
 }
 
 type OrderItemView struct {
-	ID            uint
-	ClothTypeID   uint
-	ClothTypeName string
-	ServiceTypeID uint
-	ServiceType   string
-	Quantity      int
+	ID            uint   `json:"ID"`
+	ClothTypeID   uint   `json:"ClothTypeID"`
+	ClothTypeName string `json:"ClothTypeName"`
+	ServiceTypeID uint   `json:"ServiceTypeID"`
+	ServiceType   string `json:"ServiceType"`
+	Quantity      int    `json:"Quantity"`
 }
 
 type OrderDetailView struct {
-	ID            uint
-	CreatedAt     time.Time
-	CustomerID    uint
-	CustomerName  string
-	Phone         string
-	AddressID     uint
-	Address       string
-	OrderNote     string // หมายเหตุลูกค้า (มาจาก orders.order_note)
-	StaffNote     string // หมายเหตุพนักงาน (มาจาก sorting_records.sorting_note)
-	// ✅ เพิ่ม: รายการบริการของออเดอร์ เพื่อให้พนักงานรู้ว่าต้องทำอะไร
-	ServiceTypes []ServiceTypeMini
-	Items        []OrderItemView
-	TotalItems   int
-	TotalQuantity int
+	ID            uint              `json:"ID"`
+	CreatedAt     time.Time         `json:"CreatedAt"`
+	CustomerID    uint              `json:"CustomerID"`
+	CustomerName  string            `json:"CustomerName"`
+	Phone         string            `json:"Phone"`
+	AddressID     uint              `json:"AddressID"`
+	Address       string            `json:"Address"`
+	OrderNote     string            `json:"OrderNote"`
+	StaffNote     string            `json:"StaffNote"`
+	ServiceTypes  []ServiceTypeMini `json:"ServiceTypes"`
+	Items         []OrderItemView   `json:"Items"`
+	TotalItems    int               `json:"TotalItems"`
+	TotalQuantity int               `json:"TotalQuantity"`
 }
 
-// ประวัติแต่ละรายการ
 type HistoryEntry struct {
-	ID            uint      `json:"ID"`
-	RecordedAt    time.Time `json:"RecordedAt"`
-	Quantity      int       `json:"Quantity"`
-	ClothTypeName string    `json:"ClothTypeName"`
-	ServiceType   string    `json:"ServiceType"`
+	ID              uint      `json:"ID"`
+	RecordedAt      time.Time `json:"RecordedAt"`
+	Quantity        int       `json:"Quantity"`
+	ClothTypeName   string    `json:"ClothTypeName"`
+	ServiceType     string    `json:"ServiceType"`
+	SortedClothesID uint      `json:"SortedClothesID"` // ใช้สำหรับ Edit/Delete
 }
 
 // ===================== Helpers =====================
@@ -104,8 +108,7 @@ func getOrCreateClothTypeByName(name string) (*entity.ClothType, error) {
 
 // ===================== Endpoints =====================
 
-// POST /laundry-checks/:orderId
-// ไม่แก้ไขตาราง orders — ใช้ orderId อ้างอิง แล้วสร้าง/เพิ่มรายการผ้าเข้า SortedClothes (และประวัติ)
+// POST /laundry-checks/:orderId  (Create หลายแถว)
 func UpsertLaundryCheck(c *gin.Context) {
 	oidStr := c.Param("orderId")
 	oid, _ := strconv.ParseUint(oidStr, 10, 64)
@@ -124,17 +127,15 @@ func UpsertLaundryCheck(c *gin.Context) {
 		return
 	}
 
-	// ตรวจสอบ order (อ่านอย่างเดียว)
 	var order entity.Order
 	if err := config.DB.Preload("Customer").First(&order, oid).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
 		return
 	}
 
-	// หา/สร้าง SortingRecord สำหรับ order นี้ (ไว้เก็บ StaffNote)
+	// หา/สร้าง SortingRecord สำหรับ order นี้
 	var srec entity.SortingRecord
 	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
-		// ยังไม่มี ก็สร้างใหม่
 		srec = entity.SortingRecord{
 			SortingDate: time.Now(),
 			SortingNote: strings.TrimSpace(input.StaffNote),
@@ -145,25 +146,11 @@ func UpsertLaundryCheck(c *gin.Context) {
 			return
 		}
 	} else {
-		// มีอยู่แล้ว อัปเดตหมายเหตุถ้าส่งมา
 		if strings.TrimSpace(input.StaffNote) != "" {
 			srec.SortingNote = strings.TrimSpace(input.StaffNote)
 			_ = config.DB.Save(&srec).Error
 		}
 	}
-
-	// นับยอดเดิมจาก SortedClothes ตาม SortingRecordID
-	var oldTotal int64
-	config.DB.Model(&entity.SortedClothes{}).
-		Where("sorting_record_id = ?", srec.ID).
-		Select("COALESCE(SUM(sorted_quantity),0)").
-		Scan(&oldTotal)
-
-	addTotal := 0
-	for _, it := range input.Items {
-		addTotal += it.Quantity
-	}
-	newTotal := int(oldTotal) + addTotal
 
 	serviceIDs := map[uint]struct{}{}
 
@@ -182,7 +169,6 @@ func UpsertLaundryCheck(c *gin.Context) {
 
 		row := entity.SortedClothes{
 			SortedQuantity:  it.Quantity,
-			SortedCount:     newTotal,
 			ClothTypeID:     ct.ID,
 			ServiceTypeID:   it.ServiceTypeID,
 			SortingRecordID: srec.ID,
@@ -205,7 +191,7 @@ func UpsertLaundryCheck(c *gin.Context) {
 		serviceIDs[it.ServiceTypeID] = struct{}{}
 	}
 
-	// ผูก service types (many2many) กับ order — ไม่แก้ข้อมูลในตาราง orders เอง
+	// ผูกบริการกับออเดอร์ (many2many)
 	if len(serviceIDs) > 0 {
 		ids := make([]uint, 0, len(serviceIDs))
 		for id := range serviceIDs {
@@ -219,12 +205,130 @@ func UpsertLaundryCheck(c *gin.Context) {
 		}
 	}
 
-	type ok struct{ OrderID uint }
-	c.JSON(http.StatusOK, ok{OrderID: order.ID})
+	c.JSON(http.StatusOK, gin.H{"OrderID": order.ID})
 }
 
-// GET /laundry-check/orders : รายการออเดอร์ (สรุป)
+// PUT /laundry-checks/:orderId/items/:itemId  (Update)
+func UpdateSortedClothes(c *gin.Context) {
+	oidStr := c.Param("orderId")
+	iidStr := c.Param("itemId")
+
+	oid, _ := strconv.ParseUint(oidStr, 10, 64)
+	iid, _ := strconv.ParseUint(iidStr, 10, 64)
+	if oid == 0 || iid == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "รหัสไม่ถูกต้อง"})
+		return
+	}
+
+	var order entity.Order
+	if err := config.DB.First(&order, oid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
+		return
+	}
+
+	var srec entity.SortingRecord
+	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ยังไม่มีข้อมูลการแยกผ้า"})
+		return
+	}
+
+	var inp UpdateSortedClothesInput
+	if err := c.ShouldBindJSON(&inp); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		return
+	}
+
+	var row entity.SortedClothes
+	if err := config.DB.Where("id = ? AND sorting_record_id = ?", iid, srec.ID).First(&row).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบรายการผ้า"})
+		return
+	}
+
+	if inp.ClothTypeName != nil {
+		ct, err := getOrCreateClothTypeByName(strings.TrimSpace(*inp.ClothTypeName))
+		if err != nil || ct == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "ประเภทผ้าไม่ถูกต้อง"})
+			return
+		}
+		row.ClothTypeID = ct.ID
+	}
+	if inp.ServiceTypeID != nil {
+		var st entity.ServiceType
+		if err := config.DB.First(&st, *inp.ServiceTypeID).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "ไม่พบ ServiceType"})
+			return
+		}
+		row.ServiceTypeID = *inp.ServiceTypeID
+		_ = config.DB.Model(&order).Association("ServiceTypes").Append(&st)
+	}
+	if inp.Quantity != nil {
+		if *inp.Quantity < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "จำนวนต้องมากกว่า 0"})
+			return
+		}
+		row.SortedQuantity = *inp.Quantity
+	}
+
+	if err := config.DB.Save(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึกการแก้ไขไม่สำเร็จ"})
+		return
+	}
+
+	// sync ประวัติ ล่าสุดของแถวนี้ให้แสดงจำนวนใหม่
+	var h entity.SortingHistory
+	if err := config.DB.Where("sorted_clothes_id = ?", row.ID).
+		Order("recorded_at DESC, id DESC").
+		First(&h).Error; err == nil {
+		h.HisQuantity = row.SortedQuantity
+		_ = config.DB.Save(&h).Error
+	}
+
+	c.JSON(http.StatusOK, gin.H{"OK": true})
+}
+
+// DELETE /laundry-checks/:orderId/items/:itemId  (Delete)
+func DeleteSortedClothes(c *gin.Context) {
+	oidStr := c.Param("orderId")
+	iidStr := c.Param("itemId")
+
+	oid, _ := strconv.ParseUint(oidStr, 10, 64)
+	iid, _ := strconv.ParseUint(iidStr, 10, 64)
+	if oid == 0 || iid == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "รหัสไม่ถูกต้อง"})
+		return
+	}
+
+	var order entity.Order
+	if err := config.DB.First(&order, oid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
+		return
+	}
+
+	var srec entity.SortingRecord
+	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ยังไม่มีข้อมูลการแยกผ้า"})
+		return
+	}
+
+	var row entity.SortedClothes
+	if err := config.DB.Where("id = ? AND sorting_record_id = ?", iid, srec.ID).First(&row).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบรายการผ้า"})
+		return
+	}
+
+	_ = config.DB.Where("sorted_clothes_id = ?", row.ID).Delete(&entity.SortingHistory{}).Error
+	if err := config.DB.Delete(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "ลบไม่สำเร็จ"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"OK": true})
+}
+
+// GET /laundry-check/orders?unprocessed=1  (Summary)
 func ListLaundryOrders(c *gin.Context) {
+	unprocessedOnly := strings.EqualFold(c.Query("unprocessed"), "1") || strings.EqualFold(c.Query("unprocessed"), "true")
+
 	var orders []entity.Order
 	if err := config.DB.Preload("Customer").Preload("ServiceTypes").Find(&orders).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "ดึงออเดอร์ไม่สำเร็จ"})
@@ -240,10 +344,15 @@ func ListLaundryOrders(c *gin.Context) {
 		var qtySum int64
 		if srec.ID != 0 {
 			config.DB.Model(&entity.SortedClothes{}).Where("sorting_record_id = ?", srec.ID).Count(&itemCount)
-			config.DB.Model(&entity.SortedClothes{}).Where("sorting_record_id = ?", srec.ID).Select("COALESCE(SUM(sorted_quantity),0)").Scan(&qtySum)
+			config.DB.Model(&entity.SortedClothes{}).Where("sorting_record_id = ?", srec.ID).
+				Select("COALESCE(SUM(sorted_quantity),0)").Scan(&qtySum)
 		}
 
-		// นับประวัติทั้งหมดและหาวันที่ล่าสุด
+		// เฉพาะที่ยังไม่เคยบันทึก
+		if unprocessedOnly && (srec.ID != 0 && itemCount > 0) {
+			continue
+		}
+
 		var histCount int64
 		var latest time.Time
 		if srec.ID != 0 {
@@ -266,14 +375,12 @@ func ListLaundryOrders(c *gin.Context) {
 			phone = o.Customer.PhoneNumber
 		}
 
-		// รวม ServiceTypes (จาก many2many) เป็น slice {ID, Name}
 		stOut := make([]ServiceTypeMini, 0)
 		for _, st := range o.ServiceTypes {
 			if st != nil {
 				stOut = append(stOut, ServiceTypeMini{ID: st.ID, Name: st.Type})
 			}
 		}
-		// fallback: ถ้า many2many ยังว่าง ให้ดึง DISTINCT จาก SortedClothes -> ServiceType
 		if len(stOut) == 0 && srec.ID != 0 {
 			type row struct{ ID uint; Name string }
 			var rows []row
@@ -310,7 +417,7 @@ func ListLaundryOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
-// GET /laundry-check/orders/:id : รายละเอียดออเดอร์ (✅ ดึง ServiceTypes มาด้วย)
+// GET /laundry-check/orders/:id  (Detail)
 func GetLaundryOrderDetail(c *gin.Context) {
 	id := c.Param("id")
 
@@ -320,7 +427,6 @@ func GetLaundryOrderDetail(c *gin.Context) {
 		return
 	}
 
-	// ดึงรายการผ้าจาก SortingRecord นี้
 	var srec entity.SortingRecord
 	_ = config.DB.Where("order_id = ?", order.ID).First(&srec).Error
 
@@ -358,20 +464,17 @@ func GetLaundryOrderDetail(c *gin.Context) {
 		phone = order.Customer.PhoneNumber
 	}
 
-	// StaffNote จาก SortingRecord ของออเดอร์นี้ (ถ้ามี)
 	staffNote := ""
 	if srec.ID != 0 {
 		staffNote = srec.SortingNote
 	}
 
-	// ✅ รวบรวม ServiceTypes สำหรับ Order Detail
 	stOut := make([]ServiceTypeMini, 0)
 	for _, st := range order.ServiceTypes {
 		if st != nil {
 			stOut = append(stOut, ServiceTypeMini{ID: st.ID, Name: st.Type})
 		}
 	}
-	// fallback: หาก many2many ว่าง ให้ดึงจากรายการผ้า (SortedClothes) แทน
 	if len(stOut) == 0 && srec.ID != 0 {
 		type row struct{ ID uint; Name string }
 		var rows []row
@@ -396,7 +499,7 @@ func GetLaundryOrderDetail(c *gin.Context) {
 		Address:       addrText,
 		OrderNote:     order.OrderNote,
 		StaffNote:     staffNote,
-		ServiceTypes:  stOut,         // ✅ แนบไปด้วย
+		ServiceTypes:  stOut,
 		Items:         items,
 		TotalItems:    totalItems,
 		TotalQuantity: totalQty,
@@ -405,7 +508,7 @@ func GetLaundryOrderDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GET /laundry-check/orders/:id/history
+// GET /laundry-check/orders/:id/history  (Read history + item id)
 func GetOrderHistory(c *gin.Context) {
 	id := c.Param("id")
 
@@ -423,7 +526,8 @@ func GetOrderHistory(c *gin.Context) {
 			h.recorded_at AS recorded_at,
 			h.his_quantity AS quantity,
 			COALESCE(ct.type_name, '') AS cloth_type_name,
-			COALESCE(st.type, '') AS service_type
+			COALESCE(st.type, '') AS service_type,
+			sc.id AS sorted_clothes_id
 		`).
 		Joins("JOIN sorted_clothes AS sc ON sc.id = h.sorted_clothes_id").
 		Joins("LEFT JOIN cloth_types AS ct ON ct.id = sc.cloth_type_id").
@@ -444,8 +548,8 @@ func ListClothTypes(c *gin.Context) {
 		return
 	}
 	type V struct {
-		ID   uint
-		Name string
+		ID   uint   `json:"ID"`
+		Name string `json:"Name"`
 	}
 	out := make([]V, 0, len(list))
 	for _, x := range list {
@@ -462,8 +566,8 @@ func ListServiceTypes(c *gin.Context) {
 		return
 	}
 	type V struct {
-		ID   uint
-		Name string
+		ID   uint   `json:"ID"`
+		Name string `json:"Name"`
 	}
 	out := make([]V, 0, len(list))
 	for _, x := range list {
@@ -480,12 +584,12 @@ func GetLaundryCustomers(c *gin.Context) {
 		return
 	}
 	type V struct {
-		ID        uint
-		Name      string
-		Phone     string
-		AddressID uint
-		Address   string
-		Note      string
+		ID        uint   `json:"ID"`
+		Name      string `json:"Name"`
+		Phone     string `json:"Phone"`
+		AddressID uint   `json:"AddressID"`
+		Address   string `json:"Address"`
+		Note      string `json:"Note"`
 	}
 	out := make([]V, 0, len(custs))
 	for i := range custs {
