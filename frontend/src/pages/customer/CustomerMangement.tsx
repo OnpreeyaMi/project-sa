@@ -139,7 +139,7 @@ const CustomerManagement: React.FC = () => {
         { title: 'ID', dataIndex: 'ID', key: 'ID' },
         { title: 'ชื่อ', dataIndex: 'FirstName', key: 'FirstName' },
         { title: 'สกุล', dataIndex: 'LastName', key: 'LastName' },
-        { title: 'อีเมล', dataIndex: ['User', 'Email'], key: 'Email' },
+        { title: 'อีเมล', key: 'Email', render: (_: any, record: Customer) => record.User?.Email || '-' },
         { title: 'เบอร์โทร', dataIndex: 'PhoneNumber', key: 'PhoneNumber' },
         { title: 'เพศ', dataIndex: ['Gender', 'name'], key: 'Gender' },
         {

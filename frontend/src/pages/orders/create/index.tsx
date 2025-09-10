@@ -203,6 +203,84 @@ const OrderPage: React.FC = () => {
     }
   }, [isMapModal]);
 
+  const handleSaveNewAddress = async () => {
+    if (!newAddress.trim()) return;
+    try {
+      await createAddress({
+        addressDetails: newAddress,
+        latitude: newLat,
+        longitude: newLng,
+        customerId: currentUser?.ID || 1,
+      });
+      // ดึง address ใหม่จาก backend
+      const arr = await fetchAddresses(currentUser?.ID || 1);
+      setAddresses(arr);
+      setAddingNewAddress(false);
+      setNewAddress("");
+      setNewLat(13.7563);
+      setNewLng(100.5018);
+    } catch (err) {
+      AntdModal.error({ title: "บันทึกที่อยู่ไม่สำเร็จ" });
+    }
+  };
+
+  useEffect(() => {
+    const fetch = async () => {
+      const arr = await fetchAddresses(currentUser?.ID || 1);
+      const customerId = currentUser?.ID || 1;
+      const filtered = arr.filter((a: any) => a.CustomerID === customerId);
+      setAddresses(filtered);
+      // หา address หลัก (isPrimary === true)
+      const primary = filtered.find((a: any) => a.isPrimary);
+      if (primary) {
+        setPrimaryAddressId(primary.ID);
+        setSelectedAddress(primary.ID);
+      } else if (filtered.length > 0) {
+        setPrimaryAddressId(filtered[0].ID);
+        setSelectedAddress(filtered[0].ID);
+      }
+    };
+    fetch();
+    // eslint-disable-next-line
+  }, [currentUser]);
+
+  useEffect(() => {
+    // สมมุติใช้ customer id 1 (หรือดึงจาก auth จริง)
+    const fetchUser = async () => {
+      try {
+        const res = await fetchCustomerNameById(1);
+        // ถ้า response เป็น { firstName, lastName, ... }
+        if (res && (res.firstName || res.lastName)) {
+          setCurrentUser(res);
+        } else if (res && res.data && (res.data.firstName || res.data.lastName)) {
+          setCurrentUser(res.data);
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    // โหลดน้ำยาซักผ้าและปรับผ้านุ่มแยกประเภท
+    const fetchDetergentOptions = async () => {
+      console.log("Washing:", detergentsWashing);
+      console.log("Softener:", detergentsSoftener);
+      try {
+        const washing = await fetchDetergentsByType("detergent");
+        const softener = await fetchDetergentsByType("softener");
+        setDetergentsWashing(washing || []);
+        setDetergentsSoftener(softener || []);
+      } catch {}
+    };
+    fetchDetergentOptions();
+  }, []);
+
+  const customerName = currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() : "-";
+
   return (
     <CustomerSidebar>
       <Row gutter={[24, 24]} justify="start" style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px' }}>
