@@ -214,7 +214,7 @@ func CreateEmployee(c *gin.Context) {
 	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
 	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": "hash password failed"}); return }
-	u := entity.User{Email: p.Email, Password: string(hashed), Status: "active"}
+	u := entity.User{Email: p.Email, Password: string(hashed)}
 	if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
 	// employee code (ถ้าส่งมา ต้องไม่ซ้ำ)
@@ -386,7 +386,7 @@ func UpdateEmployee(c *gin.Context) {
 		}
 		hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
 		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"hash password failed"}); return }
-		u := entity.User{Email: p.Email, Password: string(hashed), Status:"active"}
+		u := entity.User{Email: p.Email, Password: string(hashed)}
 		if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 		e.UserID = u.ID
 	}

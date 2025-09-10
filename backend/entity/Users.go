@@ -6,13 +6,11 @@ type User struct {
 	gorm.Model
 	Email    string `gorm:"uniqueIndex" json:"email"`
 	Password string `json:"password"` // ส่งกลับ “ค่าแฮช”
-	Status   string `json:"status"`
 
 	RoleID uint  `json:"roleId"`
 	Role   *Role `gorm:"foreignKey:RoleID" json:"Role,omitempty"`
 
-	CustomerID         uint            `json:"customerId"`
-	Customers          []*Customer     `gorm:"foreignKey:UserID;references:ID" json:"-"`
+	Customers []*Customer `gorm:"foreignKey:UserID" json:"-"`
 
 	PurchaseDetergent  uint                 `json:"-"`
 	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:UserID;references:ID" json:"-"`

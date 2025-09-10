@@ -23,10 +23,10 @@ import type {
   UpsertLaundryCheckInput, OrderDetail, OrderSummary,
 } from "../../interfaces/LaundryCheck/types";
 
-const { Title, Text } = Typography;
-const { TextArea } = Input;
-const { Option } = Select;
-const { RangePicker } = DatePicker;
+// const { Title, Text } = Typography;
+// const { TextArea } = Input;
+// const { Option } = Select;
+// const { RangePicker } = DatePicker;
 
 interface LaundryItemLocal {
   id: number;
@@ -65,8 +65,8 @@ const LaundryCheckPage: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  const [billOpen, setBillOpen] = useState(false);
-  const [billRecord, setBillRecord] = useState<OrderDetail | null>(null);
+//   const [billOpen, setBillOpen] = useState(false);
+//   const [billRecord, setBillRecord] = useState<OrderDetail | null>(null);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<OrderDetail | null>(null);
@@ -222,145 +222,145 @@ const LaundryCheckPage: React.FC = () => {
     },
   ];
 
-  // ---------- ฟิลเตอร์/ค้นหาใน “ประวัติคำสั่งซัก” ----------
-  const [searchText, setSearchText] = useState("");
-  const [dateRange, setDateRange] = useState<RangePickerProps["value"]>();
+//   // ---------- ฟิลเตอร์/ค้นหาใน “ประวัติคำสั่งซัก” ----------
+//   const [searchText, setSearchText] = useState("");
+//   const [dateRange, setDateRange] = useState<RangePickerProps["value"]>();
 
-  // แปลง createdAt (dd/mm/yyyy hh:mm) → Date
-  const parseCreatedAt = (s: string) => {
-    const [d, m, rest] = s.split("/");
-    const [y, hm] = rest.split(" ");
-    const [hh, mi] = hm.split(":");
-    return new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mi));
-  };
+//   // แปลง createdAt (dd/mm/yyyy hh:mm) → Date
+//   const parseCreatedAt = (s: string) => {
+//     const [d, m, rest] = s.split("/");
+//     const [y, hm] = rest.split(" ");
+//     const [hh, mi] = hm.split(":");
+//     return new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mi));
+//   };
 
-  const filteredHistory = useMemo(() => {
-    let list = [...history];
+//   const filteredHistory = useMemo(() => {
+//     let list = [...history];
 
-    if (searchText.trim()) {
-      const q = searchText.trim().toLowerCase();
-      list = list.filter(
-        (r) =>
-          r.id.toLowerCase().includes(q) ||
-          r.customer.name.toLowerCase().includes(q) ||
-          r.customer.phone.toLowerCase().includes(q)
-      );
-    }
-    if (dateRange && dateRange[0] && dateRange[1]) {
-      const start = dateRange[0].toDate();
-      const end = dateRange[1].toDate();
-      list = list.filter((r) => {
-        const dt = parseCreatedAt(r.createdAt);
-        return dt >= start && dt <= end;
-      });
-    }
-    return list;
-  }, [history, searchText, dateRange]);
+//     if (searchText.trim()) {
+//       const q = searchText.trim().toLowerCase();
+//       list = list.filter(
+//         (r) =>
+//           r.id.toLowerCase().includes(q) ||
+//           r.customer.name.toLowerCase().includes(q) ||
+//           r.customer.phone.toLowerCase().includes(q)
+//       );
+//     }
+//     if (dateRange && dateRange[0] && dateRange[1]) {
+//       const start = dateRange[0].toDate();
+//       const end = dateRange[1].toDate();
+//       list = list.filter((r) => {
+//         const dt = parseCreatedAt(r.createdAt);
+//         return dt >= start && dt <= end;
+//       });
+//     }
+//     return list;
+//   }, [history, searchText, dateRange]);
 
-  // คอลัมน์ตารางประวัติ (สวยขึ้น)
-  const historyColumns: ColumnsType<OrderRecord> = [
-    {
-      title: "เลขที่บิล",
-      dataIndex: "id",
-      fixed: "left",
-      width: 170,
-      render: (id: string) => (
-        <Space size={6}>
-          <Text copyable={{ text: id }}>
-            <Tooltip title="คัดลอกเลขที่บิล">
-              <span className="cursor-pointer">{id}</span>
-            </Tooltip>
-          </Text>
-          <CopyOutlined style={{ color: "#64748b" }} />
-        </Space>
-      ),
-    },
-    {
-      title: "วันที่ออกบิล",
-      dataIndex: "createdAt",
-      width: 170,
-      render: (v: string) => <Tag color="blue">{v}</Tag>,
-      sorter: (a, b) => parseCreatedAt(a.createdAt).getTime() - parseCreatedAt(b.createdAt).getTime(),
-      defaultSortOrder: "descend",
-    },
-    {
-      title: "ลูกค้า",
-      width: 220,
-      render: (_, r) => (
-        <Space direction="vertical" size={0}>
-          <Text strong>{r.customer.name}</Text>
-          <Text type="secondary" className="text-xs">{r.customer.phone}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: "จำนวน",
-      children: [
-        {
-          title: "รายการ",
-          dataIndex: "totalItems",
-          align: "right",
-          width: 100,
-          render: (n: number) => <Badge count={n} style={{ backgroundColor: "#0ea5e9" }} />,
-          sorter: (a, b) => a.totalItems - b.totalItems,
-        },
-        {
-          title: "ชิ้น",
-          dataIndex: "totalQuantity",
-          align: "right",
-          width: 100,
-          render: (n: number) => <Badge count={n} style={{ backgroundColor: "#22c55e" }} />,
-          sorter: (a, b) => a.totalQuantity - b.totalQuantity,
-        },
-      ],
-    },
-    {
-      title: "หมายเหตุ",
-      width: 280,
-      render: (_, r) => (
-        <div style={{ maxWidth: 260 }}>
-          {r.customerNote && (
-            <Tooltip title={r.customerNote}>
-              <Tag color="default" style={{ marginBottom: 6 }}>
-                ลูกค้า
-              </Tag>
-            </Tooltip>
-          )}
-          {r.staffNote && (
-            <Tooltip title={r.staffNote}>
-              <Tag color="processing">พนักงาน</Tag>
-            </Tooltip>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: "การทำงาน",
-      key: "actions",
-      width: 250,
-      fixed: "right",
-      render: (_: any, rec: OrderRecord) => (
-        <Space wrap>
-          <Button size="small" icon={<EyeOutlined />} onClick={() => { setDetailRecord(rec); setDetailOpen(true); }}>
-            ดูรายละเอียด
-          </Button>
-          <Button size="small" icon={<FileTextOutlined />} onClick={() => openBill(rec)}>
-            ออกบิล
-          </Button>
-          <Popconfirm
-            title="ลบประวัติรายการนี้?"
-            onConfirm={() => deleteHistory(rec.id)}
-            okText="ลบ"
-            cancelText="ยกเลิก"
-          >
-            <Button size="small" danger icon={<DeleteOutlined />}>
-              ลบ
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+//   // คอลัมน์ตารางประวัติ (สวยขึ้น)
+//   const historyColumns: ColumnsType<OrderRecord> = [
+//     {
+//       title: "เลขที่บิล",
+//       dataIndex: "id",
+//       fixed: "left",
+//       width: 170,
+//       render: (id: string) => (
+//         <Space size={6}>
+//           <Text copyable={{ text: id }}>
+//             <Tooltip title="คัดลอกเลขที่บิล">
+//               <span className="cursor-pointer">{id}</span>
+//             </Tooltip>
+//           </Text>
+//           <CopyOutlined style={{ color: "#64748b" }} />
+//         </Space>
+//       ),
+//     },
+//     {
+//       title: "วันที่ออกบิล",
+//       dataIndex: "createdAt",
+//       width: 170,
+//       render: (v: string) => <Tag color="blue">{v}</Tag>,
+//       sorter: (a, b) => parseCreatedAt(a.createdAt).getTime() - parseCreatedAt(b.createdAt).getTime(),
+//       defaultSortOrder: "descend",
+//     },
+//     {
+//       title: "ลูกค้า",
+//       width: 220,
+//       render: (_, r) => (
+//         <Space direction="vertical" size={0}>
+//           <Text strong>{r.customer.name}</Text>
+//           <Text type="secondary" className="text-xs">{r.customer.phone}</Text>
+//         </Space>
+//       ),
+//     },
+//     {
+//       title: "จำนวน",
+//       children: [
+//         {
+//           title: "รายการ",
+//           dataIndex: "totalItems",
+//           align: "right",
+//           width: 100,
+//           render: (n: number) => <Badge count={n} style={{ backgroundColor: "#0ea5e9" }} />,
+//           sorter: (a, b) => a.totalItems - b.totalItems,
+//         },
+//         {
+//           title: "ชิ้น",
+//           dataIndex: "totalQuantity",
+//           align: "right",
+//           width: 100,
+//           render: (n: number) => <Badge count={n} style={{ backgroundColor: "#22c55e" }} />,
+//           sorter: (a, b) => a.totalQuantity - b.totalQuantity,
+//         },
+//       ],
+//     },
+//     {
+//       title: "หมายเหตุ",
+//       width: 280,
+//       render: (_, r) => (
+//         <div style={{ maxWidth: 260 }}>
+//           {r.customerNote && (
+//             <Tooltip title={r.customerNote}>
+//               <Tag color="default" style={{ marginBottom: 6 }}>
+//                 ลูกค้า
+//               </Tag>
+//             </Tooltip>
+//           )}
+//           {r.staffNote && (
+//             <Tooltip title={r.staffNote}>
+//               <Tag color="processing">พนักงาน</Tag>
+//             </Tooltip>
+//           )}
+//         </div>
+//       ),
+//     },
+//     {
+//       title: "การทำงาน",
+//       key: "actions",
+//       width: 250,
+//       fixed: "right",
+//       render: (_: any, rec: OrderRecord) => (
+//         <Space wrap>
+//           <Button size="small" icon={<EyeOutlined />} onClick={() => { setDetailRecord(rec); setDetailOpen(true); }}>
+//             ดูรายละเอียด
+//           </Button>
+//           <Button size="small" icon={<FileTextOutlined />} onClick={() => openBill(rec)}>
+//             ออกบิล
+//           </Button>
+//           <Popconfirm
+//             title="ลบประวัติรายการนี้?"
+//             onConfirm={() => deleteHistory(rec.id)}
+//             okText="ลบ"
+//             cancelText="ยกเลิก"
+//           >
+//             <Button size="small" danger icon={<DeleteOutlined />}>
+//               ลบ
+//             </Button>
+//           </Popconfirm>
+//         </Space>
+//       ),
+//     },
+//   ];
 
   return (
     <EmployeeSidebar>
@@ -546,7 +546,7 @@ const LaundryCheckPage: React.FC = () => {
               {detailRecord.OrderNote && <Descriptions.Item label="หมายเหตุ (ลูกค้า)">{detailRecord.OrderNote}</Descriptions.Item>}
             </Descriptions>
 
-            <Divider />
+//             <Divider />
 
             <Title level={5}>รายการผ้า</Title>
             <Table

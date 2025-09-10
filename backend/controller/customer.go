@@ -81,24 +81,25 @@ func GetCustomerByID(c *gin.Context) {
 
 // ดึงลูกค้า profile ของตัวเอง (หน้า profile)
 func GetCustomerProfile(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
 
-	var customer entity.Customer
-	if err := config.DB.
-		Preload("User").
-		Preload("Addresses").
-		Preload("Gender").
-		First(&customer, "user_id = ?", userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
-		return
-	}
+    var customer entity.Customer
+    if err := config.DB.
+		Preload("User").    
+        Preload("Addresses").
+        Preload("Gender").
+        First(&customer, "user_id = ?", userID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+        return
+    }
 
-	c.JSON(http.StatusOK, customer)
+    c.JSON(http.StatusOK, customer)
 }
+
 
 // ดึงลูกค้าทั้งหมด (หน้า admin)
 func GetCustomers(c *gin.Context) {

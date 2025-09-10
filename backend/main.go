@@ -1,49 +1,3 @@
-// package main
-
-// import (
-// 	"fmt"
-// 	"github.com/gin-gonic/gin"
-//     "github.com/OnpreeyaMi/project-sa/backend/config"
-    
-//     "github.com/OnpreeyaMi/project-sa/backend/controller"
-
-
-// )
-
-// const port = 8080
-// func main() {
-// 	// เชื่อมต่อฐานข้อมูล
-// 	config.ConnectDatabase()
-
-//     // สร้าง table สำหรับ entity
-//     config.SetupDatabase()
-
-//     //สร้าง router
-//     router := gin.Default()
-// 	router.Use(CORSMiddleware())
-
-//     //ตั้งค่า route
-//     router.POST("/order", controller.CreateOrder)
-// 	router.GET("/order-histories", controller.GetOrderHistories)
-
-//     // รัน server
-//     router.Run(fmt.Sprintf(":%d", port))
-
-// }
-// func CORSMiddleware() gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-// 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-// 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-// 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE,PATCH")
-// 		if c.Request.Method == "OPTIONS" {
-// 			c.AbortWithStatus(204)
-// 			return
-// 		}
-// 		c.Next()
-// 	}
-// }
-
 package main
 
 import (
@@ -110,6 +64,30 @@ func main() {
 	router.PUT("/detergents/:id/update-stock", controller.UpdateDetergentStock)
 	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
 	
+	customerRoutes := router.Group("/customer")
+	customerRoutes.Use(middleware.AuthMiddleware())
+	{
+		customerRoutes.GET("/profile", controller.GetCustomerProfile)
+		customerRoutes.POST("/addresses", controller.CreateAddress)
+		customerRoutes.PUT("/addresses/:id", controller.UpdateAddress)
+		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)
+		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
+	}
+
+	adminCustomerRoutes := router.Group("/customers")
+	{
+		adminCustomerRoutes.POST("", controller.CreateCustomer)
+		adminCustomerRoutes.GET("", controller.GetCustomers)
+		adminCustomerRoutes.GET("/:id", controller.GetCustomerByID)
+		adminCustomerRoutes.PUT("/:id", controller.UpdateCustomer)
+		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
+	}
+
+	// router.POST("/detergents", controller.CreateDetergent)
+	// router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	// router.GET("/detergents", controller.GetDetergents)
+	// router.DELETE("/detergents/:id", controller.DeleteDetergent)
+
 	// Employee CRUD
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
@@ -154,7 +132,11 @@ func main() {
 	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
 	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
 
+	router.GET("/machines", controller.GetMachines) // ดึงเครื่องทั้งหมด
+
+	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
+
 }
 
 func CORSMiddleware() gin.HandlerFunc {
