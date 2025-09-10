@@ -65,9 +65,10 @@ func main() {
 	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
 	
 	customerRoutes := router.Group("/customer")
-	customerRoutes.Use(middleware.AuthMiddleware())
+	customerRoutes.Use(middlewares.AuthMiddleware())
 	{
 		customerRoutes.GET("/profile", controller.GetCustomerProfile)
+		customerRoutes.PUT("/profile", controller.EditCustomerProfile)
 		customerRoutes.POST("/addresses", controller.CreateAddress)
 		customerRoutes.PUT("/addresses/:id", controller.UpdateAddress)
 		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)

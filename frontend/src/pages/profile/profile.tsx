@@ -19,9 +19,43 @@ const CustomerProfile: React.FC = () => {
 
   const [form] = Form.useForm();
 
-  const handleEdit = () => {
-    form.setFieldsValue(profile);
-    setIsEditing(true);
+  useEffect(() => {
+    if (user?.customer) {
+      form.setFieldsValue({
+        firstName: user.customer.firstName,
+        lastName: user.customer.lastName,
+        phone: user.customer.phone,
+        gender: user.customer.gender.id,
+        email: user.email,
+      });
+      setAddresses(
+        (user.customer.addresses || []).map((addr: any) => ({
+          id: addr.ID || addr.id,
+          detail: addr.AddressDetails || addr.detail,
+          latitude: addr.Latitude || addr.latitude,
+          longitude: addr.Longitude || addr.longitude,
+          isDefault: addr.IsDefault || addr.isDefault,
+        }))
+      );
+    }
+  }, [user, form]);
+
+  // ----- แก้ไขข้อมูลส่วนตัว -----
+  const handleSave = async (values: any) => {
+    try {
+      await axios.put("http://localhost:8000/customer/profile", {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        phone: values.phone,
+        genderId: values.gender,
+      }, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      setEditMode(false);
+      await refreshCustomer();
+    } catch (err) {
+      Modal.error({ title: "บันทึกข้อมูลไม่สำเร็จ" });
+    }
   };
 
   const handleSave = () => {

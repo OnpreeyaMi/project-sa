@@ -192,13 +192,13 @@ func MockData() {
 	
 	// --- Mock Machines ---
 	machines := []entity.Machine{
-	{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
-	{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 3, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
+		{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "drying", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "drying", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "drying", Machine_number: 3, Capacity_kg: 12, Status: "available"},
 	}
 	for _, m := range machines {
 	DB.FirstOrCreate(
