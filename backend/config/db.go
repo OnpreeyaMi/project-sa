@@ -57,7 +57,6 @@ func SetupDatabase() {
 		&entity.PromotionUsage{},
 		&entity.Role{},
 		&entity.DiscountType{},
-
 	)
 	if err != nil {
 		fmt.Println("Error in AutoMigrate:", err)
@@ -72,7 +71,7 @@ func SetupDatabase() {
 func MockData() {
 	// --- Mock Customers ---
 	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1,  IsVerified: true, UserID: 2},
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, IsVerified: true, UserID: 2},
 		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false, UserID: 3},
 	}
 	for _, c := range customers {
@@ -90,10 +89,13 @@ func MockData() {
 	}
 
 	// --- Mock User ---
+	// --- Mock User (ต่อจากเดิม) ---
 	users := []entity.User{
 		{Email: "admin@example.com", Password: "1234", RoleID: 1},
 		{Email: "customer1@example.com", Password: "1234", RoleID: 2},
 		{Email: "customer2@example.com", Password: "1234", RoleID: 2},
+		{Email: "employee1@example.com", Password: "1234", RoleID: 3},
+		{Email: "employee2@example.com", Password: "1234", RoleID: 3},
 	}
 	for _, u := range users {
 		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
@@ -108,7 +110,6 @@ func MockData() {
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
-
 
 	// --- Mock Address ---
 	addresses := []entity.Address{
@@ -128,32 +129,31 @@ func MockData() {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-
 	// --- Mock Detergent ---
 	detergents := []entity.Detergent{
 		{
-			Name:  "น้ำยาซักเหลว",
-			Type:  "Liquid",
-			InStock: 100,
+			Name:       "น้ำยาซักเหลว",
+			Type:       "Liquid",
+			InStock:    100,
 			CategoryID: 1,
 		},
 		{
-			Name:  "ผงซักฟอก",
-			Type:  "Powder",
-			InStock: 50,
+			Name:       "ผงซักฟอก",
+			Type:       "Powder",
+			InStock:    50,
 			CategoryID: 2,
 		},
 		{
-			Name:  "น้ำยาซักสูตรพิเศษ",
-			Type:  "Liquid",
-			InStock: 30,
-			UserID: 2,
+			Name:       "น้ำยาซักสูตรพิเศษ",
+			Type:       "Liquid",
+			InStock:    30,
+			UserID:     2,
 			CategoryID: 1,
 		},
 		{
-			Name:  "ผงซักฟอกสูตรเข้มข้น",
-			Type:  "Powder",
-			InStock: 20,
+			Name:       "ผงซักฟอกสูตรเข้มข้น",
+			Type:       "Powder",
+			InStock:    20,
 			CategoryID: 2,
 		},
 	}
@@ -227,45 +227,84 @@ func MockData() {
 
 	// --- Mock LaundryProcess ---
 	processes := []entity.LaundryProcess{
-    {Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}}, // ใช้ ID ของ Order
-    {Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
+		{Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}}, // ใช้ ID ของ Order
+		{Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
 	}
 
 	for _, lp := range processes {
 		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status, Order: lp.Order})
 	}
-	
+
 	// --- Mock Machines ---
 	machines := []entity.Machine{
-	{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
-	{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 3, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
+		{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "drying", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "drying", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "drying", Machine_number: 3, Capacity_kg: 12, Status: "available"},
 	}
 	for _, m := range machines {
-	DB.FirstOrCreate(
-		&m,
-		entity.Machine{
-			Machine_type: m.Machine_type,
-			Capacity_kg:  m.Capacity_kg, 
-			Status:       m.Status,
-		},
+		DB.FirstOrCreate(
+			&m,
+			entity.Machine{
+				Machine_type: m.Machine_type,
+				Capacity_kg:  m.Capacity_kg,
+				Status:       m.Status,
+			},
 		)
 	}
-	// // --- Mock History ---
-	// histories := []entity.OrderHistory{
-	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
-	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
-	// }
-	// for _, h := range histories {
-	// 	DB.Create(&h)
-	// }
+
+	// --- Mock EmployeeStatus ---
+	statuses := []entity.EmployeeStatus{
+		{StatusName: "ทำงานอยู่"},
+		{StatusName: "ลาออก"},
+	}
+	for _, s := range statuses {
+		DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
+	}
+
+	// --- Mock Position ---
+	positions := []entity.Position{
+		{PositionName: "พนักงานซัก"},
+		{PositionName: "พนักงานอบ"},
+		{PositionName: "พนักงานส่งผ้า"},
+	}
+	for _, p := range positions {
+		DB.FirstOrCreate(&p, entity.Position{PositionName: p.PositionName})
+	}
+
+	// --- Mock Employee ---
+	employees := []entity.Employee{
+		{
+			Code:             "EMP001",
+			FirstName:        "Somchai",
+			LastName:         "S.",
+			Phone:            "0811111111",
+			Gender:           "ชาย",
+			StartDate:        time.Now(),
+			UserID:           4, // ต้องมี User ที่ 4 เป็น employee
+			PositionID:       1, // อ้างอิงตำแหน่งแรก
+			EmployeeStatusID: 1, // ทำงานอยู่
+		},
+		{
+			Code:             "EMP002",
+			FirstName:        "Suda",
+			LastName:         "T.",
+			Phone:            "0822222222",
+			Gender:           "หญิง",
+			StartDate:        time.Now(),
+			UserID:           5, // ต้องมี User ที่ 5 เป็น employee
+			PositionID:       2,
+			EmployeeStatusID: 1,
+		},
+	}
+	for _, e := range employees {
+		DB.FirstOrCreate(&e, entity.Employee{Code: e.Code})
+	}
 
 	fmt.Println("Mock data added successfully!")
-	
 
 	fmt.Println("✅ Mock data added successfully!")
 }

@@ -40,7 +40,7 @@ const Profile: React.FC = () => {
   // ----- แก้ไขข้อมูลส่วนตัว -----
   const handleSave = async (values: any) => {
     try {
-      await axios.put(`http://localhost:8000/customer/${user?.customer?.id}`, {
+      await axios.put("http://localhost:8000/customer/profile", {
         firstName: values.firstName,
         lastName: values.lastName,
         phone: values.phone,

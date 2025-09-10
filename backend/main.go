@@ -5,7 +5,7 @@ import (
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/controller"
-	"github.com/OnpreeyaMi/project-sa/middleware"
+	"github.com/OnpreeyaMi/project-sa/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,9 +27,10 @@ func main() {
 	// router.GET("/addresses", controller.GetAddresses)
 
 	customerRoutes := router.Group("/customer")
-	customerRoutes.Use(middleware.AuthMiddleware())
+	customerRoutes.Use(middlewares.AuthMiddleware())
 	{
 		customerRoutes.GET("/profile", controller.GetCustomerProfile)
+		customerRoutes.PUT("/profile", controller.EditCustomerProfile)
 		customerRoutes.POST("/addresses", controller.CreateAddress)
 		customerRoutes.PUT("/addresses/:id", controller.UpdateAddress)
 		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)

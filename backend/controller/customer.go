@@ -76,31 +76,29 @@ func GetCustomerByID(c *gin.Context) {
 		return
 	}
 
-
 	c.JSON(http.StatusOK, customer)
 }
 
 // ดึงลูกค้า profile ของตัวเอง (หน้า profile)
 func GetCustomerProfile(c *gin.Context) {
-    userID, exists := c.Get("userID")
-    if !exists {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-        return
-    }
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
-    var customer entity.Customer
-    if err := config.DB.
-		Preload("User").    
-        Preload("Addresses").
-        Preload("Gender").
-        First(&customer, "user_id = ?", userID).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
-        return
-    }
+	var customer entity.Customer
+	if err := config.DB.
+		Preload("User").
+		Preload("Addresses").
+		Preload("Gender").
+		First(&customer, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
 
-    c.JSON(http.StatusOK, customer)
+	c.JSON(http.StatusOK, customer)
 }
-
 
 // ดึงลูกค้าทั้งหมด (หน้า admin)
 func GetCustomers(c *gin.Context) {
@@ -153,6 +151,52 @@ func UpdateCustomer(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Customer updated successfully",
+		"data":    updatedCustomer,
+	})
+}
+
+// -------------------- EDIT PROFILE CUSTOMER (สำหรับลูกค้าแก้ไขโปรไฟล์ตัวเอง) --------------------
+type CustomerEditProfilePayload struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Phone     string `json:"phone"`
+	GenderID  uint   `json:"genderId"`
+}
+
+func EditCustomerProfile(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var payload CustomerEditProfilePayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var customer entity.Customer
+	if err := config.DB.First(&customer, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	customer.FirstName = payload.FirstName
+	customer.LastName = payload.LastName
+	customer.PhoneNumber = payload.Phone
+	customer.GenderID = payload.GenderID
+
+	if err := config.DB.Save(&customer).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var updatedCustomer entity.Customer
+	config.DB.Preload("User").Preload("Gender").Preload("Addresses").First(&updatedCustomer, customer.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profile updated successfully",
 		"data":    updatedCustomer,
 	})
 }
