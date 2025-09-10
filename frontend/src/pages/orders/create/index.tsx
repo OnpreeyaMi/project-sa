@@ -744,5 +744,4 @@ function LocationMarker({ setLat, setLng, setAddress }: { setLat: (lat: number) 
   });
   return null;
 }
-
 export default OrderPage;
