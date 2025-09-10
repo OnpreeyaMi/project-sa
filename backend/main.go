@@ -17,6 +17,9 @@ func main() {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 
+	// TimeSlot
+	router.GET("/timeslots", controller.GetTimeSlots)
+
 	// Order CRUD
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
@@ -64,6 +67,7 @@ func main() {
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/process/:id/order",controller.GetProcessesByOrder) // ดึง process พร้อม order
 	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
+	router.DELETE("/laundry-process/:id/machines/:machineId", controller.DeleteMachineFromProcess) // ลบเครื่องจาก process
 
 	// Customer
 	router.POST("/customers", controller.CreateCustomer)
@@ -74,13 +78,19 @@ func main() {
 
 	// Machine
 	router.GET("/machines", controller.GetMachines)
+	
+
 
 	// Queue Routes
 	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
 	router.POST("/queues/pickup", controller.CreatePickupQueue)
+	router.POST("/queues/:id/assign_timeslot", controller.AssignTimeSlotToQueue) // assign timeslot ให้คิว
 	router.POST("/queues/:id/accept", controller.AcceptQueue)
 	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
+	router.DELETE("/queues/:id", controller.DeleteQueue) // ลบคิว
+	router.PUT("/queues/:id", controller.UpdateQueue)    // อัปเดตคิว (status, employee)
+	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
 
 	router.Run(fmt.Sprintf(":%d", port))
 }
