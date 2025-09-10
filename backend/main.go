@@ -5,6 +5,7 @@ import (
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/controller"
+	"github.com/OnpreeyaMi/project-sa/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,9 +18,32 @@ func main() {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
 
+	// Login
+	router.POST("/login", controller.Login)
+
+	router.POST("/register", controller.Register)
 	// TimeSlot
 	router.GET("/timeslots", controller.GetTimeSlots)
 
+	customerRoutes := router.Group("/customer")
+	customerRoutes.Use(middlewares.AuthMiddleware())
+	{
+		customerRoutes.GET("/profile", controller.GetCustomerProfile)
+		customerRoutes.PUT("/profile", controller.EditCustomerProfile)
+		customerRoutes.POST("/addresses", controller.CreateAddress)
+		customerRoutes.PUT("/addresses/:id", controller.UpdateAddress)
+		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)
+		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
+	}
+
+	adminCustomerRoutes := router.Group("/customers")
+	{
+		adminCustomerRoutes.POST("", controller.CreateCustomer)
+		adminCustomerRoutes.GET("", controller.GetCustomers)
+		adminCustomerRoutes.GET("/:id", controller.GetCustomerByID)
+		adminCustomerRoutes.PUT("/:id", controller.UpdateCustomer)
+		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
+	}
 	// Order CRUD
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
@@ -57,7 +81,6 @@ func main() {
 	router.GET("/servicetypes", controller.ListServiceTypes)
 	router.GET("/laundry-check/customers", controller.GetLaundryCustomers)
 
-	
 	// Laundry Process (คงเดิม)
 	router.POST("/laundry-process", controller.CreateLaundryProcess)
 	router.GET("/laundry-processes", controller.GetLaundryProcesses)
@@ -65,21 +88,12 @@ func main() {
 	router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)
 	router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess)
 	router.GET("/orders/:id", controller.GetOrderByID)
-	router.GET("/process/:id/order",controller.GetProcessesByOrder) // ดึง process พร้อม order
-	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
+	router.GET("/process/:id/order", controller.GetProcessesByOrder)                               // ดึง process พร้อม order
+	router.GET("/ordersdetails", controller.GetOrdersdetails)                                      // ดึง order ทั้งหมด (สำหรับหน้า admin)
 	router.DELETE("/laundry-process/:id/machines/:machineId", controller.DeleteMachineFromProcess) // ลบเครื่องจาก process
-
-	// Customer
-	router.POST("/customers", controller.CreateCustomer)
-	router.GET("/customers", controller.GetCustomers)
-	router.PUT("/customers/:id", controller.UpdateCustomer)
-	router.DELETE("/customers/:id", controller.DeleteCustomer)
-	router.GET("/customers/:id", controller.GetCustomerByID)
 
 	// Machine
 	router.GET("/machines", controller.GetMachines)
-	
-
 
 	// Queue Routes
 	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
@@ -88,8 +102,8 @@ func main() {
 	router.POST("/queues/:id/accept", controller.AcceptQueue)
 	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
-	router.DELETE("/queues/:id", controller.DeleteQueue) // ลบคิว
-	router.PUT("/queues/:id", controller.UpdateQueue)    // อัปเดตคิว (status, employee)
+	router.DELETE("/queues/:id", controller.DeleteQueue)         // ลบคิว
+	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
 	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
 
 	router.Run(fmt.Sprintf(":%d", port))

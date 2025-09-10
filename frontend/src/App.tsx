@@ -23,11 +23,12 @@ import StockAdminPage from "./pages/stock/Admin";
 import CustomerHomePage from "./pages/Home/CustomerHome";
 import PurchaseHistoryPage from './pages/stock/Admin/history'; 
 import StockEmployeePage from "./pages/stock/employee";
+import { UserProvider } from "./hooks/UserContext";
 
 const App: React.FC = () => {
 
   return (
-
+    <UserProvider>
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Login />} />
@@ -67,7 +68,7 @@ const App: React.FC = () => {
           <Route path="status" element={<StatusPage />}/>
         </Route>
     </Routes>
-
+  </UserProvider>
   );
 };
 export default App;

@@ -74,28 +74,31 @@ func SetupDatabase() {
 func MockData() {
 	// --- Mock Customers ---
 	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1,  IsVerified: true},
-		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false},
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, IsVerified: true, UserID: 2},
+		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false, UserID: 3},
 	}
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
 
-	//--- Mock Address ---
 	// --- Mock Role ---
 	roles := []entity.Role{
-		{Role_name: "admin"},
-		{Role_name: "customer"},
+		{Name: "admin"},
+		{Name: "customer"},
+		{Name: "employee"},
 	}
 	for _, r := range roles {
-		DB.FirstOrCreate(&r, entity.Role{Role_name: r.Role_name})
+		DB.FirstOrCreate(&r, entity.Role{Name: r.Name})
 	}
 
 	// --- Mock User ---
+	// --- Mock User (ต่อจากเดิม) ---
 	users := []entity.User{
-		{Email: "admin@example.com", Password: "hashedpassword", Status: "active", RoleID: 1},
-		{Email: "customer1@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
-		{Email: "customer2@example.com", Password: "hashedpassword", Status: "active", RoleID: 2},
+		{Email: "admin@example.com", Password: "1234", RoleID: 1},
+		{Email: "customer1@example.com", Password: "1234", RoleID: 2},
+		{Email: "customer2@example.com", Password: "1234", RoleID: 2},
+		{Email: "employee1@example.com", Password: "1234", RoleID: 3},
+		{Email: "employee2@example.com", Password: "1234", RoleID: 3},
 	}
 	for _, u := range users {
 		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
@@ -109,6 +112,14 @@ func MockData() {
 	}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
+	}
+	// --- Mock Address ---
+	addresses := []entity.Address{
+		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	}
+	for _, a := range addresses {
+		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
 	// --- Mock ServiceType ---
