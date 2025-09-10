@@ -28,7 +28,7 @@ export async function FetchCustomers(): Promise<
   return res.json();
 }
 
-// ===== CRUD SortedClothes =====
+// ===== พนักงาน =====
 export async function UpsertLaundryCheck(orderId: number, payload: UpsertLaundryCheckInput): Promise<{ OrderID: number }> {
   const res = await fetch(`${API_BASE}/laundry-checks/${orderId}`, {
     method: "POST",
@@ -41,26 +41,33 @@ export async function UpsertLaundryCheck(orderId: number, payload: UpsertLaundry
   }
   return res.json();
 }
+
 export async function UpdateSortedItem(
   orderId: number,
   itemId: number,
-  payload: { ClothTypeName?: string; ServiceTypeID?: number; Quantity?: number }
-) {
+  payload: Partial<{ ClothTypeName: string; ServiceTypeID: number; Quantity: number }>
+): Promise<void> {
   const res = await fetch(`${API_BASE}/laundry-checks/${orderId}/items/${itemId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-export async function DeleteSortedItem(orderId: number, itemId: number) {
-  const res = await fetch(`${API_BASE}/laundry-checks/${orderId}/items/${itemId}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  if (!res.ok) {
+    const t = await res.text().catch(()=> "");
+    throw new Error(t || "อัปเดตรายการไม่สำเร็จ");
+  }
 }
 
-// ===== Queries =====
+export async function DeleteSortedItem(orderId: number, itemId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/laundry-checks/${orderId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(()=> "");
+    throw new Error(t || "ลบรายการไม่สำเร็จ");
+  }
+}
+
 export async function FetchOrderDetail(orderId: number): Promise<OrderDetail> {
   const res = await fetch(`${API_BASE}/laundry-check/orders/${orderId}`);
   if (!res.ok) throw new Error("โหลดรายละเอียดออเดอร์ไม่สำเร็จ");
@@ -71,9 +78,8 @@ export async function FetchOrderHistory(orderId: number): Promise<HistoryEntry[]
   if (!res.ok) throw new Error("โหลดประวัติไม่สำเร็จ");
   return res.json();
 }
-export async function FetchOrders(opts?: { unprocessedOnly?: boolean }): Promise<OrderSummary[]> {
-  const q = opts?.unprocessedOnly ? "?unprocessed=1" : "";
-  const res = await fetch(`${API_BASE}/laundry-check/orders${q}`);
+export async function FetchOrders(): Promise<OrderSummary[]> {
+  const res = await fetch(`${API_BASE}/laundry-check/orders`);
   if (!res.ok) throw new Error("โหลดรายการออเดอร์ไม่สำเร็จ");
   return res.json();
 }
