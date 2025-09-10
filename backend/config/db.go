@@ -134,7 +134,6 @@ func MockData() {
 	for _, c := range categories {
 		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
-
 	// --- Mock DiscountType ---
 	discountTypes := []entity.DiscountType{
 		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
@@ -179,16 +178,6 @@ func MockData() {
 	for _, c := range conds {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
-
-	// --- Mock LaundryProcess ---
-	processes := []entity.LaundryProcess{
-    {Status: "รอดำเนินการ", Order: []*entity.Order{{CustomerID: 1}}}, // ใช้ ID ของ Order
-    {Status: "กำลังซัก", Order: []*entity.Order{{CustomerID: 2}}},
-	}
-
-	for _, lp := range processes {
-		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status, Order: lp.Order})
-	}
 	
 	// --- Mock Machines ---
 	machines := []entity.Machine{
@@ -206,7 +195,6 @@ func MockData() {
 		entity.Machine{
 			Machine_type: m.Machine_type,
 			Capacity_kg:  m.Capacity_kg, 
-			Status:       m.Status,
 		},
 		)
 	}
@@ -218,9 +206,5 @@ func MockData() {
 	// for _, h := range histories {
 	// 	DB.Create(&h)
 	// }
-
-	fmt.Println("Mock data added successfully!")
-	
-
 	fmt.Println("✅ Mock data added successfully!")
 }

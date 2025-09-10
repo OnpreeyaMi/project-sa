@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
@@ -83,6 +84,24 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 	}
+	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
+	process := entity.LaundryProcess{
+		Status:     "รอดำเนินการ",
+		Start_time: time.Now(),
+		Order:      []*entity.Order{&order},
+	}
+	if err := config.DB.Create(&process).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
+		return
+	}
+	// สร้าง pickup queue ทันทีหลังสร้าง order
+    pickupQueue := entity.Queue{
+	    Queue_type: "pickup",
+	    Status:     "waiting",
+	    OrderID:    order.ID,
+    }
+    config.DB.Create(&pickupQueue)
+
 
 	c.JSON(http.StatusOK, order)
 }
