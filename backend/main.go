@@ -15,9 +15,10 @@ func main() {
 	config.SetupDatabase()
 
 	router := gin.Default()
+	_ = router.SetTrustedProxies(nil) // ปิด warning trusted proxies
 	router.Use(CORSMiddleware())
 
-	// Order CRUD
+	// ---------- Orders / Addresses ----------
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
 	router.GET("/addresses", controller.GetAddresses)
@@ -26,63 +27,59 @@ func main() {
 	router.GET("/detergents/type/:type", controller.GetDetergentsByType)
 	router.PUT("/addresses/set-main", controller.UpdateMainAddress)
 
-	// Detergent CRUD
+	// ---------- Detergents ----------
 	router.POST("/detergents", controller.CreateDetergent)
 	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
 	router.GET("/detergents", controller.GetDetergents)
 	router.DELETE("/detergents/:id", controller.DeleteDetergent)
 	router.GET("/detergents/purchase-history", controller.GetPurchaseDetergentHistory)
-	router.POST("/detergents/use", controller.UseDetergent) // ลด stock
+	router.POST("/detergents/use", controller.UseDetergent)
 	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
-	// router.GET("/detergents/daily-usage", controller.GetDailyDetergentUsage) --- IGNORE ---
-	// Employee CRUD
+
+	// ---------- Employees ----------
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
 	router.GET("/employees/:id", controller.GetEmployee)
 	router.PUT("/employees/:id", controller.UpdateEmployee)
 	router.DELETE("/employees/:id", controller.DeleteEmployee)
 
-	// ===== ฝั่งพนักงาน =====
-	// Upsert สำหรับออเดอร์ที่มีอยู่ (ไม่สร้าง/แก้ Order)
+	// ---------- Laundry Check (พนักงาน) ----------
+	// Create/Append
 	router.POST("/laundry-checks/:orderId", controller.UpsertLaundryCheck)
-	// Read-only จาก Order
+	// Read (ออเดอร์ล่าสุด = ส่งเฉพาะที่ “ยังไม่ถูกบันทึก”)
 	router.GET("/laundry-check/orders", controller.ListLaundryOrders)
 	router.GET("/laundry-check/orders/:id", controller.GetLaundryOrderDetail)
 	router.GET("/laundry-check/orders/:id/history", controller.GetOrderHistory)
-	router.PUT("/laundry-checks/:orderId/items/:itemId", controller.UpdateSortedClothes)   // <-- Update
-	router.DELETE("/laundry-checks/:orderId/items/:itemId", controller.DeleteSortedClothes) // <-- Delete
-	// Lookups
+	// Update/Delete รายการผ้า
+	router.PUT("/laundry-checks/:orderId/items/:itemId", controller.UpdateSortedClothes)
+	router.DELETE("/laundry-checks/:orderId/items/:itemId", controller.DeleteSortedClothes)
+
+	// ---------- Lookups ----------
 	router.GET("/clothtypes", controller.ListClothTypes)
 	router.GET("/servicetypes", controller.ListServiceTypes)
 	router.GET("/laundry-check/customers", controller.GetLaundryCustomers)
 
-	
-	// Laundry Process (คงเดิม)
+	// ---------- Laundry Process ----------
 	router.POST("/laundry-process", controller.CreateLaundryProcess)
 	router.GET("/laundry-processes", controller.GetLaundryProcesses)
 	router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess)
 	router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)
 	router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess)
-	router.GET("/orders/:id", controller.GetOrderByID)
-	router.GET("/process/:id/order",controller.GetProcessesByOrder) // ดึง process พร้อม order
-	router.GET("/ordersdetails", controller.GetOrdersdetails) // ดึง order ทั้งหมด (สำหรับหน้า admin)
 
-	// Customer
+	// ---------- Orders (อื่นๆ) ----------
+	router.GET("/orders/:id", controller.GetOrderByID)
+	router.GET("/process/:id/order", controller.GetProcessesByOrder)
+	router.GET("/ordersdetails", controller.GetOrdersdetails)
+
+	// ---------- Customers ----------
 	router.POST("/customers", controller.CreateCustomer)
 	router.GET("/customers", controller.GetCustomers)
 	router.PUT("/customers/:id", controller.UpdateCustomer)
 	router.DELETE("/customers/:id", controller.DeleteCustomer)
 	router.GET("/customers/:id", controller.GetCustomerByID)
 
-	// Machine
+	// ---------- Machines ----------
 	router.GET("/machines", controller.GetMachines)
-
-	// Queue Routes
-	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
-	router.POST("/queues/pickup", controller.CreatePickupQueue)
-	router.POST("/queues/:id/accept", controller.AcceptQueue)
-	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
-	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 
 	router.Run(fmt.Sprintf(":%d", port))
 }

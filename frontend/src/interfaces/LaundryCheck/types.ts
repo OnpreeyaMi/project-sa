@@ -10,6 +10,13 @@ export interface Customer {
 export interface ClothType { ID: number; Name: string; }
 export interface ServiceType { ID: number; Name: string; }
 
+export interface LaundryItemInput {
+  ClothTypeID?: number;
+  ClothTypeName?: string;
+  ServiceTypeID: number;
+  Quantity: number;
+}
+
 export interface UpsertLaundryCheckInput {
   StaffNote?: string;
   Items: { ClothTypeName: string; ServiceTypeID: number; Quantity: number; }[];
@@ -59,5 +66,4 @@ export interface HistoryEntry {
   Quantity: number;
   ClothTypeName: string;
   ServiceType: string;
-  SortedClothesID: number; // <-- สำหรับแก้/ลบ
 }
