@@ -64,8 +64,8 @@ const LaundryCheckPage: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  const [billOpen, setBillOpen] = useState(false);
-  const [billRecord, setBillRecord] = useState<OrderDetail | null>(null);
+//   const [billOpen, setBillOpen] = useState(false);
+//   const [billRecord, setBillRecord] = useState<OrderDetail | null>(null);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<OrderDetail | null>(null);
@@ -207,16 +207,16 @@ const LaundryCheckPage: React.FC = () => {
 
     const staffNote: string = form.getFieldValue("StaffNote") || "";
 
-    const payload: LaundryCheckInput = {
-      CustomerID: selectedCustomer.ID,
-      AddressID: selectedCustomer.AddressID!,
-      StaffNote: staffNote,
-      Items: items.map<LaundryItemInput>(x => ({
-        ClothTypeID: x.clothTypeId!,
-        ServiceTypeID: x.serviceTypeId!,
-        Quantity: x.quantity,
-      })),
-    };
+//     const payload: LaundryCheckInput = {
+//       CustomerID: selectedCustomer.ID,
+//       AddressID: selectedCustomer.AddressID!,
+//       StaffNote: staffNote,
+//       Items: items.map<LaundryItemInput>(x => ({
+//         ClothTypeID: x.clothTypeId!,
+//         ServiceTypeID: x.serviceTypeId!,
+//         Quantity: x.quantity,
+//       })),
+//     };
 
     try {
       setSaving(true);
@@ -567,7 +567,7 @@ const LaundryCheckPage: React.FC = () => {
               {detailRecord.OrderNote && <Descriptions.Item label="หมายเหตุ (ลูกค้า)">{detailRecord.OrderNote}</Descriptions.Item>}
             </Descriptions>
 
-            <Divider />
+//             <Divider />
 
             <Title level={5}>รายการผ้า</Title>
             <Table

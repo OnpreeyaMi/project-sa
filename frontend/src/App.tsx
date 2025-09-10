@@ -69,4 +69,5 @@ const App: React.FC = () => {
     </UserProvider>
   );
 };
+
 export default App;
