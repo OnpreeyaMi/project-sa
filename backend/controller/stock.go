@@ -86,7 +86,7 @@ func UseDetergent(c *gin.Context) {
 	var req struct {
 		UserID      uint   `json:"user_id"`
 		DetergentID uint   `json:"detergent_id"`
-		Quantity    int    `json:"quantity"`
+		QuantityUsed    int    `json:"quantity_used"`
 		Reason      string `json:"reason"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -99,17 +99,17 @@ func UseDetergent(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบสินค้า"})
 		return
 	}
-	if req.Quantity <= 0 {
+	if req.QuantityUsed <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "จำนวนต้องมากกว่า 0"})
 		return
 	}
-	if detergent.InStock < req.Quantity {
+	if detergent.InStock < req.QuantityUsed {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "สินค้าไม่เพียงพอ"})
 		return
 	}
 
 	// ลด stock
-	detergent.InStock -= req.Quantity
+	detergent.InStock -= req.QuantityUsed
 	if err := config.DB.Save(&detergent).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "ลด stock ไม่สำเร็จ"})
 		return
@@ -119,7 +119,7 @@ func UseDetergent(c *gin.Context) {
 	history := entity.DetergentUsageHistory{
 		UserID: req.UserID,
 		DetergentID: req.DetergentID,
-		QuantityUsed: req.Quantity,
+		QuantityUsed: req.QuantityUsed,
 		Reason: req.Reason,
 	}
 	if err := config.DB.Create(&history).Error; err != nil {
@@ -137,4 +137,57 @@ func GetDetergentUsageHistory(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": histories})
+}
+
+// PUT /detergents/:id/update-stock
+func UpdateDetergentStock(c *gin.Context) {
+    id := c.Param("id")
+    var req struct {
+        Quantity int `json:"quantity"`
+        Price    float64 `json:"price"` // เพิ่มราคา
+        Supplier string  `json:"supplier"` // เพิ่ม supplier
+        UserID   uint    `json:"user_id"` // เพิ่มผู้ใช้
+		Image    string  `json:"image"` // เพิ่มรูปภาพ
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    var detergent entity.Detergent
+    if err := config.DB.First(&detergent, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบสินค้า"})
+        return
+    }
+
+    detergent.InStock += req.Quantity
+    if err := config.DB.Save(&detergent).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "อัพเดทจำนวนสินค้าไม่สำเร็จ"})
+        return
+    }
+
+    // เพิ่มประวัติการซื้อ
+    purchase := entity.PurchaseDetergent{
+        DetergentID: detergent.ID,
+        Quantity:    req.Quantity,
+        Price:       req.Price,
+        Supplier:    req.Supplier,
+        UserID:      req.UserID,
+		Image:       req.Image,
+    }
+    if err := config.DB.Create(&purchase).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "บันทึกประวัติการซื้อไม่สำเร็จ"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "อัพเดทจำนวนสินค้าและบันทึกประวัติเรียบร้อย", "data": detergent, "purchase": purchase})
+}
+//ดึงรายการที่ถูกลบ
+func GetDeletedDetergents(c *gin.Context) {
+	var detergents []entity.Detergent
+	if err := config.DB.Unscoped().Where("deleted_at IS NOT NULL").Find(&detergents).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": detergents})
 }

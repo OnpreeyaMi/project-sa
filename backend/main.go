@@ -34,7 +34,9 @@ func main() {
 	router.GET("/detergents/purchase-history", controller.GetPurchaseDetergentHistory)
 	router.POST("/detergents/use", controller.UseDetergent) // ลด stock
 	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
-	// router.GET("/detergents/daily-usage", controller.GetDailyDetergentUsage) --- IGNORE ---
+	router.PUT("/detergents/:id/update-stock", controller.UpdateDetergentStock)
+	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
+	
 	// Employee CRUD
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
