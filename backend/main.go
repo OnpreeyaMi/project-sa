@@ -21,6 +21,8 @@ func main() {
 	// Login
 	router.POST("/login", controller.Login)
 
+	router.POST("/register", controller.Register)
+
 	// ตัวอย่าง route อื่น
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)

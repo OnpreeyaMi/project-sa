@@ -30,7 +30,7 @@ interface User {
   email: string;
   role: "customer" | "employee" | "admin";
   token: string;
-  customer?: Customer; // ถ้าเป็นลูกค้า
+  customer?: Customer; 
 }
 
 interface UserContextType {
