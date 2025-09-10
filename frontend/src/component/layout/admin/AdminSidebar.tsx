@@ -62,6 +62,18 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
     },
   ];
 
+  const logoutMenuItem = [
+    {
+      key: "logout",
+      icon: <MdExitToApp style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ออกจากระบบ</span>,
+      onClick: () => {
+        localStorage.clear();
+        window.location.href = '/';
+      },
+    },
+  ];
+
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
       <Sider

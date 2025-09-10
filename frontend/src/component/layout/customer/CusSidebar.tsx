@@ -114,7 +114,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
         <Menu
           style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          selectedKeys={[location.pathname]}  // ✅ ไฮไลท์ตาม path ปัจจุบัน (รูปแบบเดียวกัน)
+          selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={({ key }) => {
             const selected = menuItems.find(item => item.key === key);
