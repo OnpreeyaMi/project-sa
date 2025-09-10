@@ -122,8 +122,6 @@ func main() {
 
 	// ---------- Machines ----------
 	router.GET("/machines", controller.GetMachines)
-	
-
 
 	// Queue Routes
 	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
