@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { FaHome } from "react-icons/fa";
 import { LiaUserCogSolid } from "react-icons/lia";
-import { TbSettings } from "react-icons/tb";
+import { RiUserSmileFill } from "react-icons/ri";
+import { HiSpeakerphone } from "react-icons/hi";
+import { RiArchive2Fill } from "react-icons/ri";
+import { FaHome } from "react-icons/fa";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -40,10 +42,22 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
       onClick: () => navigate("/admin/employees"),
     },
     {
-      key: "/admin/permissions",
-      icon: <TbSettings style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>จัดการสิทธิ์</span>,
-      onClick: () => navigate("/admin/permissions"),
+      key: "/admin/customers",
+      icon: <RiUserSmileFill style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ข้อมูลลูกค้า</span>,
+      onClick: () => navigate("/admin/customers"),
+    },
+    {
+      key: "/admin/promotions",
+      icon: <HiSpeakerphone style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>โปรโมชั่น</span>,
+      onClick: () => navigate("/admin/promotions"),
+    },
+    {
+      key: "/admin/stock",
+      icon: <RiArchive2Fill style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>คลัง</span>,
+      onClick: () => navigate("/admin/stock"),
     },
   ];
 
