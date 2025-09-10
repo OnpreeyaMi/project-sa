@@ -209,16 +209,16 @@ const LaundryCheckPage: React.FC = () => {
 
     const staffNote: string = form.getFieldValue("StaffNote") || "";
 
-    const payload: LaundryCheckInput = {
-      CustomerID: selectedCustomer.ID,
-      AddressID: selectedCustomer.AddressID!,
-      StaffNote: staffNote,
-      Items: items.map<LaundryItemInput>(x => ({
-        ClothTypeID: x.clothTypeId!,
-        ServiceTypeID: x.serviceTypeId!,
-        Quantity: x.quantity,
-      })),
-    };
+//     const payload: LaundryCheckInput = {
+//       CustomerID: selectedCustomer.ID,
+//       AddressID: selectedCustomer.AddressID!,
+//       StaffNote: staffNote,
+//       Items: items.map<LaundryItemInput>(x => ({
+//         ClothTypeID: x.clothTypeId!,
+//         ServiceTypeID: x.serviceTypeId!,
+//         Quantity: x.quantity,
+//       })),
+//     };
 
     try {
       setSaving(true);
