@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Steps, Descriptions, Typography, Divider, Row, Col, Tag, Progress, Badge } from 'antd';
+import { Card, Steps, Descriptions, Typography, Row, Col, Tag, Progress, Badge } from 'antd';
 import type { DescriptionsProps } from 'antd';
+import type { Order, LaundryProcess } from '../../services/orderdetailService';
 import { 
   FaTruck, 
   FaCheckCircle, 
@@ -24,8 +25,46 @@ const { Title, Text } = Typography;
 const OrderStatusPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [animatedStep, setAnimatedStep] = useState(0);
-  
-  const orderStatus = 'กำลังอบ'; // ดึงจาก backend จริงในอนาคต
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // สมมติ customerId เก็บใน localStorage (หรือ session storage)
+  let customerId = localStorage.getItem('customerId');
+  if (!customerId) {
+    customerId = '1'; // mock customer id
+  }
+
+  // ดึง order ทั้งหมดของลูกค้า
+  // ดึง order ทั้งหมดของ customerId (refresh ทุก 10 วินาที)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    const fetchOrders = () => {
+      setLoading(true);
+      fetch(`http://localhost:8000/ordersdetails`)
+        .then(res => {
+          if (!res.ok) throw new Error('ไม่สามารถดึงข้อมูลออเดอร์ได้');
+          return res.json();
+        })
+        .then((data) => {
+          const allOrders = Array.isArray(data) ? data : (data.data || []);
+          setOrders(allOrders);
+          // auto select order ล่าสุด ถ้ายังไม่ได้เลือก
+          if (allOrders.length > 0 && !selectedOrderId) {
+            setSelectedOrderId(allOrders[allOrders.length-1].ID);
+          }
+          setError(null);
+        })
+        .catch(err => {
+          setError(err.message);
+          setOrders([]);
+        })
+        .finally(() => setLoading(false));
+    };
+    fetchOrders();
+    timer = setInterval(fetchOrders, 10000); // refresh ทุก 10 วินาที
+    return () => clearInterval(timer);
+  }, [customerId, selectedOrderId]);
 
   const statusSteps = [
     { 
@@ -78,8 +117,65 @@ const OrderStatusPage: React.FC = () => {
     },
   ];
 
-  const currentStep = statusSteps.indexOf(statusSteps.find(step => step.title === orderStatus) || statusSteps[0]);
-  const progressPercent = Math.round((currentStep / (statusSteps.length - 1)) * 100);
+  // เลือก order ที่ต้องการแสดง (ล่าสุด/แรกสุด/เลือกได้)
+  const selectedOrder = orders.find(o => o.ID === selectedOrderId) || (orders.length > 0 ? orders[orders.length-1] : null);
+  // หา customer_id ของ order ที่เลือก (หรือใช้ order ล่าสุด)
+  const selectedCustomerId = selectedOrder ? selectedOrder.customer_id : null;
+  // filter orders ที่ customer_id เดียวกัน
+  const sameCustomerOrders = selectedCustomerId
+    ? orders.filter(o => o.customer_id === selectedCustomerId)
+    : orders;
+  // Map สถานะจริงจาก LaundryProcesses และ Queue ของ order
+  // 1. รอดำเนินการ (LaundryProcess.status)
+  // 2. กำลังไปรับผ้า (Queue.status == pickup_in_progress)
+  // 3. รับผ้าเรียบร้อย (Queue.status == done)
+  // 4. กำลังซัก (LaundryProcess.status)
+  // 5. กำลังอบ (LaundryProcess.status)
+  // 6. เสร็จสิ้น (LaundryProcess.status)
+  // 7. กำลังจัดส่ง (Queue.status == delivery_in_progress)
+  // 8. จัดส่งเรียบร้อย (Queue.status == delivered)
+
+  // Helper: หา Queue ตาม type
+  const getQueueByType = (type: string) => {
+    if (!selectedOrder || !('Queues' in selectedOrder)) return undefined;
+    const queues = (selectedOrder as any).Queues as any[];
+    if (!Array.isArray(queues)) return undefined;
+    return queues.find(q => q.Queue_type === type);
+  };
+
+  // Helper: หา LaundryProcess ล่าสุด
+  const getLastLaundryProcess = () => {
+    if (!selectedOrder || !selectedOrder.LaundryProcesses || selectedOrder.LaundryProcesses.length === 0) return undefined;
+    return selectedOrder.LaundryProcesses[selectedOrder.LaundryProcesses.length - 1];
+  };
+
+  // Map สถานะปัจจุบัน
+  let currentStep = 0;
+  let orderStatus = '';
+  const lastProcess = getLastLaundryProcess();
+  const pickupQueue = getQueueByType('pickup');
+  const deliveryQueue = getQueueByType('delivery');
+
+  // เช็คสถานะจากขั้นสูงสุดไปต่ำสุด
+  if (deliveryQueue && deliveryQueue.Status === 'delivered') {
+    currentStep = 7; orderStatus = 'จัดส่งเรียบร้อยแล้ว';
+  } else if (deliveryQueue && deliveryQueue.Status === 'delivery_in_progress') {
+    currentStep = 6; orderStatus = 'กำลังจัดส่ง';
+  } else if (lastProcess && lastProcess.Status === 'เสร็จสิ้น') {
+    currentStep = 5; orderStatus = 'เสร็จสิ้น';
+  } else if (lastProcess && lastProcess.Status === 'กำลังอบ') {
+    currentStep = 4; orderStatus = 'กำลังอบ';
+  } else if (lastProcess && lastProcess.Status === 'กำลังซัก') {
+    currentStep = 3; orderStatus = 'กำลังซัก';
+  } else if (pickupQueue && pickupQueue.Status === 'done') {
+    currentStep = 2; orderStatus = 'รับผ้าเรียบร้อย';
+  } else if (pickupQueue && pickupQueue.Status === 'pickup_in_progress') {
+    currentStep = 1; orderStatus = 'กำลังไปรับผ้า';
+  } else if (lastProcess && lastProcess.Status === 'รอดำเนินการ') {
+    currentStep = 2; orderStatus = 'รอดำเนินการ';
+  }
+
+  const progressPercent = Math.round((currentStep >= 0 ? currentStep : 0) / (statusSteps.length - 1) * 100);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -102,7 +198,7 @@ const OrderStatusPage: React.FC = () => {
     return 'wait';
   };
 
-  const items: DescriptionsProps['items'] = [
+  const items: DescriptionsProps['items'] = selectedOrder ? [
     {
       key: '1',
       label: (
@@ -111,7 +207,7 @@ const OrderStatusPage: React.FC = () => {
           ชื่อลูกค้า
         </span>
       ),
-      children: <Text strong style={{ color: '#0E4587', fontSize: '1.1rem' }}>ใจดี สมใจ</Text>,
+  children: <Text strong style={{ color: '#0E4587', fontSize: '1.1rem' }}>{selectedOrder.Customer ? `${selectedOrder.Customer.FirstName} ${selectedOrder.Customer.LastName}` : '-'}</Text>,
     },
     {
       key: '2',
@@ -131,7 +227,7 @@ const OrderStatusPage: React.FC = () => {
             fontWeight: 'bold'
           }}
         >
-          ORD-20250808-001
+          {selectedOrder.ID}
         </Tag>
       ),
     },
@@ -145,7 +241,10 @@ const OrderStatusPage: React.FC = () => {
       ),
       children: (
         <Text style={{ fontSize: '1rem', color: '#333' }}>
-          08 สิงหาคม 2025 เวลา 14:30 น.
+          {(() => {
+            const dateStr = (selectedOrder as any)?.created_at || (selectedOrder as any)?.CreatedAt;
+            return dateStr ? new Date(dateStr).toLocaleString('th-TH') : '-';
+          })()}
         </Text>
       ),
     },
@@ -159,34 +258,25 @@ const OrderStatusPage: React.FC = () => {
       ),
       children: (
         <div style={{ fontSize: '1rem', color: '#333', lineHeight: '1.5' }}>
-          123 หมู่ 4 ต.เมือง จ.เชียงใหม่ 50200
+          {selectedOrder.Address?.AddressDetails ?? '-'}
           <br />
           <Text type="secondary" style={{ fontSize: '0.9rem' }}>
-            📞 081-234-5678
+            📞 {selectedOrder.Customer?.PhoneNumber ?? '-'}
           </Text>
         </div>
       ),
     },
-    {
-      key: '5',
-      label: (
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#666' }}>
-          <FaBox color="#20639B" />
-          รายการซัก
-        </span>
-      ),
-      children: (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <Tag color="green" style={{ fontSize: '0.9rem', padding: '2px 8px' }}>
-            👔 เสื้อ 5 ตัว
-          </Tag>
-          <Tag color="blue" style={{ fontSize: '0.9rem', padding: '2px 8px' }}>
-            👖 กางเกง 3 ตัว
-          </Tag>
-        </div>
-      ),
-    },
-  ];
+    // รายการซัก: เพิ่มเองถ้ามีข้อมูลใน latestOrder
+  ] : [];
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
+  if (error) return <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>{error}</div>;
+  if (!selectedOrder) return <div style={{ padding: 40, textAlign: 'center' }}>ไม่พบออเดอร์ของคุณ</div>;
+  // UI: เลือก order ที่ต้องการแสดง (dropdown)
+  const handleSelectOrder = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedOrderId(Number(e.target.value));
+  };
+
 
   return (
     <CustomerSidebar>
@@ -195,6 +285,19 @@ const OrderStatusPage: React.FC = () => {
         background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
         minHeight: '100vh'
       }}>
+        {/* Dropdown เลือก order เฉพาะ customer เดียวกัน */}
+        {sameCustomerOrders.length > 1 && (
+          <div style={{ marginBottom: 24, textAlign: 'right' }}>
+            <label style={{ marginRight: 8, fontWeight: 600 }}>เลือกออเดอร์:</label>
+            <select value={selectedOrderId ?? ''} onChange={handleSelectOrder} style={{ padding: 6, borderRadius: 8, minWidth: 120 }}>
+              {sameCustomerOrders.map((o) => (
+                <option key={o.ID} value={o.ID}>
+                  #{o.ID} | {o.created_at ? new Date(o.created_at).toLocaleString('th-TH') : o.ID}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {/* Header Section */}
         <div style={{ 
           textAlign: 'center', 
@@ -442,7 +545,6 @@ const OrderStatusPage: React.FC = () => {
                 {statusSteps.map((step, index) => {
                   const isActive = index <= animatedStep;
                   const status = getStepStatus(index);
-                  
                   return (
                     <Step
                       key={index}
@@ -482,6 +584,9 @@ const OrderStatusPage: React.FC = () => {
                   );
                 })}
               </Steps>
+              <div style={{ marginTop: 16, fontWeight: 'bold', fontSize: 18, color: '#1890ff' }}>
+                สถานะปัจจุบัน: {orderStatus || '-'}
+              </div>
             </Card>
           </Col>
         </Row>

@@ -27,6 +27,8 @@ export interface LaundryProcess {
 
 export interface Order {
   ID: number;
+  customer_id?: number; // เพิ่มให้ตรง backend
+  created_at?: string;  // เพิ่มให้ตรง backend
   Customer?: Customer;
   Address?: Address;
   LaundryProcesses?: LaundryProcess[];
@@ -60,8 +62,8 @@ export const orderdeailService = {
     const res = await fetch(`${API_BASE}/laundry-process/${processId}/machines`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ MachineIDs: machine_ids }),
-    },);
+      body: JSON.stringify({ machine_ids: machine_ids }),
+    });
     if (!res.ok) throw new Error("Failed to save machines");
     return res.json();
   },
@@ -76,4 +78,11 @@ export const orderdeailService = {
     if (!res.ok) throw new Error("Failed to update status");
     return res.json();
   },
+  deleteMachine: async (processId: number, machineId: number) => {
+  const res = await fetch(`${API_BASE}/laundry-process/${processId}/machines/${machineId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete machine");
+  return res.json();
+},
 };
