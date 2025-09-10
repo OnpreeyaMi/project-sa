@@ -107,6 +107,15 @@ func GetCustomers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// Force reload User for each customer if missing
+	for i, cust := range customers {
+		if cust.User == nil && cust.UserID != 0 {
+			var user entity.User
+			if err := config.DB.First(&user, cust.UserID).Error; err == nil {
+				customers[i].User = &user
+			}
+		}
+	}
 	c.JSON(http.StatusOK, customers)
 }
 

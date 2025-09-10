@@ -11,6 +11,7 @@ import {
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom'; // ✅ นำเข้า
 import iconWashing from '../../../assets/iconwashing.png';
+import { MdExitToApp } from "react-icons/md";
 
 const { Header, Sider, Content } = Layout;
 
@@ -102,6 +103,18 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
             if (selected?.onClick) selected.onClick();
           }}
         />
+        <div style={{ position: 'absolute', bottom: 24, left: 0, width: '100%' }}>
+          <Menu
+            style={{ backgroundColor: '#0E4587', color: 'white', border: 'none' }}
+            mode="inline"
+            selectedKeys={[]}
+            items={logoutMenuItem}
+            onClick={({ key }) => {
+              const selected = logoutMenuItem.find(item => item.key === key);
+              if (selected?.onClick) selected.onClick();
+            }}
+          />
+        </div>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>

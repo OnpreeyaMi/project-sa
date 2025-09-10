@@ -98,8 +98,6 @@ func main() {
 
 	// Machines
 	router.GET("/machines", controller.GetMachines)
-	
-
 
 	router.Run(fmt.Sprintf(":%d", port))
 }

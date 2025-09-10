@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaHome, FaUserCircle, FaHistory } from "react-icons/fa";
-import { MdLocalLaundryService, MdOutlinePayment } from "react-icons/md";
+import { MdLocalLaundryService, MdOutlinePayment, MdExitToApp } from "react-icons/md";
 import { RiUserVoiceFill } from "react-icons/ri";
 import { GiClothes } from "react-icons/gi";
 import {
@@ -68,6 +68,18 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
     },
   ];
 
+  const logoutMenuItem = [
+    {
+      key: "logout",
+      icon: <MdExitToApp style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ออกจากระบบ</span>,
+      onClick: () => {
+        localStorage.clear();
+        window.location.href = '/';
+      },
+    },
+  ];
+
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
       <Sider
@@ -109,6 +121,18 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
             if (selected?.onClick) selected.onClick();
           }}
         />
+        <div style={{ position: 'absolute', bottom: 24, left: 0, width: '100%' }}>
+          <Menu
+            style={{ backgroundColor: '#0E4587', color: 'white', border: 'none' }}
+            mode="inline"
+            selectedKeys={[]}
+            items={logoutMenuItem}
+            onClick={({ key }) => {
+              const selected = logoutMenuItem.find(item => item.key === key);
+              if (selected?.onClick) selected.onClick();
+            }}
+          />
+        </div>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>
