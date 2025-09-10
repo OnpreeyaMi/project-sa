@@ -7,6 +7,7 @@ export interface Detergent {
   InStock: number;
   UserID: number;
   CategoryID: number;
+  Image: string;
 }
 
 export interface PurchaseDetergent {
@@ -14,6 +15,7 @@ export interface PurchaseDetergent {
   Price: number;
   Supplier: string;
   UserID: number;
+  Image: string;
 }
 
 export interface DetergentWithPurchase {
@@ -45,17 +47,29 @@ export async function getDetergentUsageHistory() {
   return response.data;
 }
 
-export async function useDetergent({ user_id, detergent_id, quantity, reason }: {
+export async function useDetergent({ user_id, detergent_id, quantity_used, reason }: {
   user_id: number;
   detergent_id: number;
-  quantity: number;
+  quantity_used: number;
   reason: string;
 }) {
   const response = await axios.post(`${API_BASE}/detergents/use`, {
     user_id,
     detergent_id,
-    quantity,
+    quantity_used,
     reason
   });
+  return response.data;
+}
+export async function updateDetergentStock(id: number, quantityToAdd: number) {
+  const response = await axios.put(`${API_BASE}/detergents/${id}/update-stock`, {
+    quantity: quantityToAdd
+  });
+  return response.data;
+}
+
+// ดึงรายการที่ถูกลบ
+export async function getDeletedDetergents() {
+  const response = await axios.get(`${API_BASE}/detergents/deleted`);
   return response.data;
 }
