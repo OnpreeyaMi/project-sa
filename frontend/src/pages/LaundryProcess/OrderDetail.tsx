@@ -17,6 +17,7 @@ import StatusCard from "../../component/StatusCard";
 import { GiWashingMachine, GiClothes } from "react-icons/gi";
 import { FaCheckCircle } from "react-icons/fa";
 import { orderdeailService } from "../../services/orderdetailService";
+import { DeleteOutlined } from "@ant-design/icons";
 
 const { TextArea } = Input;
 const { Title } = Typography;
@@ -189,7 +190,9 @@ const OrderDetail: React.FC = () => {
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="font-bold">🏠 ที่อยู่</span>
-                  <span className="text-right max-w-[60%]">{order.Address?.AddressDetails || "-"}</span>
+                  <span className="text-right max-w-[60%]">
+                    {order.Address?.AddressDetails || order.Address?.address_details || "-"}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="font-bold">📌 สถานะ</span>
@@ -205,28 +208,71 @@ const OrderDetail: React.FC = () => {
                     }`}
                   >
                     {order.LaundryProcesses?.slice(-1)[0]?.Status || "รอดำเนินการ"}
-                  </span>
+                </span>
                 </div>
-                <div className="flex justify-between border-b pb-2">
+                {/* 🧭 เครื่องซัก */}
+                <div className="flex justify-between border-b pb-2 items-center">
                   <span className="font-bold">🧭 เครื่องซัก</span>
-                  <span>
-                    {order.LaundryProcesses?.slice(-1)[0]?.Machine?.find((m: any) => m.Machine_type === "washing")
-                      ? `ถังซัก ${order.LaundryProcesses.slice(-1)[0].Machine.find((m: any) => m.Machine_type === "washing").ID}`
+                  <span className="flex items-center gap-2">
+                    {order.LaundryProcesses?.slice(-1)[0]?.Machines?.find((m: any) => m.Machine_type === "washing")
+                      ? `ถังซัก ${order.LaundryProcesses.slice(-1)[0].Machines.find((m: any) => m.Machine_type === "washing").ID}`
                       : "-"}
+                    {order.LaundryProcesses?.slice(-1)[0]?.Machines?.find((m: any) => m.Machine_type === "washing") && (
+                      <Button
+                        type="primary"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={async () => {
+                          try {
+                            const washingMachine = order.LaundryProcesses?.slice(-1)[0]?.Machines?.find((m: any) => m.Machine_type === "washing");
+                            if (!washingMachine) return;
+                            setSelectedWashMachine(null);
+                            await orderdeailService.deleteMachine(latestProcessId, washingMachine.ID);
+                            message.success("ลบเครื่องซักออกเรียบร้อย");
+                            loadOrder();
+                          } catch (err) {
+                            console.error(err);
+                            message.error("ลบเครื่องซักไม่สำเร็จ");
+                          }
+                        }}
+                      />
+                    )}
                   </span>
                 </div>
-                <div className="flex justify-between border-b pb-2">
+                {/* 🔥 เครื่องอบ */}
+                <div className="flex justify-between border-b pb-2 items-center">
                   <span className="font-bold">🔥 เครื่องอบ</span>
-                  <span>
-                    {order.LaundryProcesses?.slice(-1)[0]?.Machine?.find((m: any) => m.Machine_type === "drying")
-                      ? `ถังอบ ${order.LaundryProcesses.slice(-1)[0].Machine.find((m: any) => m.Machine_type === "drying").ID}`
+                  <span className="flex items-center gap-2">
+                    {order.LaundryProcesses?.slice(-1)[0]?.Machines?.find((m: any) => m.Machine_type === "drying")
+                      ? `ถังอบ ${order.LaundryProcesses.slice(-1)[0].Machines.find((m: any) => m.Machine_type === "drying").ID}`
                       : "-"}
+                    {order.LaundryProcesses?.slice(-1)[0]?.Machines?.find((m: any) => m.Machine_type === "drying") && (
+                      <Button
+                        type="primary"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={async () => {
+                          try {
+                            const dryingMachine = order.LaundryProcesses?.slice(-1)[0]?.Machines?.find((m: any) => m.Machine_type === "drying");
+                            if (!dryingMachine) return;
+                            setSelectedDryMachine(null);
+                            await orderdeailService.deleteMachine(latestProcessId, dryingMachine.ID);
+                            message.success("ลบเครื่องอบออกเรียบร้อย");
+                            loadOrder();
+                          } catch (err) {
+                            console.error(err);
+                            message.error("ลบเครื่องอบไม่สำเร็จ");
+                          }
+                        }}
+                      />
+                    )}
                   </span>
                 </div>
               </div>
             </Card>
           </Col>
-
           {/* เครื่องซัก/อบ + อัปเดตสถานะ */}
           <Col xs={24} md={12}>
             <Row gutter={[16, 16]}>

@@ -120,7 +120,7 @@ func GetOrderHistories(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, histories)
 }
-
+// ดึงออเดอร์ทั้งหมด
 func GetOrders(c *gin.Context) {
 	var orders []entity.Order
 	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
@@ -166,29 +166,29 @@ func GetCustomerNameByID(c *gin.Context) {
 }
 
 // เพิ่มฟังก์ชันสร้าง address ใหม่และเชื่อมกับลูกค้า
-func CreateAddress(c *gin.Context) {
-	var req struct {
-		AddressDetails string  `json:"addressDetails"`
-		Latitude       float64 `json:"latitude"`
-		Longitude      float64 `json:"longitude"`
-		CustomerID     uint    `json:"customerId"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	address := entity.Address{
-		AddressDetails: req.AddressDetails,
-		Latitude:       req.Latitude,
-		Longitude:      req.Longitude,
-		CustomerID:     req.CustomerID,
-	}
-	if err := config.DB.Create(&address).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, address)
-}
+// func CreateAddress(c *gin.Context) {
+// 	var req struct {
+// 		AddressDetails string  `json:"addressDetails"`
+// 		Latitude       float64 `json:"latitude"`
+// 		Longitude      float64 `json:"longitude"`
+// 		CustomerID     uint    `json:"customerId"`
+// 	}
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	address := entity.Address{
+// 		AddressDetails: req.AddressDetails,
+// 		Latitude:       req.Latitude,
+// 		Longitude:      req.Longitude,
+// 		CustomerID:     req.CustomerID,
+// 	}
+// 	if err := config.DB.Create(&address).Error; err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, address)
+// }
 
 // อัพเดตที่อยู่หลักของลูกค้า
 func UpdateMainAddress(c *gin.Context) {

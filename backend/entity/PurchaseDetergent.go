@@ -12,5 +12,5 @@ type PurchaseDetergent struct {
 	Supplier 	string
 	UserID 		uint
 	User 		*User `gorm:"foreignKey:UserID;"`
-	
+	Image	  	string
 }

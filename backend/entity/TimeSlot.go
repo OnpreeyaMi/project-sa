@@ -10,6 +10,9 @@ type TimeSlot struct {
 
 	Start_time time.Time
 	End_time   time.Time
+	SlotType string `gorm:"not null"`
+	Capacity int    `gorm:"default:5"`
+	Status   string `gorm:"default:'available'"`
 
 	Queue  []*Queue `gorm:"foreignKey:TimeSlotID"`
 

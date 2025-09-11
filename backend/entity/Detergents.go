@@ -9,6 +9,7 @@ type Detergent struct {
 	Name 		string
 	Type 		string
 	InStock 	int
+	Image 		string
 	Orders 		[]*Order `gorm:"many2many:OrderDetergents;"`
 	PurchaseDetergents []*PurchaseDetergent `gorm:"foreignKey:DetergentID"`
 	UserID 		uint

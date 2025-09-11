@@ -20,6 +20,7 @@ export interface Detergent {
   name: string;
   type: "Liquid" | "Softener";
   inStock: number;
+  image: string;
 }
 
 export interface OrderHistory {

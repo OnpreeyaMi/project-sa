@@ -10,7 +10,7 @@ type SortingRecord struct {
 
 	SortingDate time.Time
 	SortingNote string
-
+	
 	OrderID uint
 	Order *Order `gorm:"foreignKey:OrderID"`
 
