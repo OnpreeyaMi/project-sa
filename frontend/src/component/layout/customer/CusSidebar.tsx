@@ -37,7 +37,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       onClick: () => navigate("/customer/home"),
     },
     {
-      key: "/customer/wash",
+      key: "/customer/orders",
       icon: <GiClothes style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>ซัก-อบ</span>,
       onClick: () => navigate("/customer/orders"),
@@ -47,12 +47,6 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       icon: <MdOutlinePayment style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>ชำระเงิน</span>,
       onClick: () => navigate("/customer/payment"),
-    },
-    {
-      key: "/customer/status",
-      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>สถานะ</span>,
-      onClick: () => navigate("/customer/status"),
     },
     {
       key: "/customer/history",
