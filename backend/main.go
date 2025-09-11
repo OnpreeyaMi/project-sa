@@ -128,17 +128,19 @@ func main() {
 	// Queue Routes
 	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
 	router.POST("/queues/pickup", controller.CreatePickupQueue)
-	router.POST("/queues/:id/accept", controller.AcceptQueue)
+	
 	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
-
+	router.DELETE("/queues/:id", controller.DeleteQueue)         // ลบคิว
+	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
+	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
 	//Payment
 	router.GET("/payment/checkout/:orderId", controller.GetCheckoutData)   // ข้อมูลหน้าเช็คเอาต์ 
 	// router.GET("/orders/latest", middlewares.AuthRequired().controller.GetLatestOrderForCustomer)
 	router.GET("/orders/latest/:customer_id", controller.GetLatestOrderForCustomer)
 	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
 	
-	
+
 	//complaintCreate
 	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
 	router.Static("/uploads", "./uploads")
@@ -155,11 +157,8 @@ func main() {
 
 	router.POST("/queues/:id/assign_timeslot", controller.AssignTimeSlotToQueue) // assign timeslot ให้คิว
 	router.POST("/queues/:id/accept", controller.AcceptQueue)
-	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
-	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
-	router.DELETE("/queues/:id", controller.DeleteQueue)         // ลบคิว
-	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
-	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
+
+
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))
