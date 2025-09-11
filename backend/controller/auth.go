@@ -2,7 +2,7 @@ package controller
 
 import (
 	"net/http"
-
+	"fmt"
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
@@ -31,6 +31,7 @@ func Login(c *gin.Context) {
 		Where("email = ?", input.Email).
 		First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		fmt.Println("customer.Addresses:", user.Customers[0].Addresses)
 		return
 	}
 

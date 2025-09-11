@@ -36,6 +36,7 @@ func main() {
 		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
 	}
 
+
 	adminCustomerRoutes := router.Group("/customers")
 	{
 		adminCustomerRoutes.POST("", controller.CreateCustomer)
@@ -44,6 +45,14 @@ func main() {
 		adminCustomerRoutes.PUT("/:id", controller.UpdateCustomer)
 		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
 	}
+
+	// Promotion CRUD
+	router.POST("/promotions", controller.CreatePromotion)
+	router.GET("/promotions", controller.GetPromotions)
+	router.PUT("/promotions/:id", controller.UpdatePromotion)
+	router.DELETE("/promotions/:id", controller.DeletePromotion)
+
+
 	// Order CRUD
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
@@ -63,7 +72,7 @@ func main() {
 	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
 	router.PUT("/detergents/:id/update-stock", controller.UpdateDetergentStock)
 	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
-	
+
 	// Employee CRUD
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
@@ -125,5 +134,3 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-

@@ -12,8 +12,8 @@ import (
 // -------------------- CREATE --------------------
 type AddressPayload struct {
 	AddressDetails string  `json:"AddressDetails" binding:"required"`
-	Latitude    float64 `json:"Latitude" binding:"required"`
-	Longitude    float64 `json:"Longitude" binding:"required"`
+	Latitude       float64 `json:"Latitude" binding:"required"`
+	Longitude      float64 `json:"Longitude" binding:"required"`
 }
 
 func CreateAddress(c *gin.Context) {
@@ -24,6 +24,13 @@ func CreateAddress(c *gin.Context) {
 	}
 	userID := userIDRaw.(uint)
 
+	// ดึง customer จาก userID
+	var customer entity.Customer
+	if err := config.DB.Where("user_id = ?", userID).First(&customer).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
 	var payload AddressPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -31,11 +38,11 @@ func CreateAddress(c *gin.Context) {
 	}
 
 	address := entity.Address{
-		CustomerID: userID,
-		AddressDetails:     payload.AddressDetails,
-		Latitude:        payload.Latitude,
-		Longitude:        payload.Longitude,
-		IsDefault:       false,
+		CustomerID:     customer.ID, // ใช้ customer.ID ที่ถูกต้อง
+		AddressDetails: payload.AddressDetails,
+		Latitude:       payload.Latitude,
+		Longitude:      payload.Longitude,
+		IsDefault:      false,
 	}
 
 	if err := config.DB.Create(&address).Error; err != nil {
@@ -44,6 +51,32 @@ func CreateAddress(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, address)
+}
+
+// -------------------- READ --------------------
+func GetAddresses(c *gin.Context) {
+	customerIDStr := c.Query("customerId")
+	var addresses []entity.Address
+
+	if customerIDStr != "" {
+		customerID, err := strconv.Atoi(customerIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid customerId"})
+			return
+		}
+		if err := config.DB.Where("customer_id = ?", customerID).Find(&addresses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	} else {
+		// ถ้าไม่ส่ง customerId ให้ส่ง address ทุกคน
+		if err := config.DB.Find(&addresses).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, addresses)
 }
 
 // -------------------- UPDATE --------------------

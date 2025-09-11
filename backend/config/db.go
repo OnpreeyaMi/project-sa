@@ -74,8 +74,8 @@ func SetupDatabase() {
 func MockData() {
 	// --- Mock Customers ---
 	customers := []entity.Customer{
-		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, IsVerified: true, UserID: 2},
-		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false, UserID: 3},
+		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, UserID: 2},
+		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, UserID: 3},
 	}
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
@@ -91,6 +91,7 @@ func MockData() {
 		DB.FirstOrCreate(&r, entity.Role{Name: r.Name})
 	}
 
+	
 	// --- Mock User ---
 	// --- Mock User (ต่อจากเดิม) ---
 	users := []entity.User{

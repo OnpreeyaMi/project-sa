@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/OnpreeyaMi/project-sa/config"
@@ -26,6 +27,13 @@ func CreateCustomer(c *gin.Context) {
 		return
 	}
 
+	// เช็ค email ซ้ำก่อนสร้าง user
+	var existingUser entity.User
+	if err := config.DB.Where("email = ? AND deleted_at IS NULL", payload.Email).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email นี้ถูกใช้ไปแล้ว"})
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), 14)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
@@ -46,12 +54,12 @@ func CreateCustomer(c *gin.Context) {
 		FirstName:   payload.FirstName,
 		LastName:    payload.LastName,
 		PhoneNumber: payload.Phone,
-		IsVerified:  false,
 		GenderID:    payload.GenderID,
 		UserID:      user.ID,
 	}
 
 	if err := config.DB.Create(&customer).Error; err != nil {
+		fmt.Println("Create customer error:", err) // เพิ่มบรรทัดนี้
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -75,7 +83,13 @@ func GetCustomerByID(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
 		return
 	}
-
+	// ถ้า User ยัง nil ให้ดึงใหม่
+	if customer.User == nil && customer.UserID != 0 {
+		var user entity.User
+		if err := config.DB.First(&user, customer.UserID).Error; err == nil {
+			customer.User = &user
+		}
+	}
 	c.JSON(http.StatusOK, customer)
 }
 
