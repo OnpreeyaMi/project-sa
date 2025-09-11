@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Steps, Descriptions, Typography, Row, Col, Tag, Progress, Badge } from 'antd';
+import { queueService } from '../../services/queueService';
+import type { Queue } from '../../services/queueService';
+import { Card, Steps, Descriptions, Typography, Row, Col, Tag, Progress, Badge, Select, Avatar } from 'antd';
 import type { DescriptionsProps } from 'antd';
-import type { Order, LaundryProcess } from '../../services/orderdetailService';
+import type { Order } from '../../services/orderdetailService';
 import { 
   FaTruck, 
   FaCheckCircle, 
@@ -18,6 +20,7 @@ import {
   FaBox
 } from 'react-icons/fa';
 import CustomerSidebar from "../../component/layout/customer/CusSidebar";
+import { useUser } from '../../context/UserContext';
 
 const { Step } = Steps;
 const { Title, Text } = Typography;
@@ -27,90 +30,96 @@ const OrderStatusPage: React.FC = () => {
   const [animatedStep, setAnimatedStep] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [pickupQueues, setPickupQueues] = useState<Queue[]>([]);
+  const [deliveryQueues, setDeliveryQueues] = useState<Queue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // สมมติ customerId เก็บใน localStorage (หรือ session storage)
-  let customerId = localStorage.getItem('customerId');
-  if (!customerId) {
-    customerId = '1'; // mock customer id
-  }
-
-  // ดึง order ทั้งหมดของลูกค้า
+  const { user } = useUser();
+  const customerId = user?.customer?.id ;
+  
   // ดึง order ทั้งหมดของ customerId (refresh ทุก 10 วินาที)
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    const fetchOrders = () => {
-      setLoading(true);
-      fetch(`http://localhost:8000/ordersdetails`)
-        .then(res => {
-          if (!res.ok) throw new Error('ไม่สามารถดึงข้อมูลออเดอร์ได้');
-          return res.json();
-        })
-        .then((data) => {
-          const allOrders = Array.isArray(data) ? data : (data.data || []);
+    let ignore = false;
+    setLoading(true);
+    Promise.all([
+      fetch(`http://localhost:8000/ordersdetails`).then(res => {
+        if (!res.ok) throw new Error('ไม่สามารถดึงข้อมูลออเดอร์ได้');
+        return res.json();
+      }),
+      queueService.getQueues('pickup'),
+      queueService.getQueues('delivery')
+    ])
+      .then(([ordersData, pickupQueuesData, deliveryQueuesData]) => {
+        let allOrders: any[] = [];
+        if (Array.isArray(ordersData)) {
+          allOrders = ordersData;
+        } else if (ordersData && Array.isArray(ordersData.data)) {
+          allOrders = ordersData.data;
+        }
+        if (!ignore) {
           setOrders(allOrders);
-          // auto select order ล่าสุด ถ้ายังไม่ได้เลือก
-          if (allOrders.length > 0 && !selectedOrderId) {
-            setSelectedOrderId(allOrders[allOrders.length-1].ID);
-          }
+          setPickupQueues(pickupQueuesData);
+          setDeliveryQueues(deliveryQueuesData);
           setError(null);
-        })
-        .catch(err => {
+        }
+      })
+      .catch(err => {
+        if (!ignore) {
           setError(err.message);
           setOrders([]);
-        })
-        .finally(() => setLoading(false));
-    };
-    fetchOrders();
-    timer = setInterval(fetchOrders, 10000); // refresh ทุก 10 วินาที
-    return () => clearInterval(timer);
+          setPickupQueues([]);
+          setDeliveryQueues([]);
+        }
+      })
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
   }, [customerId, selectedOrderId]);
 
   const statusSteps = [
-    { 
-      title: 'กำลังไปรับผ้า', 
-      icon: <FaTruck />,
-      color: '#F6D55C',
-      description: 'พนักงานกำลังเดินทางไปรับผ้า'
-    },
-    { 
-      title: 'รับผ้าเรียบร้อย', 
-      icon: <FaCheckCircle />,
-      color: '#3CAEA3',
-      description: 'รับผ้าจากลูกค้าเรียบร้อยแล้ว'
-    },
-    { 
-      title: 'รอดำเนินการ', 
+    {
+      title: 'รอดำเนินการ',
       icon: <FaClock />,
       color: '#ED553B',
       description: 'ผ้าอยู่ในคิวรอการดำเนินการ'
     },
-    { 
-      title: 'กำลังซัก', 
+    {
+      title: 'กำลังไปรับผ้า',
+      icon: <FaTruck />,
+      color: '#F6D55C',
+      description: 'พนักงานกำลังเดินทางไปรับผ้า'
+    },
+    {
+      title: 'รับผ้าเรียบร้อย',
+      icon: <FaCheckCircle />,
+      color: '#3CAEA3',
+      description: 'รับผ้าจากลูกค้าเรียบร้อยแล้ว'
+    },
+    {
+      title: 'กำลังซัก',
       icon: <FaSoap />,
       color: '#20639B',
       description: 'กำลังซักผ้าด้วยความระมัดระวัง'
     },
-    { 
-      title: 'กำลังอบ', 
+    {
+      title: 'กำลังอบ',
       icon: <FaTshirt />,
       color: '#0E4587',
       description: 'อบผ้าด้วยระบบถนอมใยผ้า'
     },
-    { 
-      title: 'เสร็จสิ้น', 
+    {
+      title: 'เสร็จสิ้น',
       icon: <FaFlag />,
       color: '#28a745',
       description: 'ซักอบเสร็จสิ้น พร้อมจัดส่ง'
     },
-    { 
-      title: 'กำลังจัดส่ง', 
+    {
+      title: 'กำลังจัดส่ง',
       icon: <FaShippingFast />,
       color: '#FF6B6B',
       description: 'พนักงานกำลังจัดส่งผ้า'
     },
-    { 
-      title: 'จัดส่งเรียบร้อยแล้ว', 
+    {
+      title: 'จัดส่งเรียบร้อยแล้ว',
       icon: <FaHome />,
       color: '#4ECDC4',
       description: 'ส่งผ้าถึงลูกค้าเรียบร้อยแล้ว'
@@ -125,54 +134,50 @@ const OrderStatusPage: React.FC = () => {
   const sameCustomerOrders = selectedCustomerId
     ? orders.filter(o => o.customer_id === selectedCustomerId)
     : orders;
-  // Map สถานะจริงจาก LaundryProcesses และ Queue ของ order
-  // 1. รอดำเนินการ (LaundryProcess.status)
-  // 2. กำลังไปรับผ้า (Queue.status == pickup_in_progress)
-  // 3. รับผ้าเรียบร้อย (Queue.status == done)
-  // 4. กำลังซัก (LaundryProcess.status)
-  // 5. กำลังอบ (LaundryProcess.status)
-  // 6. เสร็จสิ้น (LaundryProcess.status)
-  // 7. กำลังจัดส่ง (Queue.status == delivery_in_progress)
-  // 8. จัดส่งเรียบร้อย (Queue.status == delivered)
 
-  // Helper: หา Queue ตาม type
-  const getQueueByType = (type: string) => {
-    if (!selectedOrder || !('Queues' in selectedOrder)) return undefined;
-    const queues = (selectedOrder as any).Queues as any[];
-    if (!Array.isArray(queues)) return undefined;
-    return queues.find(q => q.Queue_type === type);
+  // Merge status ตาม flow ที่ต้องการ
+  const statusToStepIndex: Record<string, number> = {
+    'waiting': 0,
+    'รอดำเนินการ': 0,
+    'pickup_in_progress': 1,
+    'done': 2,
+    'washing': 3,
+    'กำลังซัก': 3,
+    'drying': 4,
+    'กำลังอบ': 4,
+    'finished': 5,
+    'เสร็จสิ้น': 5,
+    'delivery_in_progress': 6,
+    'delivered': 7,
   };
-
-  // Helper: หา LaundryProcess ล่าสุด
-  const getLastLaundryProcess = () => {
-    if (!selectedOrder || !selectedOrder.LaundryProcesses || selectedOrder.LaundryProcesses.length === 0) return undefined;
-    return selectedOrder.LaundryProcesses[selectedOrder.LaundryProcesses.length - 1];
-  };
-
-  // Map สถานะปัจจุบัน
+  let mergedStatus = selectedOrder?.status || '';
+  if (selectedOrder) {
+    const pickupQueue = pickupQueues.find(q => q.OrderID === selectedOrder.ID);
+    const deliveryQueue = deliveryQueues.find(q => q.OrderID === selectedOrder.ID);
+    // 1. ถ้า laundryprocess ยังเป็น waiting/รอดำเนินการ ให้ดู queue pickup
+    if (mergedStatus === 'waiting' || mergedStatus === 'รอดำเนินการ') {
+      if (pickupQueue && pickupQueue.Status === 'pickup_in_progress') {
+        mergedStatus = 'pickup_in_progress';
+      } else if (pickupQueue && pickupQueue.Status === 'done') {
+        mergedStatus = 'done';
+      }
+    }
+    // 2. ถ้า laundryprocess เป็น finished/เสร็จสิ้น ให้ดู queue delivery
+    if (mergedStatus === 'finished' || mergedStatus === 'เสร็จสิ้น') {
+      if (deliveryQueue && deliveryQueue.Status === 'delivery_in_progress') {
+        mergedStatus = 'delivery_in_progress';
+      } else if (deliveryQueue && deliveryQueue.Status === 'delivered') {
+        mergedStatus = 'delivered';
+      }
+    }
+  }
+  let orderStatus = mergedStatus;
   let currentStep = 0;
-  let orderStatus = '';
-  const lastProcess = getLastLaundryProcess();
-  const pickupQueue = getQueueByType('pickup');
-  const deliveryQueue = getQueueByType('delivery');
-
-  // เช็คสถานะจากขั้นสูงสุดไปต่ำสุด
-  if (deliveryQueue && deliveryQueue.Status === 'delivered') {
-    currentStep = 7; orderStatus = 'จัดส่งเรียบร้อยแล้ว';
-  } else if (deliveryQueue && deliveryQueue.Status === 'delivery_in_progress') {
-    currentStep = 6; orderStatus = 'กำลังจัดส่ง';
-  } else if (lastProcess && lastProcess.Status === 'เสร็จสิ้น') {
-    currentStep = 5; orderStatus = 'เสร็จสิ้น';
-  } else if (lastProcess && lastProcess.Status === 'กำลังอบ') {
-    currentStep = 4; orderStatus = 'กำลังอบ';
-  } else if (lastProcess && lastProcess.Status === 'กำลังซัก') {
-    currentStep = 3; orderStatus = 'กำลังซัก';
-  } else if (pickupQueue && pickupQueue.Status === 'done') {
-    currentStep = 2; orderStatus = 'รับผ้าเรียบร้อย';
-  } else if (pickupQueue && pickupQueue.Status === 'pickup_in_progress') {
-    currentStep = 1; orderStatus = 'กำลังไปรับผ้า';
-  } else if (lastProcess && lastProcess.Status === 'รอดำเนินการ') {
-    currentStep = 2; orderStatus = 'รอดำเนินการ';
+  if (orderStatus in statusToStepIndex) {
+    currentStep = statusToStepIndex[orderStatus];
+    orderStatus = statusSteps[currentStep]?.title || orderStatus;
+  } else {
+    currentStep = 0;
   }
 
   const progressPercent = Math.round((currentStep >= 0 ? currentStep : 0) / (statusSteps.length - 1) * 100);
@@ -271,10 +276,21 @@ const OrderStatusPage: React.FC = () => {
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
   if (error) return <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>{error}</div>;
+  if (orders.length === 0) {
+    return (
+      <CustomerSidebar>
+        <div style={{ padding: 40, textAlign: 'center', color: '#888', fontSize: 20 }}>
+          <div>คุณยังไม่มีออเดอร์ในระบบ</div>
+          <div style={{ fontSize: 60, margin: '32px 0' }}>🧺</div>
+          <div>เริ่มต้นสั่งซักผ้าได้เลย!</div>
+        </div>
+      </CustomerSidebar>
+    );
+  }
   if (!selectedOrder) return <div style={{ padding: 40, textAlign: 'center' }}>ไม่พบออเดอร์ของคุณ</div>;
-  // UI: เลือก order ที่ต้องการแสดง (dropdown)
-  const handleSelectOrder = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedOrderId(Number(e.target.value));
+  // UI: เลือก order ที่ต้องการแสดง (modern dropdown)
+  const handleSelectOrder = (orderId: number) => {
+    setSelectedOrderId(orderId);
   };
 
 
@@ -287,27 +303,82 @@ const OrderStatusPage: React.FC = () => {
       }}>
         {/* Dropdown เลือก order เฉพาะ customer เดียวกัน */}
         {sameCustomerOrders.length > 1 && (
-          <div style={{ marginBottom: 24, textAlign: 'right' }}>
-            <label style={{ marginRight: 8, fontWeight: 600 }}>เลือกออเดอร์:</label>
-            <select value={selectedOrderId ?? ''} onChange={handleSelectOrder} style={{ padding: 6, borderRadius: 8, minWidth: 120 }}>
-              {sameCustomerOrders.map((o) => (
-                <option key={o.ID} value={o.ID}>
-                  #{o.ID} | {o.created_at ? new Date(o.created_at).toLocaleString('th-TH') : o.ID}
-                </option>
-              ))}
-            </select>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            marginBottom: 32,
+            justifyContent: 'flex-start',
+            maxWidth: 520,
+            paddingLeft: 8
+          }}>
+            <label style={{ fontWeight: 600, fontSize: 16, color: '#222', minWidth: 110 }}>เลือกออเดอร์:</label>
+            <Select
+              value={selectedOrderId ?? undefined}
+              placeholder="เลือกออเดอร์"
+              onChange={handleSelectOrder}
+              style={{ minWidth: 280, borderRadius: 12, fontSize: 15 }}
+              dropdownStyle={{ borderRadius: 16, padding: 8 }}
+              size="large"
+            >
+              {sameCustomerOrders.map((o) => {
+                // merge status จาก pickupQueue ถ้ามี
+                let mergedStatus = o.status;
+                const pickupQueue = pickupQueues.find(q => q.OrderID === o.ID);
+                if (pickupQueue && pickupQueue.Status && ['pickup_in_progress','done'].includes(pickupQueue.Status)) {
+                  mergedStatus = pickupQueue.Status;
+                }
+                // แปลงเป็นชื่อไทยเหมือนใน statusSteps
+                const statusToStepIndex: Record<string, number> = {
+                  'waiting': 0,
+                  'รอดำเนินการ': 0,
+                  'pickup_in_progress': 1,
+                  'done': 2,
+                  'washing': 3,
+                  'กำลังซัก': 3,
+                  'drying': 4,
+                  'กำลังอบ': 4,
+                  'finished': 5,
+                  'เสร็จสิ้น': 5,
+                  'delivery_in_progress': 6,
+                  'delivered': 7,
+                };
+                let statusLabel = mergedStatus;
+                if (mergedStatus && mergedStatus in statusToStepIndex) {
+                  statusLabel = statusSteps[statusToStepIndex[mergedStatus]]?.title || mergedStatus;
+                }
+                return (
+                  <Select.Option key={o.ID} value={o.ID}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar size={24} style={{ background: '#3CAEA3', fontWeight: 700 }}>{o.ID}</Avatar>
+                      <span style={{ fontWeight: 600, color: '#20639B' }}>#{o.ID}</span>
+                      <span style={{ color: '#888', fontSize: 13 }}>
+                        {o.created_at ? new Date(o.created_at).toLocaleString('th-TH') : o.ID}
+                      </span>
+                      {statusLabel && (
+                        <Tag color="blue" style={{ marginLeft: 8, fontSize: 12 }}>{statusLabel}</Tag>
+                      )}
+                    </span>
+                  </Select.Option>
+                );
+              })}
+            </Select>
           </div>
         )}
         {/* Header Section */}
-        <div style={{ 
-          textAlign: 'center', 
+        <div style={{
+          textAlign: 'center',
           marginBottom: '32px',
           background: 'linear-gradient(135deg, #0E4587, #3CAEA3)',
-          padding: '32px',
+          padding: '32px 24px 32px 24px',
           borderRadius: '20px',
           color: 'white',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          maxWidth: 900,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          boxShadow: '0 4px 24px 0 rgba(44,62,80,0.10)'
         }}>
           {/* Animated background elements */}
           <div style={{
@@ -608,7 +679,14 @@ const OrderStatusPage: React.FC = () => {
                 ⏱️ เวลาโดยประมาณ
               </Title>
               <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1rem' }}>
-                {currentStep >= statusSteps.length - 1 ? 'เสร็จสิ้นแล้ว! 🎉' : `อีกประมาณ ${Math.max(1, 3 - Math.floor(currentStep / 2))} ชั่วโมง`}
+                {currentStep >= statusSteps.length - 1
+                  ? 'เสร็จสิ้นแล้ว! 🎉'
+                  : (() => {
+                      // ลดเวลาโดยประมาณ: 1.5, 1, 0.5 ชั่วโมง
+                      if (currentStep <= 1) return 'อีกประมาณ 1 ชั่วโมง 30 นาที';
+                      if (currentStep <= 3) return 'อีกประมาณ 1 ชั่วโมง';
+                      return 'อีกประมาณ 30 นาที';
+                    })()}
               </Text>
             </Col>
             <Col>

@@ -32,6 +32,7 @@ export interface Order {
   Customer?: Customer;
   Address?: Address;
   LaundryProcesses?: LaundryProcess[];
+  status?: string;
 }
 
 const API_BASE = "http://localhost:8000";
