@@ -17,7 +17,8 @@ import (
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-)
+)	
+
 
 // ========================= EasySlip verify (ของเดิม) =========================
 
@@ -38,12 +39,12 @@ type esBank struct{ ID string `json:"id"` }
 type esAmount struct{ Amount float64 `json:"amount"` }
 type esData struct {
 	TransRef string   `json:"transRef"`
-	Country  string   `json:"country"`
+	// Country  string   `json:"country"`
 	Date     string   `json:"date"` // RFC3339
 	Amount   esAmount `json:"amount"`
-	Receiver struct {
-		Bank esBank `json:"bank"`
-	} `json:"receiver"`
+	// Receiver struct {
+	// 	Bank esBank `json:"bank"`
+	// } `json:"receiver"`
 }
 type esVerifyResp struct {
 	Status  int     `json:"status"`
@@ -110,19 +111,27 @@ func VerifySlipBase64(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
+
 	var out esVerifyResp
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "easyslip_bad_response"})
 		return
 	}
 	if out.Status != 200 || out.Data == nil {
-		if strings.Contains(strings.ToLower(out.Message), "duplicate") {
-			c.JSON(http.StatusConflict, gin.H{"error": "duplicate_slip"})
-			return
-		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": "easyslip_verify_failed", "message": out.Message})
-		return
-	}
+    if strings.EqualFold(out.Message, "application_expired") {
+        c.JSON(http.StatusServiceUnavailable, gin.H{
+            "error":   "easyslip_application_expired",
+            "message": "EasySlip application expired",
+        })
+        return
+    }
+    if strings.Contains(strings.ToLower(out.Message), "duplicate") {
+        c.JSON(http.StatusConflict, gin.H{"error": "duplicate_slip"})
+        return
+    }
+    c.JSON(http.StatusBadRequest, gin.H{"error": "easyslip_verify_failed", "message": out.Message})
+    return
+}
 
 	// 4) Amount must match (±0.01)
 	ea := out.Data.Amount.Amount
