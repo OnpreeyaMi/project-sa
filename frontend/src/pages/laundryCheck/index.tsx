@@ -302,22 +302,32 @@ const LaundryCheckPage: React.FC = () => {
   };
 
   const submitEditItem = async () => {
-    if (!activeOrderId || !editingItem) return;
+  if (!activeOrderId || !editingItem) return;
+  
+  try {
     const vals = await editForm.validateFields();
-    try {
-      await UpdateSortedItem(activeOrderId, editingItem.ID, {
-        ClothTypeName: vals.ClothTypeName,
-        ServiceTypeID: (activeDetail?.ServiceTypes?.length ?? 0) > 1 ? vals.ServiceTypeID : editingItem.ServiceTypeID,
-        Quantity: vals.Quantity,
-      });
-      message.success("อัปเดตรายการสำเร็จ");
-      setEditModalOpen(false);
-      setEditingItem(null);
-      await refreshActiveDetail();
-    } catch (e: any) {
-      message.error(e?.message || "อัปเดตไม่สำเร็จ");
-    }
-  };
+    
+    // ใช้ค่า ServiceTypeID จากฟอร์มที่ผู้ใช้เลือก
+    // หากมีหลายบริการ ใช้ค่าที่เลือกใหม่
+    // หากมีบริการเดียว ใช้ค่าเดิม
+    const nextServiceId = (activeDetail?.ServiceTypes?.length ?? 0) > 1 
+      ? Number(vals.ServiceTypeID)  // ใช้ค่าที่เลือกใหม่จากฟอร์ม
+      : Number(editingItem.ServiceTypeID);  // ใช้ค่าเดิม
+
+    await UpdateSortedItem(activeOrderId, editingItem.ID, {
+      ClothTypeName: String(vals.ClothTypeName || "").trim(),
+      ServiceTypeID: nextServiceId,
+      Quantity: Number(vals.Quantity),
+    });
+
+    message.success("อัปเดตรายการสำเร็จ");
+    setEditModalOpen(false);
+    setEditingItem(null);
+    await refreshActiveDetail();
+  } catch (e) {
+    message.error( "อัปเดตไม่สำเร็จ");
+  }
+};
 
   const confirmDeleteItem = async (row: OrderItemView) => {
     if (!activeOrderId) return;

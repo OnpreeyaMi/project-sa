@@ -72,11 +72,12 @@ type OrderDetailView struct {
 	TotalQuantity int               `json:"TotalQuantity"`
 }
 
-// ประวัติแต่ละรายการ
+// ประวัติแต่ละรายการ (+ Action)
 type HistoryEntry struct {
 	ID            uint      `json:"ID"`
 	RecordedAt    time.Time `json:"RecordedAt"`
 	Quantity      int       `json:"Quantity"`
+	Action        string    `json:"Action"` // ADD | EDIT | DELETE
 	ClothTypeName string    `json:"ClothTypeName"`
 	ServiceType   string    `json:"ServiceType"`
 }
@@ -108,7 +109,7 @@ func getOrCreateClothTypeByName(name string) (*entity.ClothType, error) {
 
 // ===================== Endpoints =====================
 
-// POST /laundry-checks/:orderId
+// POST /laundry-checks/:orderId  (เพิ่มรายการใหม่ + history(Action=ADD))
 func UpsertLaundryCheck(c *gin.Context) {
 	oidStr := c.Param("orderId")
 	oid, _ := strconv.ParseUint(oidStr, 10, 64)
@@ -134,7 +135,7 @@ func UpsertLaundryCheck(c *gin.Context) {
 		return
 	}
 
-	// หา/สร้าง SortingRecord สำหรับ order นี้
+	// หา/สร้าง SortingRecord
 	var srec entity.SortingRecord
 	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
 		srec = entity.SortingRecord{
@@ -183,6 +184,7 @@ func UpsertLaundryCheck(c *gin.Context) {
 			HisQuantity:     it.Quantity,
 			RecordedAt:      time.Now(),
 			SortedClothesID: row.ID,
+			Action:          "ADD", // ✅
 		}
 		_ = config.DB.Create(&h).Error
 
@@ -207,7 +209,7 @@ func UpsertLaundryCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, ok{OrderID: order.ID})
 }
 
-// GET /laundry-check/orders : ส่งเฉพาะออเดอร์ที่ "ยังไม่ถูกบันทึก" (ไม่มี SortedClothes)
+// GET /laundry-check/orders : ส่งเฉพาะออเดอร์ที่ "ยังไม่ถูกบันทึก" (ไม่มีชิ้น > 0)
 func ListLaundryOrders(c *gin.Context) {
 	var orders []entity.Order
 	if err := config.DB.Preload("Customer").Preload("ServiceTypes").Find(&orders).Error; err != nil {
@@ -223,16 +225,21 @@ func ListLaundryOrders(c *gin.Context) {
 		var itemCount int64
 		var qtySum int64
 		if srec.ID != 0 {
-			config.DB.Model(&entity.SortedClothes{}).Where("sorting_record_id = ?", srec.ID).Count(&itemCount)
-			config.DB.Model(&entity.SortedClothes{}).Where("sorting_record_id = ?", srec.ID).Select("COALESCE(SUM(sorted_quantity),0)").Scan(&qtySum)
+			// นับเฉพาะที่ปริมาณ > 0
+			config.DB.Model(&entity.SortedClothes{}).
+				Where("sorting_record_id = ? AND sorted_quantity > 0", srec.ID).
+				Count(&itemCount)
+			config.DB.Model(&entity.SortedClothes{}).
+				Where("sorting_record_id = ? AND sorted_quantity > 0", srec.ID).
+				Select("COALESCE(SUM(sorted_quantity),0)").Scan(&qtySum)
 		}
 
-		// ข้ามออเดอร์ที่มีการบันทึกแล้ว (ให้เหลือแต่ยังไม่ได้บันทึก)
+		// ข้ามออเดอร์ที่มีการบันทึก (มีชิ้น > 0) ให้เหลือแต่ยังไม่ได้บันทึก
 		if itemCount > 0 || qtySum > 0 {
 			continue
 		}
 
-		// (ข้อมูลประกอบ)
+		// ข้อมูลประกอบ
 		var histCount int64
 		var latest time.Time
 
@@ -242,7 +249,6 @@ func ListLaundryOrders(c *gin.Context) {
 			phone = o.Customer.PhoneNumber
 		}
 
-		// รวม ServiceTypes ของออเดอร์ (ถ้ามี)
 		stOut := make([]ServiceTypeMini, 0)
 		for _, st := range o.ServiceTypes {
 			if st != nil {
@@ -271,7 +277,7 @@ func ListLaundryOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, results)
 }
 
-// GET /laundry-check/orders/:id
+// GET /laundry-check/orders/:id : รายละเอียดออเดอร์ (โชว์เฉพาะรายการที่จำนวน > 0)
 func GetLaundryOrderDetail(c *gin.Context) {
 	id := c.Param("id")
 
@@ -288,7 +294,8 @@ func GetLaundryOrderDetail(c *gin.Context) {
 	if srec.ID != 0 {
 		var rows []entity.SortedClothes
 		if err := config.DB.Preload("ClothType").Preload("ServiceType").
-			Where("sorting_record_id = ?", srec.ID).Find(&rows).Error; err == nil {
+			Where("sorting_record_id = ? AND sorted_quantity > 0", srec.ID). // ✅ ซ่อนรายการที่ถูกลบ (จำนวน = 0)
+			Find(&rows).Error; err == nil {
 			for _, r := range rows {
 				items = append(items, OrderItemView{
 					ID:            r.ID,
@@ -339,7 +346,7 @@ func GetLaundryOrderDetail(c *gin.Context) {
 			Table("service_types AS st").
 			Select("DISTINCT st.id AS id, st.type AS name").
 			Joins("JOIN sorted_clothes AS sc ON sc.service_type_id = st.id").
-			Where("sc.sorting_record_id = ?", srec.ID).
+			Where("sc.sorting_record_id = ? AND sc.sorted_quantity > 0", srec.ID).
 			Scan(&rows)
 		for _, r := range rows {
 			stOut = append(stOut, ServiceTypeMini{ID: r.ID, Name: r.Name})
@@ -365,7 +372,7 @@ func GetLaundryOrderDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GET /laundry-check/orders/:id/history
+// GET /laundry-check/orders/:id/history  (LEFT JOIN + Action)
 func GetOrderHistory(c *gin.Context) {
 	id := c.Param("id")
 
@@ -382,10 +389,12 @@ func GetOrderHistory(c *gin.Context) {
 			h.id AS id,
 			h.recorded_at AS recorded_at,
 			h.his_quantity AS quantity,
+			h.action AS action,
 			COALESCE(ct.type_name, '') AS cloth_type_name,
 			COALESCE(st.type, '') AS service_type
 		`).
-		Joins("JOIN sorted_clothes AS sc ON sc.id = h.sorted_clothes_id").
+		// ใช้ LEFT JOIN เพื่อให้ประวัติยังแสดง แม้รายการถูกลบหรือจำนวนถูกเซต 0
+		Joins("LEFT JOIN sorted_clothes AS sc ON sc.id = h.sorted_clothes_id").
 		Joins("LEFT JOIN cloth_types AS ct ON ct.id = sc.cloth_type_id").
 		Joins("LEFT JOIN service_types AS st ON st.id = sc.service_type_id").
 		Joins("LEFT JOIN sorting_records AS sr ON sr.id = sc.sorting_record_id").
@@ -395,8 +404,7 @@ func GetOrderHistory(c *gin.Context) {
 
 	c.JSON(http.StatusOK, entries)
 }
-
-// PUT /laundry-checks/:orderId/items/:itemId
+// PUT /laundry-checks/:orderId/items/:itemId  (แก้ไข + history(Action=EDIT))
 func UpdateSortedClothes(c *gin.Context) {
 	orderID, _ := strconv.ParseUint(c.Param("orderId"), 10, 64)
 	itemID, _ := strconv.ParseUint(c.Param("itemId"), 10, 64)
@@ -424,6 +432,8 @@ func UpdateSortedClothes(c *gin.Context) {
 		return
 	}
 
+	changed := false
+
 	// อัปเดต cloth type
 	if in.ClothTypeName != nil {
 		ct, err := getOrCreateClothTypeByName(*in.ClothTypeName)
@@ -431,7 +441,10 @@ func UpdateSortedClothes(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"Error": "ประเภทผ้าไม่ถูกต้อง"})
 			return
 		}
-		row.ClothTypeID = ct.ID
+		if row.ClothTypeID != ct.ID {
+			row.ClothTypeID = ct.ID
+			changed = true
+		}
 	}
 
 	// อัปเดต service type
@@ -441,8 +454,10 @@ func UpdateSortedClothes(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"Error": "ไม่พบ ServiceType"})
 			return
 		}
-		row.ServiceTypeID = *in.ServiceTypeID
-
+		if row.ServiceTypeID != *in.ServiceTypeID {
+			row.ServiceTypeID = *in.ServiceTypeID
+			changed = true
+		}
 		// ผูกกับ order ถ้ายังไม่ถูกผูก
 		var order entity.Order
 		if err := config.DB.First(&order, srec.OrderID).Error; err == nil {
@@ -452,16 +467,50 @@ func UpdateSortedClothes(c *gin.Context) {
 
 	// อัปเดตจำนวน + ลง history เป็น delta
 	if in.Quantity != nil {
+		if *in.Quantity < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "จำนวนต้องไม่เป็นค่าติดลบ"})
+			return
+		}
 		delta := *in.Quantity - row.SortedQuantity
-		row.SortedQuantity = *in.Quantity
 		if delta != 0 {
+			changed = true
+			row.SortedQuantity = *in.Quantity
 			h := entity.SortingHistory{
-				HisQuantity:     delta, // อนุญาตติดลบ = แก้ไขลดจำนวน
+				HisQuantity:     delta, // อาจติดลบได้ (ลดจำนวน)
 				RecordedAt:      time.Now(),
 				SortedClothesID: row.ID,
+				Action:          "EDIT",
+			}
+			_ = config.DB.Create(&h).Error
+		} else {
+			// ไม่เปลี่ยนจำนวน แต่เปลี่ยนชนิด/บริการ => เก็บประวัติ EDIT ปริมาณ 0
+			if in.ClothTypeName != nil || in.ServiceTypeID != nil {
+				h := entity.SortingHistory{
+					HisQuantity:     0,
+					RecordedAt:      time.Now(),
+					SortedClothesID: row.ID,
+					Action:          "EDIT",
+				}
+				_ = config.DB.Create(&h).Error
+			}
+		}
+	} else {
+		// ไม่แตะจำนวน แต่มีการแก้ไขชนิด/บริการ => เก็บประวัติ EDIT ปริมาณ 0
+		if in.ClothTypeName != nil || in.ServiceTypeID != nil {
+			changed = true
+			h := entity.SortingHistory{
+				HisQuantity:     0,
+				RecordedAt:      time.Now(),
+				SortedClothesID: row.ID,
+				Action:          "EDIT",
 			}
 			_ = config.DB.Create(&h).Error
 		}
+	}
+
+	if !changed {
+		c.JSON(http.StatusOK, gin.H{"Success": true, "Message": "ไม่มีการเปลี่ยนแปลง"})
+		return
 	}
 
 	if err := config.DB.Save(&row).Error; err != nil {
@@ -472,6 +521,8 @@ func UpdateSortedClothes(c *gin.Context) {
 }
 
 // DELETE /laundry-checks/:orderId/items/:itemId
+// เปลี่ยนพฤติกรรม: ไม่ลบประวัติทิ้ง และไม่ hard-delete รายการ
+// แต่จะสร้าง history(Action=DELETE) แล้วตั้งจำนวน = 0 เพื่อให้หายไปจากรายการปัจจุบัน
 func DeleteSortedClothes(c *gin.Context) {
 	orderID, _ := strconv.ParseUint(c.Param("orderId"), 10, 64)
 	itemID, _ := strconv.ParseUint(c.Param("itemId"), 10, 64)
@@ -491,13 +542,24 @@ func DeleteSortedClothes(c *gin.Context) {
 		return
 	}
 
-	// ลบประวัติ (ถ้ามี) เพื่อกัน orphan
-	_ = config.DB.Where("sorted_clothes_id = ?", row.ID).Delete(&entity.SortingHistory{}).Error
-	// ลบตัวรายการ
-	if err := config.DB.Delete(&row).Error; err != nil {
+	// สร้างประวัติการลบ (ติดลบด้วยจำนวนเดิม)
+	if row.SortedQuantity > 0 {
+		h := entity.SortingHistory{
+			HisQuantity:     -row.SortedQuantity,
+			RecordedAt:      time.Now(),
+			SortedClothesID: row.ID,
+			Action:          "DELETE",
+		}
+		_ = config.DB.Create(&h).Error
+	}
+
+	// "ลบ" โดยตั้งจำนวน = 0 (soft delete ด้านพฤติกรรม)
+	row.SortedQuantity = 0
+	if err := config.DB.Save(&row).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "ลบรายการไม่สำเร็จ"})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"Success": true})
 }
 

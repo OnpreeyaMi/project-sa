@@ -66,4 +66,5 @@ export interface HistoryEntry {
   Quantity: number;
   ClothTypeName: string;
   ServiceType: string;
+  Action: "ADD" | "EDIT" | "DELETE";
 }
