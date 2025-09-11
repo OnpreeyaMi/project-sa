@@ -1,10 +1,10 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { UserProvider } from "./hooks/UserContext"; // import ให้ถูก path
+import { UserProvider } from "./hooks/UserContext";
+import { RequireRole } from "./routes/guards";
 
-import EmployeePage from "./pages/employee";
-import LaundryCheckPage from "./pages/laundryCheck";
-import LaundryHistoryPage from "./pages/laundryCheck/LaundryHistoryPage";
+import EmployeePage from "./pages/employee"; // index.tsx
+import LaundryCheckPage from "./pages/laundryCheck"; // index.tsx
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
 import Login from "./pages/login/login";
 import RegisterForm from "./pages/register/register";
@@ -29,25 +29,27 @@ import LaundryHistoryPage from "./pages/laundryCheck/LaundryHistoryPage";
 import PurchaseHistoryPage from "./pages/stock/Admin/history";
 import UsageHistoryPage from "./pages/stock/Admin/usage";
 import DeleteHistoryPage from "./pages/stock/Admin/delete";
+import OrderStatusPage from "./pages/LaundryProcess/StatusPage";
 
 const App: React.FC = () => {
   return (
     <UserProvider>
       <Routes>
-        {/* Public routes */}
+        {/* Public */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<RegisterForm />} />
 
-        {/* Employee routes */}
-        <Route path="/employee" >
-          <Route path="dashboard" element={<EmployeeHome />} />
-          <Route path="orders" element={<StatusUpdate />} />
-          <Route path="orders/:orderId" element={<OrderDetail />} />
-          <Route path="delivery" element={<TransportQueuePage />} />
-          {/* <Route path="check" element={<LaundryCheckPage />} /> */}
-          <Route path="inventory" element={<StockEmpPage />} />
-          <Route path="profile" element={<StatusPage />} />
-          <Route path="complaint" element={<ComplaintAdminPage />} />
+        {/* Employee */}
+        <Route path="/employee">
+          <Route path="dashboard" element={<RequireRole role="employee"><EmployeeHome /></RequireRole>} />
+          <Route path="orders" element={<RequireRole role="employee"><StatusUpdate /></RequireRole>} />
+          <Route path="orders/:orderId" element={<RequireRole role="employee"><OrderDetail /></RequireRole>} />
+          <Route path="delivery" element={<RequireRole role="employee"><TransportQueuePage /></RequireRole>} />
+          <Route path="check" element={<RequireRole role="employee"><LaundryCheckPage /></RequireRole>} />
+          <Route path="laundry-history" element={<RequireRole role="employee"><LaundryHistoryPage /></RequireRole>} />
+          <Route path="inventory" element={<RequireRole role="employee"><StockEmpPage /></RequireRole>} />
+          <Route path="profile" element={<RequireRole role="employee"><EmployeeProfile /></RequireRole>} />
+          <Route path="complaint" element={<RequireRole role="employee"><ComplaintAdminPage /></RequireRole>} />
         </Route>
 
         {/* Admin */}
@@ -61,14 +63,15 @@ const App: React.FC = () => {
           <Route path="stock/delete" element={<RequireRole role="admin"><DeleteHistoryPage /></RequireRole>} />
         </Route>
 
-        {/* Customer routes */}
+        {/* Customer */}
         <Route path="/customer">
-          <Route path="profile" element={<Profile />} />
-          <Route path="complaint" element={<CustomerComplaintPage />} />
-          <Route path="payment" element={<Payment />} />
-          <Route path="orders" element={<OrderPage />} />
-          <Route path="history" element={<HistoryPage />} />
-          <Route path="home" element={<CustomerHomePage />} />
+          <Route path="complaint" element={<RequireRole role="customer"><CustomerComplaintPage /></RequireRole>} />
+          <Route path="payment" element={<RequireRole role="customer"><Payment /></RequireRole>} />
+          <Route path="orders" element={<RequireRole role="customer"><OrderPage /></RequireRole>} />
+          <Route path="history" element={<RequireRole role="customer"><HistoryPage /></RequireRole>} />
+          <Route path="home" element={<RequireRole role="customer"><CustomerHomePage /></RequireRole>} />
+          <Route path="profile" element={<RequireRole role="customer"><Profile /></RequireRole>} />
+          <Route path="status" element={<RequireRole role="customer"><OrderStatusPage /></RequireRole>} />
         </Route>
       </Routes>
     </UserProvider>

@@ -260,9 +260,21 @@ func CreateEmployee(c *gin.Context) {
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
-	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": "hash password failed"}); return }
-	u := entity.User{Email: p.Email, Password: string(hashed)}
-	if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "hash password failed"})
+		return
+	}
+	u := entity.User{
+		Email:    p.Email,
+		Password: string(hashed),
+		RoleID:   empRoleID, // 🔗 ผูก role = employee
+	}
+	if err := tx.Create(&u).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
 
 	// code unique check (optional)
 	code := strings.TrimSpace(p.Code)

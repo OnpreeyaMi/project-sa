@@ -2,6 +2,8 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
@@ -10,27 +12,39 @@ import (
 )
 
 // ===================== DTO =====================
-// ใช้ชื่อฟิลด์ PascalCase และไม่ใช้ json tag
 type LaundryItemInput struct {
-	ClothTypeID   uint
-	ServiceTypeID uint
-	Quantity      int
+	ClothTypeName string `json:"ClothTypeName"`
+	ServiceTypeID uint   `json:"ServiceTypeID"`
+	Quantity      int    `json:"Quantity"`
 }
 
-type CreateLaundryCheckInput struct {
-	CustomerID uint
-	AddressID  uint
-	StaffNote  string
-	Items      []LaundryItemInput
+type UpsertLaundryCheckInput struct {
+	StaffNote string             `json:"StaffNote"`
+	Items     []LaundryItemInput `json:"Items"`
+}
+
+type UpdateItemInput struct {
+	ClothTypeName *string `json:"ClothTypeName,omitempty"`
+	ServiceTypeID *uint   `json:"ServiceTypeID,omitempty"`
+	Quantity      *int    `json:"Quantity,omitempty"`
+}
+
+type ServiceTypeMini struct {
+	ID   uint   `json:"ID"`
+	Name string `json:"Name"`
 }
 
 type OrderSummary struct {
-	ID            uint
-	CreatedAt     time.Time
-	CustomerName  string
-	Phone         string
-	TotalItems    int
-	TotalQuantity int
+	ID              uint              `json:"ID"`
+	CreatedAt       time.Time         `json:"CreatedAt"`
+	CustomerName    string            `json:"CustomerName"`
+	Phone           string            `json:"Phone"`
+	OrderNote       string            `json:"OrderNote"`
+	HistoryCount    int               `json:"HistoryCount"`
+	LatestHistoryAt *time.Time        `json:"LatestHistoryAt"`
+	TotalItems      int               `json:"TotalItems"`
+	TotalQuantity   int               `json:"TotalQuantity"`
+	ServiceTypes    []ServiceTypeMini `json:"ServiceTypes"`
 }
 
 type OrderItemView struct {
@@ -43,17 +57,28 @@ type OrderItemView struct {
 }
 
 type OrderDetailView struct {
-	ID            uint
-	CreatedAt     time.Time
-	CustomerID    uint
-	CustomerName  string
-	Phone         string
-	AddressID     uint
-	Address       string
-	StaffNote     string
-	Items         []OrderItemView
-	TotalItems    int
-	TotalQuantity int
+	ID            uint              `json:"ID"`
+	CreatedAt     time.Time         `json:"CreatedAt"`
+	CustomerID    uint              `json:"CustomerID"`
+	CustomerName  string            `json:"CustomerName"`
+	Phone         string            `json:"Phone"`
+	AddressID     uint              `json:"AddressID"`
+	Address       string            `json:"Address"`
+	OrderNote     string            `json:"OrderNote"`
+	StaffNote     string            `json:"StaffNote"`
+	ServiceTypes  []ServiceTypeMini `json:"ServiceTypes"`
+	Items         []OrderItemView   `json:"Items"`
+	TotalItems    int               `json:"TotalItems"`
+	TotalQuantity int               `json:"TotalQuantity"`
+}
+
+// ประวัติแต่ละรายการ
+type HistoryEntry struct {
+	ID            uint      `json:"ID"`
+	RecordedAt    time.Time `json:"RecordedAt"`
+	Quantity      int       `json:"Quantity"`
+	ClothTypeName string    `json:"ClothTypeName"`
+	ServiceType   string    `json:"ServiceType"`
 }
 
 // ===================== Helpers =====================
@@ -68,63 +93,73 @@ func findDefaultAddressText(cust *entity.Customer) (addrID uint, addrText string
 	return 0, ""
 }
 
+func getOrCreateClothTypeByName(name string) (*entity.ClothType, error) {
+	n := strings.TrimSpace(name)
+	if n == "" {
+		return nil, nil
+	}
+	var ct entity.ClothType
+	err := config.DB.FirstOrCreate(&ct, entity.ClothType{TypeName: n}).Error
+	if err != nil {
+		return nil, err
+	}
+	return &ct, nil
+}
+
 // ===================== Endpoints =====================
 
-// POST /laundry-checks : สร้างออเดอร์ + SortingRecord + SortedClothes
-func CreateLaundryCheck(c *gin.Context) {
-	var input CreateLaundryCheckInput
+// POST /laundry-checks/:orderId
+func UpsertLaundryCheck(c *gin.Context) {
+	oidStr := c.Param("orderId")
+	oid, _ := strconv.ParseUint(oidStr, 10, 64)
+	if oid == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "orderId ไม่ถูกต้อง"})
+		return
+	}
+
+	var input UpsertLaundryCheckInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
 		return
 	}
-
-	// validate customer & address
-	var cust entity.Customer
-	if err := config.DB.First(&cust, input.CustomerID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบลูกค้า"})
-		return
-	}
-	var addr entity.Address
-	if err := config.DB.First(&addr, input.AddressID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบที่อยู่"})
+	if len(input.Items) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "ต้องมีรายการผ้าอย่างน้อย 1 รายการ"})
 		return
 	}
 
-	// create order
-	order := entity.Order{
-		CustomerID: cust.ID,
-		AddressID:  addr.ID,
-		OrderNote:  input.StaffNote,
-	}
-	if err := config.DB.Create(&order).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก Order ไม่สำเร็จ"})
+	// ตรวจสอบ order
+	var order entity.Order
+	if err := config.DB.Preload("Customer").First(&order, oid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
 		return
 	}
 
-	// create sorting record
-	srec := entity.SortingRecord{
-		SortingDate: time.Now(),
-		SortingNote: input.StaffNote,
-		OrderID:     order.ID,
-	}
-	if err := config.DB.Create(&srec).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortingRecord ไม่สำเร็จ"})
-		return
+	// หา/สร้าง SortingRecord สำหรับ order นี้
+	var srec entity.SortingRecord
+	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
+		srec = entity.SortingRecord{
+			SortingDate: time.Now(),
+			SortingNote: strings.TrimSpace(input.StaffNote),
+			OrderID:     order.ID,
+		}
+		if err := config.DB.Create(&srec).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortingRecord ไม่สำเร็จ"})
+			return
+		}
+	} else {
+		if strings.TrimSpace(input.StaffNote) != "" {
+			srec.SortingNote = strings.TrimSpace(input.StaffNote)
+			_ = config.DB.Save(&srec).Error
+		}
 	}
 
-	// sum total quantity for SortedCount
-	totalQty := 0
-	for _, it := range input.Items {
-		totalQty += it.Quantity
-	}
-
-	// create rows for each item
 	serviceIDs := map[uint]struct{}{}
+
+	// เพิ่มรายการใหม่ + ประวัติ
 	for _, it := range input.Items {
-		// validate refs (เช็คว่ามีจริง)
-		var ct entity.ClothType
-		if err := config.DB.First(&ct, it.ClothTypeID).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "ไม่พบ ClothType"})
+		ct, err := getOrCreateClothTypeByName(it.ClothTypeName)
+		if err != nil || ct == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "ประเภทผ้าไม่ถูกต้อง"})
 			return
 		}
 		var st entity.ServiceType
@@ -135,8 +170,7 @@ func CreateLaundryCheck(c *gin.Context) {
 
 		row := entity.SortedClothes{
 			SortedQuantity:  it.Quantity,
-			SortedCount:     totalQty,
-			ClothTypeID:     it.ClothTypeID,
+			ClothTypeID:     ct.ID,
 			ServiceTypeID:   it.ServiceTypeID,
 			SortingRecordID: srec.ID,
 		}
@@ -144,10 +178,18 @@ func CreateLaundryCheck(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortedClothes ไม่สำเร็จ"})
 			return
 		}
+
+		h := entity.SortingHistory{
+			HisQuantity:     it.Quantity,
+			RecordedAt:      time.Now(),
+			SortedClothesID: row.ID,
+		}
+		_ = config.DB.Create(&h).Error
+
 		serviceIDs[it.ServiceTypeID] = struct{}{}
 	}
 
-	// bind service types (many2many) ที่ระดับ Order — แก้ให้ Append ทีละตัว
+	// ผูก service types (many2many) กับ order
 	if len(serviceIDs) > 0 {
 		ids := make([]uint, 0, len(serviceIDs))
 		for id := range serviceIDs {
@@ -156,79 +198,19 @@ func CreateLaundryCheck(c *gin.Context) {
 		var svs []entity.ServiceType
 		if err := config.DB.Where("id IN ?", ids).Find(&svs).Error; err == nil && len(svs) > 0 {
 			for i := range svs {
-				if err := config.DB.Model(&order).Association("ServiceTypes").Append(&svs[i]); err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"Error": "ผูก ServiceTypes ไม่สำเร็จ"})
-					return
-				}
+				_ = config.DB.Model(&order).Association("ServiceTypes").Append(&svs[i])
 			}
 		}
 	}
 
-	// ตอบกลับด้วย struct (PascalCase)
-	type created struct{ OrderID uint }
-	c.JSON(http.StatusCreated, created{OrderID: order.ID})
-}
-
-// POST /laundry-checks/:id/items : เพิ่มรายการผ้าเข้าออเดอร์เดิม
-func AddLaundryItems(c *gin.Context) {
-	id := c.Param("id")
-
-	var order entity.Order
-	if err := config.DB.First(&order, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
-		return
-	}
-
-	var srec entity.SortingRecord
-	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ SortingRecord ของออเดอร์นี้"})
-		return
-	}
-
-	var items []LaundryItemInput
-	if err := c.ShouldBindJSON(&items); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
-		return
-	}
-
-	// old total
-	var oldTotal int64
-	config.DB.Model(&entity.SortedClothes{}).
-		Where("sorting_record_id = ?", srec.ID).
-		Select("COALESCE(SUM(sorted_quantity),0)").
-		Scan(&oldTotal)
-
-	addTotal := 0
-	for _, it := range items {
-		addTotal += it.Quantity
-	}
-	newTotal := int(oldTotal) + addTotal
-
-	for _, it := range items {
-		row := entity.SortedClothes{
-			SortedQuantity:  it.Quantity,
-			SortedCount:     newTotal,
-			ClothTypeID:     it.ClothTypeID,
-			ServiceTypeID:   it.ServiceTypeID,
-			SortingRecordID: srec.ID,
-		}
-		if err := config.DB.Create(&row).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "เพิ่มรายการล้มเหลว"})
-			return
-		}
-	}
-
-	type ok struct {
-		Message       string
-		TotalQuantity int
-	}
-	c.JSON(http.StatusOK, ok{Message: "เพิ่มรายการสำเร็จ", TotalQuantity: newTotal})
+	type ok struct{ OrderID uint }
+	c.JSON(http.StatusOK, ok{OrderID: order.ID})
 }
 
 // GET /laundry-check/orders : ส่งเฉพาะออเดอร์ที่ "ยังไม่ถูกบันทึก" (ไม่มี SortedClothes)
 func ListLaundryOrders(c *gin.Context) {
 	var orders []entity.Order
-	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
+	if err := config.DB.Preload("Customer").Preload("ServiceTypes").Find(&orders).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "ดึงออเดอร์ไม่สำเร็จ"})
 		return
 	}
@@ -250,31 +232,51 @@ func ListLaundryOrders(c *gin.Context) {
 			continue
 		}
 
+		// (ข้อมูลประกอบ)
+		var histCount int64
+		var latest time.Time
+
 		name, phone := "", ""
 		if o.Customer != nil {
 			name = o.Customer.FirstName + " " + o.Customer.LastName
 			phone = o.Customer.PhoneNumber
 		}
 
+		// รวม ServiceTypes ของออเดอร์ (ถ้ามี)
+		stOut := make([]ServiceTypeMini, 0)
+		for _, st := range o.ServiceTypes {
+			if st != nil {
+				stOut = append(stOut, ServiceTypeMini{ID: st.ID, Name: st.Type})
+			}
+		}
+		var latestPtr *time.Time
+		if !latest.IsZero() {
+			latestPtr = &latest
+		}
+
 		results = append(results, OrderSummary{
-			ID:            o.ID,
-			CreatedAt:     o.CreatedAt,
-			CustomerName:  name,
-			Phone:         phone,
-			TotalItems:    int(itemCount),
-			TotalQuantity: int(qtySum),
+			ID:              o.ID,
+			CreatedAt:       o.CreatedAt,
+			CustomerName:    name,
+			Phone:           phone,
+			OrderNote:       o.OrderNote,
+			HistoryCount:    int(histCount),
+			LatestHistoryAt: latestPtr,
+			TotalItems:      int(itemCount),
+			TotalQuantity:   int(qtySum),
+			ServiceTypes:    stOut,
 		})
 	}
 
 	c.JSON(http.StatusOK, results)
 }
 
-// GET /laundry-check/orders/:id : รายละเอียดออเดอร์
+// GET /laundry-check/orders/:id
 func GetLaundryOrderDetail(c *gin.Context) {
 	id := c.Param("id")
 
 	var order entity.Order
-	if err := config.DB.Preload("Customer").Preload("Address").First(&order, id).Error; err != nil {
+	if err := config.DB.Preload("Customer").Preload("Address").Preload("ServiceTypes").First(&order, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
 		return
 	}
@@ -285,14 +287,15 @@ func GetLaundryOrderDetail(c *gin.Context) {
 	items := []OrderItemView{}
 	if srec.ID != 0 {
 		var rows []entity.SortedClothes
-		if err := config.DB.Preload("ClothType").Preload("ServiceType").Where("sorting_record_id = ?", srec.ID).Find(&rows).Error; err == nil {
+		if err := config.DB.Preload("ClothType").Preload("ServiceType").
+			Where("sorting_record_id = ?", srec.ID).Find(&rows).Error; err == nil {
 			for _, r := range rows {
 				items = append(items, OrderItemView{
 					ID:            r.ID,
 					ClothTypeID:   r.ClothTypeID,
-					ClothTypeName: func() string { if r.ClothType != nil { return r.ClothType.TypeName }; return "" }(),
+					ClothTypeName: func() string { if r.ClothType != nil { return r.ClothType.TypeName } ; return "" }(),
 					ServiceTypeID: r.ServiceTypeID,
-					ServiceType:   func() string { if r.ServiceType != nil { return r.ServiceType.Type }; return "" }(),
+					ServiceType:   func() string { if r.ServiceType != nil { return r.ServiceType.Type } ; return "" }(),
 					Quantity:      r.SortedQuantity,
 				})
 			}
@@ -315,6 +318,34 @@ func GetLaundryOrderDetail(c *gin.Context) {
 		phone = order.Customer.PhoneNumber
 	}
 
+	// Staff note
+	staffNote := ""
+	if srec.ID != 0 {
+		staffNote = srec.SortingNote
+	}
+
+	// ServiceTypes
+	stOut := make([]ServiceTypeMini, 0)
+	for _, st := range order.ServiceTypes {
+		if st != nil {
+			stOut = append(stOut, ServiceTypeMini{ID: st.ID, Name: st.Type})
+		}
+	}
+	// fallback จากรายการผ้า
+	if len(stOut) == 0 && srec.ID != 0 {
+		type row struct{ ID uint; Name string }
+		var rows []row
+		config.DB.
+			Table("service_types AS st").
+			Select("DISTINCT st.id AS id, st.type AS name").
+			Joins("JOIN sorted_clothes AS sc ON sc.service_type_id = st.id").
+			Where("sc.sorting_record_id = ?", srec.ID).
+			Scan(&rows)
+		for _, r := range rows {
+			stOut = append(stOut, ServiceTypeMini{ID: r.ID, Name: r.Name})
+		}
+	}
+
 	resp := OrderDetailView{
 		ID:            order.ID,
 		CreatedAt:     order.CreatedAt,
@@ -323,7 +354,9 @@ func GetLaundryOrderDetail(c *gin.Context) {
 		Phone:         phone,
 		AddressID:     order.AddressID,
 		Address:       addrText,
-		StaffNote:     order.OrderNote,
+		OrderNote:     order.OrderNote,
+		StaffNote:     staffNote,
+		ServiceTypes:  stOut,
 		Items:         items,
 		TotalItems:    totalItems,
 		TotalQuantity: totalQty,
@@ -332,7 +365,143 @@ func GetLaundryOrderDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GET /clothtypes
+// GET /laundry-check/orders/:id/history
+func GetOrderHistory(c *gin.Context) {
+	id := c.Param("id")
+
+	var order entity.Order
+	if err := config.DB.First(&order, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบ Order"})
+		return
+	}
+
+	entries := []HistoryEntry{}
+	config.DB.
+		Table("sorting_histories AS h").
+		Select(`
+			h.id AS id,
+			h.recorded_at AS recorded_at,
+			h.his_quantity AS quantity,
+			COALESCE(ct.type_name, '') AS cloth_type_name,
+			COALESCE(st.type, '') AS service_type
+		`).
+		Joins("JOIN sorted_clothes AS sc ON sc.id = h.sorted_clothes_id").
+		Joins("LEFT JOIN cloth_types AS ct ON ct.id = sc.cloth_type_id").
+		Joins("LEFT JOIN service_types AS st ON st.id = sc.service_type_id").
+		Joins("LEFT JOIN sorting_records AS sr ON sr.id = sc.sorting_record_id").
+		Where("sr.order_id = ?", order.ID).
+		Order("h.recorded_at ASC").
+		Scan(&entries)
+
+	c.JSON(http.StatusOK, entries)
+}
+
+// PUT /laundry-checks/:orderId/items/:itemId
+func UpdateSortedClothes(c *gin.Context) {
+	orderID, _ := strconv.ParseUint(c.Param("orderId"), 10, 64)
+	itemID, _ := strconv.ParseUint(c.Param("itemId"), 10, 64)
+	if orderID == 0 || itemID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "พารามิเตอร์ไม่ถูกต้อง"})
+		return
+	}
+
+	var row entity.SortedClothes
+	if err := config.DB.Preload("ClothType").Preload("ServiceType").First(&row, itemID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบรายการผ้า"})
+		return
+	}
+
+	// ตรวจว่า item นี้อยู่ใน order นี้จริง
+	var srec entity.SortingRecord
+	if err := config.DB.First(&srec, row.SortingRecordID).Error; err != nil || uint(orderID) != srec.OrderID {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "รายการไม่อยู่ในออเดอร์นี้"})
+		return
+	}
+
+	var in UpdateItemInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		return
+	}
+
+	// อัปเดต cloth type
+	if in.ClothTypeName != nil {
+		ct, err := getOrCreateClothTypeByName(*in.ClothTypeName)
+		if err != nil || ct == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "ประเภทผ้าไม่ถูกต้อง"})
+			return
+		}
+		row.ClothTypeID = ct.ID
+	}
+
+	// อัปเดต service type
+	if in.ServiceTypeID != nil {
+		var st entity.ServiceType
+		if err := config.DB.First(&st, *in.ServiceTypeID).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": "ไม่พบ ServiceType"})
+			return
+		}
+		row.ServiceTypeID = *in.ServiceTypeID
+
+		// ผูกกับ order ถ้ายังไม่ถูกผูก
+		var order entity.Order
+		if err := config.DB.First(&order, srec.OrderID).Error; err == nil {
+			_ = config.DB.Model(&order).Association("ServiceTypes").Append(&st)
+		}
+	}
+
+	// อัปเดตจำนวน + ลง history เป็น delta
+	if in.Quantity != nil {
+		delta := *in.Quantity - row.SortedQuantity
+		row.SortedQuantity = *in.Quantity
+		if delta != 0 {
+			h := entity.SortingHistory{
+				HisQuantity:     delta, // อนุญาตติดลบ = แก้ไขลดจำนวน
+				RecordedAt:      time.Now(),
+				SortedClothesID: row.ID,
+			}
+			_ = config.DB.Create(&h).Error
+		}
+	}
+
+	if err := config.DB.Save(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "อัปเดตรายการไม่สำเร็จ"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Success": true})
+}
+
+// DELETE /laundry-checks/:orderId/items/:itemId
+func DeleteSortedClothes(c *gin.Context) {
+	orderID, _ := strconv.ParseUint(c.Param("orderId"), 10, 64)
+	itemID, _ := strconv.ParseUint(c.Param("itemId"), 10, 64)
+	if orderID == 0 || itemID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "พารามิเตอร์ไม่ถูกต้อง"})
+		return
+	}
+
+	var row entity.SortedClothes
+	if err := config.DB.First(&row, itemID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบรายการผ้า"})
+		return
+	}
+	var srec entity.SortingRecord
+	if err := config.DB.First(&srec, row.SortingRecordID).Error; err != nil || uint(orderID) != srec.OrderID {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": "รายการไม่อยู่ในออเดอร์นี้"})
+		return
+	}
+
+	// ลบประวัติ (ถ้ามี) เพื่อกัน orphan
+	_ = config.DB.Where("sorted_clothes_id = ?", row.ID).Delete(&entity.SortingHistory{}).Error
+	// ลบตัวรายการ
+	if err := config.DB.Delete(&row).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"Error": "ลบรายการไม่สำเร็จ"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"Success": true})
+}
+
+// ---------- Lookups เดิม ----------
 func ListClothTypes(c *gin.Context) {
 	var list []entity.ClothType
 	if err := config.DB.Find(&list).Error; err != nil {
@@ -367,7 +536,6 @@ func ListServiceTypes(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// GET /laundry-check/customers : shape สำหรับหน้า LaundryCheck โดยเฉพาะ
 func GetLaundryCustomers(c *gin.Context) {
 	var custs []entity.Customer
 	if err := config.DB.Find(&custs).Error; err != nil {

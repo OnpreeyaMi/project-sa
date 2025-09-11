@@ -34,9 +34,6 @@ import "slick-carousel/slick/slick-theme.css";
 import mieleWashingMachineImg from '../../../assets/washing-machine-miele.png';
 import boschDryerImg from '../../../assets/dryer-bosch.png';
 
-import mieleWashingMachineImg from '../../../assets/washing-machine-miele.png';
-import boschDryerImg from '../../../assets/dryer-bosch.png';
-
 const descriptionsWashing: Record<number, string> =  {
   10: "เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น",
   14: "เสื้อยืด ผ้าบาง 20 ชิ้น\n ผ้าหนา ยีนส์ 10 ชิ้น\n ชุดเครื่องนอน 3 ฟุต",

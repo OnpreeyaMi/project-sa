@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FaHome } from "react-icons/fa";
+import React, { useState} from 'react';
+import { FaHome ,FaUserCircle } from "react-icons/fa";
 import { IoNewspaper } from "react-icons/io5";
 import { MdLocalLaundryService } from "react-icons/md";
 import { TbTruckDelivery } from "react-icons/tb";
@@ -167,5 +167,4 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 };
 
 export default EmployeeSidebar;
-
 

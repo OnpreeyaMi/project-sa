@@ -64,26 +64,6 @@ func main() {
 	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
 	router.PUT("/detergents/:id/update-stock", controller.UpdateDetergentStock)
 	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
-	
-	customerRoutes := router.Group("/customer")
-	customerRoutes.Use(middlewares.AuthMiddleware())
-	{
-		customerRoutes.GET("/profile", controller.GetCustomerProfile)
-		customerRoutes.PUT("/profile", controller.EditCustomerProfile)
-		customerRoutes.POST("/addresses", controller.CreateAddress)
-		customerRoutes.PUT("/addresses/:id", controller.UpdateAddress)
-		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)
-		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
-	}
-
-	adminCustomerRoutes := router.Group("/customers")
-	{
-		adminCustomerRoutes.POST("", controller.CreateCustomer)
-		adminCustomerRoutes.GET("", controller.GetCustomers)
-		adminCustomerRoutes.GET("/:id", controller.GetCustomerByID)
-		adminCustomerRoutes.PUT("/:id", controller.UpdateCustomer)
-		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
-	}
 
 	// router.POST("/detergents", controller.CreateDetergent)
 	// router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
@@ -133,8 +113,6 @@ func main() {
 	router.DELETE("/queues/:id", controller.DeleteQueue)         // ลบคิว
 	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
 	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
-
-	router.GET("/machines", controller.GetMachines) // ดึงเครื่องทั้งหมด
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))

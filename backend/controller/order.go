@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity" // ดูmodule at go.mod
@@ -12,7 +13,7 @@ import (
 func CreateOrder(c *gin.Context) {
 	var req struct {
 		CustomerID     uint   `json:"customer_id"`
-		ServiceTypeIDs []uint `json:"servicetype_ids"`
+		ServiceTypeIDs []uint `json:"service_type_ids"`
 		DetergentIDs   []uint `json:"detergent_ids"`
 		OrderImage     string `json:"order_image"`
 		OrderNote      string `json:"order_note"`
@@ -118,25 +119,6 @@ func GetOrderHistories(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, histories)
-}
-// ดึงออเดอร์ทั้งหมด
-func GetOrders(c *gin.Context) {
-	var orders []entity.Order
-	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, orders)
-}
-
-// ดึงที่อยู่ทั้งหมด
-func GetAddresses(c *gin.Context) {
-	var addresses []entity.Address
-	if err := config.DB.Preload("Customer").Find(&addresses).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, addresses)
 }
 // ดึงออเดอร์ทั้งหมด
 func GetOrders(c *gin.Context) {

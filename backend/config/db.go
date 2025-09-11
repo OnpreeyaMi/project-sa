@@ -118,30 +118,6 @@ func MockData() {
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
-
-	// --- Mock Role ---
-	roles := []entity.Role{
-		{Name: "admin"},
-		{Name: "customer"},
-		{Name: "employee"},
-	}
-	for _, r := range roles {
-		DB.FirstOrCreate(&r, entity.Role{Name: r.Name})
-	}
-
-	// --- Mock User ---
-	// --- Mock User (ต่อจากเดิม) ---
-	users := []entity.User{
-		{Email: "admin@example.com", Password: "1234", RoleID: 1},
-		{Email: "customer1@example.com", Password: "1234", RoleID: 2},
-		{Email: "customer2@example.com", Password: "1234", RoleID: 2},
-		{Email: "employee1@example.com", Password: "1234", RoleID: 3},
-		{Email: "employee2@example.com", Password: "1234", RoleID: 3},
-	}
-	for _, u := range users {
-		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
-	}
-
 	// Genders
 	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {

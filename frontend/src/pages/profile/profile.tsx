@@ -200,17 +200,68 @@ const Profile: React.FC = () => {
 
   return (
     <CustomerSidebar>
-      <h2 style={{ marginTop: 10 , marginBottom:10 }}>โปร์ไฟล์</h2>
+      <Row justify="center" style={{ marginTop: 32 }} gutter={32}>
+        <Col xs={24} sm={20} md={16} lg={12}>
+          {/* ส่วนบน: ข้อมูลส่วนตัว */}
+          <Card loading={loading} style={{ marginBottom: 32, borderRadius: 16, boxShadow: "0 2px 8px #f0f1f2" }}>
+            <Space direction="horizontal" align="center" style={{ width: "100%" }}>
+              <div style={{ flex: 1 }}>
+                <Title level={3} style={{ marginBottom: 0 }}>
+                  {user?.customer?.firstName} {user?.customer?.lastName}
+                </Title>
+                <Text type="secondary">{user?.email}</Text>
+              </div>
+              {!editMode ? (
+                <Button type="primary" onClick={() => setEditMode(true)} style={{ marginLeft: "auto" }}>
+                  แก้ไข
+                </Button>
+              ) : null}
+            </Space>
 
-      <Row gutter={24}>
-        {/* Card 1 */}
-        <Col xs={24} md={8}>
-          <Card>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <Avatar size={140} icon={<UserOutlined />} />
-              <h2 style={{ marginTop: 12, marginBottom: 0 }}>{profile.fullName} {profile.nickName}</h2>
-              <p style={{ marginTop: 4, color: "gray" }}>{profile.email}</p>
-            </div>
+            <Form form={form} layout="vertical" onFinish={handleSave} initialValues={form.getFieldsValue()} style={{ marginTop: 32 }}>
+              <Row gutter={16}>
+                <Col xs={24} sm={12}>
+                  <Form.Item label="ชื่อ" name="firstName" rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}>
+                    <Input disabled={!editMode} />
+                  </Form.Item>
+                  <Form.Item label="เบอร์โทร" name="phone" rules={[{ required: true, message: "กรุณากรอกเบอร์โทร" }]}>
+                    <Input disabled={!editMode} />
+                  </Form.Item>
+                  <Form.Item label="เพศ" name="gender" rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}>
+                    <Select disabled={!editMode}>
+                      <Option value={1}>ชาย</Option>
+                      <Option value={2}>หญิง</Option>
+                      <Option value={3}>อื่นๆ</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item label="นามสกุล" name="lastName" rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}>
+                    <Input disabled={!editMode} />
+                  </Form.Item>
+                  <Form.Item label="อีเมล" name="email">
+                    <Input disabled />
+                  </Form.Item>
+                </Col>
+              </Row>
+              {editMode && (
+                <Space>
+                  <Button type="primary" htmlType="submit" style={{ marginTop: 8 }}>
+                    บันทึก
+                  </Button>
+                  <Button
+                    style={{ marginTop: 8 }}
+                    onClick={() => {
+                      setEditMode(false);
+                      form.resetFields();
+                      hydrateFromContext();
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+                </Space>
+              )}
+            </Form>
           </Card>
 
           {/* ส่วนล่าง: รายการที่อยู่ */}
