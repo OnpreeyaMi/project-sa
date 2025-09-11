@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // src/context/UserContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
@@ -109,3 +110,7 @@ export const useUser = () => {
   if (!context) throw new Error("useUser must be used within UserProvider");
   return context;
 };
+=======
+// src/hooks/UserContext.tsx
+export { useUser, UserProvider } from "../context/UserContext";
+>>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
