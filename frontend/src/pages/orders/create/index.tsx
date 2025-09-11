@@ -30,9 +30,9 @@ import L from 'leaflet';
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+
 import mieleWashingMachineImg from '../../../assets/washing-machine-miele.png';
 import boschDryerImg from '../../../assets/dryer-bosch.png';
-import { InfoCircleOutlined } from '@ant-design/icons';
 
 import mieleWashingMachineImg from '../../../assets/washing-machine-miele.png';
 import boschDryerImg from '../../../assets/dryer-bosch.png';
