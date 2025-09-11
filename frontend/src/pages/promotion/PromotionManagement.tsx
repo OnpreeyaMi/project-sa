@@ -51,7 +51,7 @@ const PromotionManagement: React.FC = () => {
   // ดึงข้อมูลโปรโมชั่น
   const fetchPromotions = async () => {
     try {
-      const res = await axios.get("http://localhost:8080/promotions");
+      const res = await axios.get("http://localhost:8000/promotions");
       setPromotions(res.data);
     } catch (err) {
       message.error("โหลดข้อมูลโปรโมชั่นล้มเหลว");
@@ -98,7 +98,7 @@ const PromotionManagement: React.FC = () => {
           value: c.Value,
         })),
       };
-      await axios.post("http://localhost:8080/promotions", payload);
+      await axios.post("http://localhost:8000/promotions", payload);
       message.success("เพิ่มโปรโมชั่นสำเร็จ");
       setAddModalVisible(false);
       setImageUrl(null);
@@ -148,7 +148,7 @@ const PromotionManagement: React.FC = () => {
           value: c.Value,
         })),
       };
-      await axios.put(`http://localhost:8080/promotions/${editingPromotion.ID}`, payload);
+      await axios.put(`http://localhost:8000/promotions/${editingPromotion.ID}`, payload);
       message.success("แก้ไขโปรโมชั่นสำเร็จ");
       setEditModalVisible(false);
       setEditingPromotion(null);
@@ -163,7 +163,7 @@ const PromotionManagement: React.FC = () => {
   // ลบโปรโมชั่น
   const handleDeletePromotion = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8080/promotions/${id}`);
+      await axios.delete(`http://localhost:8000/promotions/${id}`);
       message.success("ลบโปรโมชั่นสำเร็จ");
       fetchPromotions();
     } catch (err: any) {
