@@ -9,9 +9,6 @@ import (
 	"github.com/OnpreeyaMi/project-sa/middlewares"
 	 "github.com/joho/godotenv"
 	
-	"github.com/OnpreeyaMi/project-sa/controller"
-	"github.com/OnpreeyaMi/project-sa/middlewares"
-	"github.com/gin-gonic/gin"
 )
 
 const port = 8000
@@ -103,7 +100,6 @@ func main() {
 	router.GET("/process/:id/order", controller.GetProcessesByOrder)
 	router.GET("/ordersdetails", controller.GetOrdersdetails)
 
-<<<<<<< HEAD
 	// Customer
 	router.POST("/customers", controller.CreateCustomer)
 	router.GET("/customers", controller.GetCustomers)
@@ -154,11 +150,6 @@ func main() {
 
 
 	// รัน server
-=======
-	// Machines
-	router.GET("/machines", controller.GetMachines)
-
->>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
 	router.Run(fmt.Sprintf(":%d", port))
 
 }
