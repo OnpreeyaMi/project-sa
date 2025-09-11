@@ -42,6 +42,32 @@ export async function UpsertLaundryCheck(orderId: number, payload: UpsertLaundry
   return res.json();
 }
 
+export async function UpdateSortedItem(
+  orderId: number,
+  itemId: number,
+  payload: Partial<{ ClothTypeName: string; ServiceTypeID: number; Quantity: number }>
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/laundry-checks/${orderId}/items/${itemId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(()=> "");
+    throw new Error(t || "อัปเดตรายการไม่สำเร็จ");
+  }
+}
+
+export async function DeleteSortedItem(orderId: number, itemId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/laundry-checks/${orderId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(()=> "");
+    throw new Error(t || "ลบรายการไม่สำเร็จ");
+  }
+}
+
 export async function FetchOrderDetail(orderId: number): Promise<OrderDetail> {
   const res = await fetch(`${API_BASE}/laundry-check/orders/${orderId}`);
   if (!res.ok) throw new Error("โหลดรายละเอียดออเดอร์ไม่สำเร็จ");

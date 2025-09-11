@@ -399,7 +399,7 @@ func GetOrdersdetails(c *gin.Context) {
 	       totalItems := 0
 	       if o.SortingRecord != nil && o.SortingRecord.SortedClothes != nil {
 		       for _, sc := range o.SortingRecord.SortedClothes {
-			       totalItems += sc.SortedCount
+			       totalItems += sc.SortedQuantity
 		       }
 	       }
 	       // ดึงขนาดถังซัก/อบจาก ServiceTypes

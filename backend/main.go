@@ -16,6 +16,7 @@ func main() {
 	config.SetupDatabase()
 
 	router := gin.Default()
+	_ = router.SetTrustedProxies(nil)
 	router.Use(CORSMiddleware())
 
 	// Login
@@ -36,6 +37,10 @@ func main() {
 		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
 	}
 
+	// Convenience endpoint for employee (need token)
+	router.GET("/employee/me", middlewares.AuthMiddleware(), controller.GetEmployeeMe)
+
+	// Admin customers
 	adminCustomerRoutes := router.Group("/customers")
 	{
 		adminCustomerRoutes.POST("", controller.CreateCustomer)
@@ -44,22 +49,23 @@ func main() {
 		adminCustomerRoutes.PUT("/:id", controller.UpdateCustomer)
 		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
 	}
-	// Order CRUD
+
+	// Orders / Addresses (public or adjust as needed)
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
 	router.GET("/addresses", controller.GetAddresses)
 	router.GET("/customers/name/:id", controller.GetCustomerNameByID)
-	router.POST("/orderaddress", controller.CreateAddress)
+	router.POST("/orderaddress", controller.CreateNewAddress)
 	router.GET("/detergents/type/:type", controller.GetDetergentsByType)
 	router.PUT("/addresses/set-main", controller.UpdateMainAddress)
 
-	// Detergent CRUD
+	// Detergents
 	router.POST("/detergents", controller.CreateDetergent)
 	router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
 	router.GET("/detergents", controller.GetDetergents)
 	router.DELETE("/detergents/:id", controller.DeleteDetergent)
 	router.GET("/detergents/purchase-history", controller.GetPurchaseDetergentHistory)
-	router.POST("/detergents/use", controller.UseDetergent) // ลด stock
+	router.POST("/detergents/use", controller.UseDetergent)
 	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
 	router.PUT("/detergents/:id/update-stock", controller.UpdateDetergentStock)
 	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
@@ -71,13 +77,13 @@ func main() {
 	router.PUT("/employees/:id", controller.UpdateEmployee)
 	router.DELETE("/employees/:id", controller.DeleteEmployee)
 
-	// ===== ฝั่งพนักงาน =====
-	// Upsert สำหรับออเดอร์ที่มีอยู่ (ไม่สร้าง/แก้ Order)
+	// Laundry Check (employee)
 	router.POST("/laundry-checks/:orderId", controller.UpsertLaundryCheck)
-	// Read-only จาก Order
 	router.GET("/laundry-check/orders", controller.ListLaundryOrders)
 	router.GET("/laundry-check/orders/:id", controller.GetLaundryOrderDetail)
 	router.GET("/laundry-check/orders/:id/history", controller.GetOrderHistory)
+	router.PUT("/laundry-checks/:orderId/items/:itemId", controller.UpdateSortedClothes)
+	router.DELETE("/laundry-checks/:orderId/items/:itemId", controller.DeleteSortedClothes)
 	// Lookups
 	router.GET("/clothtypes", controller.ListClothTypes)
 	router.GET("/servicetypes", controller.ListServiceTypes)
@@ -89,6 +95,8 @@ func main() {
 	router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess)
 	router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)
 	router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess)
+
+	// Orders (อื่นๆ)
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/process/:id/order", controller.GetProcessesByOrder)                               // ดึง process พร้อม order
 	router.GET("/ordersdetails", controller.GetOrdersdetails)                                      // ดึง order ทั้งหมด (สำหรับหน้า admin)
