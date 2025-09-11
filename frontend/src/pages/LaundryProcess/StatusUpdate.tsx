@@ -44,6 +44,21 @@ const StatusUpdate: React.FC = () => {
     });
   }, [orders, searchText, statusFilter]);
 
+useEffect(() => {
+  fetch("http://localhost:8000/ordersdetails")
+    .then(res => res.json())
+    .then(data => {
+      setOrders(data);  // จะได้ array ของ order + status
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching orders:", err);
+      setLoading(false);
+    });
+}, []);
+
+  
+  // mock data (แทน DB จริง)
   const columns = [
     {
       title: "รหัสออเดอร์",

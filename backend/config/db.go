@@ -118,7 +118,12 @@ func MockData() {
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
+<<<<<<< HEAD
 	// Genders
+=======
+
+	// --- Genders ---
+>>>>>>> b70f88cba87f12bf976b9aa61ab650e6269c54ee
 	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
@@ -132,7 +137,20 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
+<<<<<<< HEAD
 	// Service Types
+=======
+	// // --- Address ---
+	// addresses := []entity.Address{
+	// 	{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+	// 	{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	// }
+	// for _, a := range addresses {
+	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
+	// }
+
+	// --- ServiceTypes ---
+>>>>>>> b70f88cba87f12bf976b9aa61ab650e6269c54ee
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
@@ -221,34 +239,58 @@ func MockData() {
 	}
 	for _, m := range machines {
 		DB.FirstOrCreate(&m, entity.Machine{Machine_type: m.Machine_type, Capacity_kg: m.Capacity_kg, Status: m.Status})
+<<<<<<< HEAD
+=======
 	}
-	// --- Mock TimeSlot ---
-	var countTS int64
-	DB.Model(&entity.TimeSlot{}).Count(&countTS)
-	if countTS == 0 {
-		now := time.Now()
-		pickupSlots := []entity.TimeSlot{
-			{Start_time: now.Add(1 * time.Hour), End_time: now.Add(2 * time.Hour), SlotType: "pickup", Capacity: 5, Status: "available"},
-			{Start_time: now.Add(3 * time.Hour), End_time: now.Add(4 * time.Hour), SlotType: "pickup", Capacity: 5, Status: "available"},
-		}
-		deliverySlots := []entity.TimeSlot{
-			{Start_time: now.Add(5 * time.Hour), End_time: now.Add(6 * time.Hour), SlotType: "delivery", Capacity: 5, Status: "available"},
-			{Start_time: now.Add(7 * time.Hour), End_time: now.Add(8 * time.Hour), SlotType: "delivery", Capacity: 5, Status: "available"},
-		}
-		for _, ts := range pickupSlots {
-			DB.Create(&ts)
-		}
-		for _, ts := range deliverySlots {
-			DB.Create(&ts)
-		}
+
+	// --- Positions (ตัวอย่าง) ---
+	positions := []entity.Position{
+		{PositionName: "พนักงานซักผ้า"},
+		{PositionName: "พนักงานขนส่งผ้า"},
 	}
-	// // --- Mock History ---
-	// histories := []entity.OrderHistory{
-	// 	{OrderID: 1, PaymentID: 1, ProcessID: 1},
-	// 	{OrderID: 2, PaymentID: 2, ProcessID: 2},
-	// }
-	// for _, h := range histories {
-	// 	DB.Create(&h)
-	// }
+	for _, p := range positions {
+		DB.FirstOrCreate(&p, entity.Position{PositionName: p.PositionName})
+	}
+
+	// --- EmployeeStatus (ค่าเริ่มต้น) ---
+	statuses := []entity.EmployeeStatus{
+		{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},
+		{StatusName: "inactive", StatusDescription: "ยังไม่ปฏิบัติงาน"},
+		{StatusName: "onleave", StatusDescription: "ลาพัก"},
+	}
+	for _, s := range statuses {
+		DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
+	}
+
+	// --- Employees ตัวอย่าง (ผูกกับ user employee1/2) ---
+	emps := []entity.Employee{
+		{
+			Code:             "EMP001",
+			FirstName:        "Somchai",
+			LastName:         "S.",
+			Phone:            "0811111111",
+			Gender:           "ชาย",
+			StartDate:        time.Now(),
+			UserID:           4,
+			PositionID:       1,
+			EmployeeStatusID: 1,
+		},
+		{
+			Code:             "EMP002",
+			FirstName:        "Suda",
+			LastName:         "T.",
+			Phone:            "0822222222",
+			Gender:           "หญิง",
+			StartDate:        time.Now(),
+			UserID:           5,
+			PositionID:       2,
+			EmployeeStatusID: 1,
+		},
+>>>>>>> b70f88cba87f12bf976b9aa61ab650e6269c54ee
+	}
+	for _, e := range emps {
+		DB.FirstOrCreate(&e, entity.Employee{Code: e.Code})
+	}
+
 	fmt.Println("✅ Mock data added successfully!")
 }

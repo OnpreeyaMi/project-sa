@@ -37,6 +37,10 @@ func main() {
 		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
 	}
 
+	// Convenience endpoint for employee (need token)
+	router.GET("/employee/me", middlewares.AuthMiddleware(), controller.GetEmployeeMe)
+
+	// Admin customers
 	adminCustomerRoutes := router.Group("/customers")
 	{
 		adminCustomerRoutes.POST("", controller.CreateCustomer)
@@ -45,7 +49,8 @@ func main() {
 		adminCustomerRoutes.PUT("/:id", controller.UpdateCustomer)
 		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
 	}
-	// Order CRUD
+
+	// Orders / Addresses (public or adjust as needed)
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
 	router.GET("/addresses", controller.GetAddresses)
@@ -95,6 +100,8 @@ func main() {
 	router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess)
 	router.PUT("/laundry-process/:id", controller.UpdateProcessStatus)
 	router.POST("/laundry-process/:id/machines", controller.AssignMachinesToProcess)
+
+	// Orders (อื่นๆ)
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/process/:id/order", controller.GetProcessesByOrder)                               // ดึง process พร้อม order
 	router.GET("/ordersdetails", controller.GetOrdersdetails)                                      // ดึง order ทั้งหมด (สำหรับหน้า admin)
@@ -132,3 +139,5 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+
