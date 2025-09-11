@@ -5,7 +5,6 @@ import "gorm.io/gorm"
 type SortedClothes struct {
 	gorm.Model
 	SortedQuantity int
-	SortedCount    int
 
 	SortingHistory *SortingHistory `gorm:"foreignKey:SortedClothesID"`
 

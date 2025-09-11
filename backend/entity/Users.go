@@ -4,10 +4,10 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	Email    string `gorm:"uniqueIndex" json:"email"`
-	Password string `json:"password"` // ส่งกลับ “ค่าแฮช”
+	Email    string `gorm:"uniqueIndex" json:"Email"`
+	Password string `json:"Password"` // ส่งกลับ “ค่าแฮช”
 
-	RoleID uint  `json:"roleId"`
+	RoleID uint  `json:"RoleID"`
 	Role   *Role `gorm:"foreignKey:RoleID" json:"Role,omitempty"`
 
 	Customers []*Customer `gorm:"foreignKey:UserID" json:"-"`

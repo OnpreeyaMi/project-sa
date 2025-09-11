@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// --------- Utilities ---------
+/* ====================== Utilities ====================== */
 
 var dateLayouts = []string{
 	"2006-01-02",
@@ -33,7 +33,6 @@ func parseDateThaiAware(s string) (time.Time, error) {
 	if s == "" {
 		return time.Time{}, errors.New("empty date")
 	}
-	// รองรับปี พ.ศ. รูปแบบ dd/mm/yyyy
 	if strings.Count(s, "/") == 2 {
 		parts := strings.Split(s, "/")
 		if len(parts) == 3 {
@@ -97,7 +96,6 @@ func modifyPositionCount(tx *gorm.DB, positionID uint, delta int) error {
 		).Error
 }
 
-// คำอธิบายสถานะดีฟอลต์ (สะกดให้ตรงกัน: ปฏิบัติงาน)
 func defaultStatusDescription(name string) string {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "active":
@@ -111,7 +109,6 @@ func defaultStatusDescription(name string) string {
 	}
 }
 
-// หา/สร้าง/อัปเดตคำอธิบายสถานะ (ใช้ชื่อฟิลด์ใน struct เพื่อความสม่ำเสมอ)
 func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	desc = strings.TrimSpace(desc)
@@ -145,8 +142,29 @@ func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	}
 }
 
-// --------- DTO (อินพุตจาก Frontend) ---------
-// controller/employee_controller.go
+// ---------- NEW: role utilities ----------
+func getOrCreateRoleID(tx *gorm.DB, roleName string) (uint, error) {
+	roleName = strings.TrimSpace(roleName)
+	if roleName == "" {
+		return 0, errors.New("empty role name")
+	}
+	var r entity.Role
+	err := tx.Where("name = ?", roleName).First(&r).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		r = entity.Role{Name: roleName}
+		if err := tx.Create(&r).Error; err != nil {
+			return 0, err
+		}
+		return r.ID, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return r.ID, nil
+}
+
+/* ====================== DTO ====================== */
+
 type EmployeePayload struct {
 	Code              string
 	FirstName         string
@@ -164,8 +182,7 @@ type EmployeePayload struct {
 	UserID            uint
 }
 
-
-// --------- Handlers ---------
+/* ====================== Handlers ====================== */
 
 // POST /employees
 func CreateEmployee(c *gin.Context) {
@@ -180,51 +197,97 @@ func CreateEmployee(c *gin.Context) {
 	}
 
 	tx := config.DB.Begin()
-	defer func() { if r := recover(); r != nil { tx.Rollback() } }()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
 	// position
 	posID := p.PositionID
 	if posID == 0 && strings.TrimSpace(p.Position) != "" {
 		id, err := findOrCreatePosition(tx, p.Position)
-		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
 		posID = id
 	}
 
 	// date
 	jd := strings.TrimSpace(p.JoinDate)
-	if jd == "" { jd = strings.TrimSpace(p.StartDate) }
+	if jd == "" {
+		jd = strings.TrimSpace(p.StartDate)
+	}
 	startTime, err := parseDateThaiAware(jd)
-	if err != nil { tx.Rollback(); c.JSON(400, gin.H{"error": "invalid join/start date"}); return }
+	if err != nil {
+		tx.Rollback()
+		c.JSON(400, gin.H{"error": "invalid join/start date"})
+		return
+	}
 
 	// status + description
 	if strings.TrimSpace(p.StatusDescription) == "" {
 		p.StatusDescription = defaultStatusDescription(p.Status)
 	}
 	statusID, err := upsertEmployeeStatus(tx, p.Status, p.StatusDescription)
-	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
 
-	// user (unique email)
+	// --------- USER + ROLE = employee ----------
+	// unique email check
 	{
 		var existed entity.User
 		if err := tx.Where("email = ?", p.Email).First(&existed).Error; err == nil {
-			tx.Rollback(); c.JSON(http.StatusConflict, gin.H{"error": "email already exists"}); return
+			tx.Rollback()
+			c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
+			return
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 	}
-	hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
-	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": "hash password failed"}); return }
-	u := entity.User{Email: p.Email, Password: string(hashed)}
-	if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+	empRoleID, err := getOrCreateRoleID(tx, "employee")
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "cannot ensure role: " + err.Error()})
+		return
+	}
 
-	// employee code (ถ้าส่งมา ต้องไม่ซ้ำ)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
+	if err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": "hash password failed"})
+		return
+	}
+	u := entity.User{
+		Email:    p.Email,
+		Password: string(hashed),
+		RoleID:   empRoleID, // 🔗 ผูก role = employee
+	}
+	if err := tx.Create(&u).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	// code unique check (optional)
 	code := strings.TrimSpace(p.Code)
 	if code != "" {
 		var dup entity.Employee
 		if err := tx.Where("code = ?", code).First(&dup).Error; err == nil {
-			tx.Rollback(); c.JSON(http.StatusConflict, gin.H{"error": "employeeCode already exists"}); return
+			tx.Rollback()
+			c.JSON(http.StatusConflict, gin.H{"error": "employeeCode already exists"})
+			return
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 	}
 
@@ -239,28 +302,42 @@ func CreateEmployee(c *gin.Context) {
 		PositionID:       posID,
 		EmployeeStatusID: statusID,
 	}
-	if err := tx.Create(&emp).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+	if err := tx.Create(&emp).Error; err != nil {
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
 
-	// gen code ถ้าไม่ได้ส่งมา
+	// gen code if empty
 	if emp.Code == "" {
 		gen := fmt.Sprintf("EMP%03d", emp.ID)
 		if err := tx.Model(&entity.Employee{}).Where("id = ?", emp.ID).Update("code", gen).Error; err != nil {
-			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 		emp.Code = gen
 	}
 
-	// ปรับยอดตำแหน่ง
+	// adjust position count
 	if posID != 0 {
-		if err := modifyPositionCount(tx, posID, 1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+		if err := modifyPositionCount(tx, posID, 1); err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
-	if err := tx.Commit().Error; err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
 
 	var created entity.Employee
 	if err := config.DB.Preload("User").Preload("Position").Preload("EmployeeStatus").
 		First(&created, emp.ID).Error; err != nil {
-		c.JSON(http.StatusCreated, gin.H{"id": emp.ID}); return
+		c.JSON(http.StatusCreated, gin.H{"id": emp.ID})
+		return
 	}
 	c.JSON(http.StatusCreated, created)
 }
@@ -269,13 +346,19 @@ func CreateEmployee(c *gin.Context) {
 func GetEmployee(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil { c.JSON(400, gin.H{"error": "invalid id"}); return }
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid id"})
+		return
+	}
 
 	var emp entity.Employee
 	if err := config.DB.Preload("User").Preload("Position").Preload("EmployeeStatus").
 		First(&emp, uint(id)).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) { c.JSON(404, gin.H{"error": "employee not found"})
-		} else { c.JSON(500, gin.H{"error": err.Error()}) }
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(404, gin.H{"error": "employee not found"})
+		} else {
+			c.JSON(500, gin.H{"error": err.Error()})
+		}
 		return
 	}
 	c.JSON(200, emp)
@@ -286,7 +369,8 @@ func ListEmployees(c *gin.Context) {
 	var list []entity.Employee
 	if err := config.DB.Preload("User").Preload("Position").Preload("EmployeeStatus").
 		Find(&list).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()}); return
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(200, list)
 }
@@ -295,30 +379,49 @@ func ListEmployees(c *gin.Context) {
 func UpdateEmployee(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil { c.JSON(400, gin.H{"error": "invalid id"}); return }
-
-	var p EmployeePayload
-	if err := c.ShouldBindJSON(&p); err != nil { c.JSON(400, gin.H{"error": err.Error()}); return }
-
-	tx := config.DB.Begin()
-	defer func(){ if r:=recover(); r!=nil { tx.Rollback() } }()
-
-	var e entity.Employee
-	if err := tx.Clauses(clause.Locking{Strength:"UPDATE"}).
-		Preload("User").
-		First(&e, uint(id)).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) { tx.Rollback(); c.JSON(404, gin.H{"error":"employee not found"})
-		} else { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}) }
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid id"})
 		return
 	}
 
-	// employeeCode (optional & unique)
+	var p EmployeePayload
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	tx := config.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var e entity.Employee
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("User").
+		First(&e, uint(id)).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			c.JSON(404, gin.H{"error": "employee not found"})
+		} else {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	// code
 	if code := strings.TrimSpace(p.Code); code != "" && code != e.Code {
 		var dup entity.Employee
 		if err := tx.Where("code = ?", code).First(&dup).Error; err == nil && dup.ID != e.ID {
-			tx.Rollback(); c.JSON(http.StatusConflict, gin.H{"error": "employeeCode already exists"}); return
+			tx.Rollback()
+			c.JSON(http.StatusConflict, gin.H{"error": "employeeCode already exists"})
+			return
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 		e.Code = code
 	}
@@ -327,92 +430,157 @@ func UpdateEmployee(c *gin.Context) {
 	newPosID := p.PositionID
 	if newPosID == 0 && strings.TrimSpace(p.Position) != "" {
 		idp, err := findOrCreatePosition(tx, p.Position)
-		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
 		newPosID = idp
 	}
 	oldPosID := e.PositionID
 
 	// date
 	jd := strings.TrimSpace(p.JoinDate)
-	if jd == "" { jd = strings.TrimSpace(p.StartDate) }
+	if jd == "" {
+		jd = strings.TrimSpace(p.StartDate)
+	}
 	if jd != "" {
 		t, err := parseDateThaiAware(jd)
-		if err != nil { tx.Rollback(); c.JSON(400, gin.H{"error":"invalid join/start date"}); return }
+		if err != nil {
+			tx.Rollback()
+			c.JSON(400, gin.H{"error": "invalid join/start date"})
+			return
+		}
 		e.StartDate = t
 	}
 
-	// status (upsert; default desc if empty)
+	// status
 	if strings.TrimSpace(p.Status) != "" {
 		if strings.TrimSpace(p.StatusDescription) == "" {
 			p.StatusDescription = defaultStatusDescription(p.Status)
 		}
 		statusID, err := upsertEmployeeStatus(tx, p.Status, p.StatusDescription)
-		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
 		e.EmployeeStatusID = statusID
 	}
 
-	// employee fields
-	e.FirstName  = p.FirstName
-	e.LastName   = p.LastName
-	e.Gender     = strings.ToLower(strings.TrimSpace(p.Gender))
-	e.Phone      = p.Phone
+	// fields
+	e.FirstName = p.FirstName
+	e.LastName = p.LastName
+	e.Gender = strings.ToLower(strings.TrimSpace(p.Gender))
+	e.Phone = p.Phone
 	e.PositionID = newPosID
 
-	// user (email/password)
+	// user (email/password) + ensure role = employee เมื่อสร้างใหม่
 	if e.UserID != 0 {
 		var user entity.User
 		if err := tx.First(&user, e.UserID).Error; err == nil {
 			if strings.TrimSpace(p.Email) != "" && p.Email != user.Email {
 				var exists entity.User
 				if err := tx.Where("email = ?", p.Email).First(&exists).Error; err == nil && exists.ID != user.ID {
-					tx.Rollback(); c.JSON(409, gin.H{"error":"email already exists"}); return
+					tx.Rollback()
+					c.JSON(409, gin.H{"error": "email already exists"})
+					return
 				}
 				user.Email = p.Email
 			}
 			if strings.TrimSpace(p.Password) != "" {
 				hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
-				if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"hash password failed"}); return }
+				if err != nil {
+					tx.Rollback()
+					c.JSON(500, gin.H{"error": "hash password failed"})
+					return
+				}
 				user.Password = string(hashed)
 			}
-			if err := tx.Save(&user).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+			// ถ้า user ยังไม่มี role (กรณีข้อมูลเก่า) -> set เป็น employee
+			if user.RoleID == 0 {
+				empRoleID, err := getOrCreateRoleID(tx, "employee")
+				if err != nil {
+					tx.Rollback()
+					c.JSON(500, gin.H{"error": "cannot ensure role: " + err.Error()})
+					return
+				}
+				user.RoleID = empRoleID
+			}
+			if err := tx.Save(&user).Error; err != nil {
+				tx.Rollback()
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	} else if strings.TrimSpace(p.Email) != "" {
+		// สร้าง user ใหม่และผูก role = employee
 		if strings.TrimSpace(p.Password) == "" {
-			tx.Rollback(); c.JSON(400, gin.H{"error":"password required to create user"}); return
+			tx.Rollback()
+			c.JSON(400, gin.H{"error": "password required to create user"})
+			return
 		}
 		var exists entity.User
 		if err := tx.Where("email = ?", p.Email).First(&exists).Error; err == nil {
-			tx.Rollback(); c.JSON(409, gin.H{"error":"email already exists"}); return
+			tx.Rollback()
+			c.JSON(409, gin.H{"error": "email already exists"})
+			return
+		}
+		empRoleID, err := getOrCreateRoleID(tx, "employee")
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": "cannot ensure role: " + err.Error()})
+			return
 		}
 		hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
-		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"hash password failed"}); return }
-		u := entity.User{Email: p.Email, Password: string(hashed)}
-		if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": "hash password failed"})
+			return
+		}
+		u := entity.User{Email: p.Email, Password: string(hashed), RoleID: empRoleID}
+		if err := tx.Create(&u).Error; err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
 		e.UserID = u.ID
 	}
 
 	if err := tx.Save(&e).Error; err != nil {
-		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
-	// ปรับยอดตำแหน่ง เมื่อมีการย้าย
+	// adjust position count
 	if oldPosID != newPosID {
 		if oldPosID != 0 {
-			if err := modifyPositionCount(tx, oldPosID, -1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+			if err := modifyPositionCount(tx, oldPosID, -1); err != nil {
+				tx.Rollback()
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
 		}
 		if newPosID != 0 {
-			if err := modifyPositionCount(tx, newPosID, 1); err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+			if err := modifyPositionCount(tx, newPosID, 1); err != nil {
+				tx.Rollback()
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
 		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()}); return
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
 	var updated entity.Employee
 	if err := config.DB.Preload("User").Preload("Position").Preload("EmployeeStatus").
 		First(&updated, uint(id)).Error; err != nil {
-		c.JSON(500, gin.H{"error": err.Error()}); return
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 	c.JSON(200, updated)
 }
@@ -421,16 +589,28 @@ func UpdateEmployee(c *gin.Context) {
 func DeleteEmployee(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil { c.JSON(400, gin.H{"error":"invalid id"}); return }
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid id"})
+		return
+	}
 
 	tx := config.DB.Begin()
-	defer func(){ if r:=recover(); r!=nil { tx.Rollback() } }()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
 	var emp entity.Employee
-	if err := tx.Clauses(clause.Locking{Strength:"UPDATE"}).
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		First(&emp, uint(id)).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) { tx.Rollback(); c.Status(204)
-		} else { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}) }
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			c.Status(204)
+		} else {
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -438,20 +618,29 @@ func DeleteEmployee(c *gin.Context) {
 	userID := emp.UserID
 
 	if err := tx.Delete(&entity.Employee{}, uint(id)).Error; err != nil {
-		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+		tx.Rollback()
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
-	// เลือก “ลบ user” ถ้าผูกอยู่ (ถ้าจะเปลี่ยนเป็น inactive ก็แก้ตรงนี้)
+	// ลบ user ที่ผูก (คงพฤติกรรมเดิม)
 	if userID != 0 {
 		if err := tx.Delete(&entity.User{}, userID).Error; err != nil {
-			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 	}
 	if posID != 0 {
 		if err := modifyPositionCount(tx, posID, -1); err != nil {
-			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
+			tx.Rollback()
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
 	c.Status(204)
 }

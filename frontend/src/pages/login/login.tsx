@@ -32,7 +32,7 @@ const Login: React.FC = () => {
           ...data,
           customer: normalizeCustomer(customerData) // ต้อง normalize ตรงนี้!
         }));
-
+          localStorage.setItem("userId", String(customerData.ID)); // <-- เพิ่มบรรทัดนี้
         switch (data.role) {
           case "customer":
             navigate("/customer/home");
@@ -123,4 +123,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-

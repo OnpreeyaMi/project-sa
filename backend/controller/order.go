@@ -79,8 +79,8 @@ func CreateOrder(c *gin.Context) {
 
 	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
 	if len(req.DetergentIDs) > 0 {
-		if err := DecreaseDetergentStock(req.DetergentIDs); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยาไม่สำเร็จ"})
+		if err := DecreaseDetergentStock(req.DetergentIDs, req.CustomerID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยา/บันทึกการใช้งานไม่สำเร็จ"})
 			return
 		}
 	}
@@ -166,29 +166,29 @@ func GetCustomerNameByID(c *gin.Context) {
 }
 
 // เพิ่มฟังก์ชันสร้าง address ใหม่และเชื่อมกับลูกค้า
-// func CreateAddress(c *gin.Context) {
-// 	var req struct {
-// 		AddressDetails string  `json:"addressDetails"`
-// 		Latitude       float64 `json:"latitude"`
-// 		Longitude      float64 `json:"longitude"`
-// 		CustomerID     uint    `json:"customerId"`
-// 	}
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	address := entity.Address{
-// 		AddressDetails: req.AddressDetails,
-// 		Latitude:       req.Latitude,
-// 		Longitude:      req.Longitude,
-// 		CustomerID:     req.CustomerID,
-// 	}
-// 	if err := config.DB.Create(&address).Error; err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, address)
-// }
+func CreateNewAddress(c *gin.Context) {
+	var req struct {
+		AddressDetails string  `json:"addressDetails"`
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		CustomerID     uint    `json:"customerId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	address := entity.Address{
+		AddressDetails: req.AddressDetails,
+		Latitude:       req.Latitude,
+		Longitude:      req.Longitude,
+		CustomerID:     req.CustomerID,
+	}
+	if err := config.DB.Create(&address).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, address)
+}
 
 // อัพเดตที่อยู่หลักของลูกค้า
 func UpdateMainAddress(c *gin.Context) {
@@ -221,7 +221,7 @@ func UpdateMainAddress(c *gin.Context) {
 }
 
 // ลดจำนวน InStock ของน้ำยาทางร้านเมื่อมีการสร้างออเดอร์
-func DecreaseDetergentStock(detergentIDs []uint) error {
+func DecreaseDetergentStock(detergentIDs []uint, customerID uint) error {
 	for _, id := range detergentIDs {
 		var detergent entity.Detergent
 		if err := config.DB.First(&detergent, id).Error; err != nil {
@@ -230,6 +230,16 @@ func DecreaseDetergentStock(detergentIDs []uint) error {
 		if detergent.InStock > 0 {
 			detergent.InStock -= 1
 			if err := config.DB.Save(&detergent).Error; err != nil {
+				return err
+			}
+			// เพิ่มบันทึกการใช้งาน
+			history := entity.DetergentUsageHistory{
+				UserID: customerID,
+				DetergentID: detergent.ID,
+				QuantityUsed: 1,
+				Reason: "ใช้จากออเดอร์ลูกค้า",
+			}
+			if err := config.DB.Create(&history).Error; err != nil {
 				return err
 			}
 		}
