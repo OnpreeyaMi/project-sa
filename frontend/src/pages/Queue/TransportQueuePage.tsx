@@ -292,7 +292,11 @@ const TransportQueuePage: React.FC = () => {
                 type="primary" 
                 icon={<FaTruck />}
                 style={{ borderRadius: '8px' }}
-                onClick={() => { setSelectedQueue(record); setShowConfirmPickup(true); }}
+                onClick={async () => {
+                  await queueService.acceptQueue(record.ID, EMPLOYEE_ID);
+                  message.success("รับคิวรับผ้าแล้ว");
+                  loadQueues();
+                }}
               >
                 กดรับคิวรับผ้า
               </Button>
@@ -391,7 +395,11 @@ const TransportQueuePage: React.FC = () => {
                 type="primary" 
                 icon={<FaBox />}
                 style={{ borderRadius: '8px' }}
-                onClick={() => { setSelectedQueue(record); setShowConfirmDelivery(true); }}
+                onClick={async () => {
+                  await queueService.acceptQueue(record.ID, EMPLOYEE_ID);
+                  message.success("รับคิวส่งผ้าแล้ว");
+                  loadQueues();
+                }}
               >
                 กดรับคิวส่งผ้า
               </Button>
@@ -439,32 +447,32 @@ const TransportQueuePage: React.FC = () => {
           {/* Statistics Cards */}
           <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
             <Col xs={24} sm={8}>
-              <Card style={{ borderRadius: '12px', textAlign: 'center' }}>
-                <Statistic
-                  title="คิวรับผ้า"
+              <Card style={{ borderRadius: '12px', textAlign: 'center' , background: '#3BAEA3'}}>
+                <Statistic 
+                  title={<span style={{ color: '#ffff' }}>คิวรับผ้า</span>}
                   value={pickupQueues.length}
-                  prefix={<FaTruck style={{ color: '#1890ff' }} />}
-                  valueStyle={{ color: '#1890ff' }}
+                  prefix={<FaTruck style={{ color: '#ffff' }} />}
+                  valueStyle={{ color: '#ffff' }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={8}>
-              <Card style={{ borderRadius: '12px', textAlign: 'center' }}>
+              <Card style={{ borderRadius: '12px', textAlign: 'center', background: '#F7D55C' }}>
                 <Statistic
-                  title="คิวส่งผ้า"
+                  title={<span style={{ color: '#ffff' }}>คิวส่งผ้า</span>}
                   value={deliveryQueues.length}
-                  prefix={<FaBox style={{ color: '#52c41a' }} />}
-                  valueStyle={{ color: '#52c41a' }}
+                  prefix={<FaBox style={{ color: '#ffff' }} />}
+                  valueStyle={{ color: '#ffff' }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={8}>
-              <Card style={{ borderRadius: '12px', textAlign: 'center' }}>
+              <Card style={{ borderRadius: '12px', textAlign: 'center', background: '#FE6F91' }}>
                 <Statistic
-                  title="รวมทั้งหมด"
+                  title={<span style={{ color: '#ffff' }}>รวมทั้งหมด</span>}
                   value={pickupQueues.length + deliveryQueues.length}
-                  prefix={<FaCheckCircle style={{ color: '#f39c12' }} />}
-                  valueStyle={{ color: '#f39c12' }}
+                  prefix={<FaCheckCircle style={{ color: '#ffff' }} />}
+                  valueStyle={{ color: '#ffff' }}
                 />
               </Card>
             </Col>

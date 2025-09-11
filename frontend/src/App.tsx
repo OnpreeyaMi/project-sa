@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { UserProvider } from "./hooks/UserContext";
 import { RequireRole } from "./routes/guards";
-
 import EmployeePage from "./pages/employee"; // index.tsx
 import LaundryCheckPage from "./pages/laundryCheck"; // index.tsx
 import TransportQueuePage from "./pages/Queue/TransportQueuePage";
@@ -10,11 +9,10 @@ import Login from "./pages/login/login";
 import RegisterForm from "./pages/register/register";
 import EmployeeHome from "./pages/Home/EmployeeHome";
 import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
+import StatusPage from "./pages/LaundryProcess/StatusPage";
 import OrderDetail from "./pages/LaundryProcess/OrderDetail";
-
 import StockEmpPage from "./pages/stock/employee"; // src/pages/stock/employee/index.tsx
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
-
 import CustomerManagement from "./pages/customer/CustomerMangement";
 import PromotionManagement from "./pages/promotion/PromotionManagement";
 import Profile from "./pages/profile/profile";
@@ -64,6 +62,7 @@ const App: React.FC = () => {
           <Route path="history" element={<RequireRole role="customer"><HistoryPage /></RequireRole>} />
           <Route path="home" element={<RequireRole role="customer"><CustomerHomePage /></RequireRole>} />
           <Route path="profile" element={<RequireRole role="customer"><Profile /></RequireRole>} />
+          <Route path="status" element={<RequireRole role="customer"><StatusPage /></RequireRole>} />
         </Route>
       </Routes>
     </UserProvider>
