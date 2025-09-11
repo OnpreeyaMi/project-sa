@@ -49,7 +49,7 @@ func main() {
 	router.GET("/order-histories", controller.GetOrderHistories)
 	router.GET("/addresses", controller.GetAddresses)
 	router.GET("/customers/name/:id", controller.GetCustomerNameByID)
-	router.POST("/orderaddress", controller.CreateAddress)
+	router.POST("/orderaddress", controller.CreateNewAddress)
 	router.GET("/detergents/type/:type", controller.GetDetergentsByType)
 	router.PUT("/addresses/set-main", controller.UpdateMainAddress)
 
