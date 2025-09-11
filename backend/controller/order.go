@@ -76,6 +76,32 @@ func CreateOrder(c *gin.Context) {
 		return
 	}
 
+	// หลังบันทึก Detergents ให้ลด stock ถ้าเลือกน้ำยาทางร้าน
+	if len(req.DetergentIDs) > 0 {
+		if err := DecreaseDetergentStock(req.DetergentIDs, req.CustomerID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ลดจำนวนสต็อกน้ำยา/บันทึกการใช้งานไม่สำเร็จ"})
+			return
+		}
+	}
+	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
+	process := entity.LaundryProcess{
+		Status:     "รอดำเนินการ",
+		Start_time: time.Now(),
+		Order:      []*entity.Order{&order},
+	}
+	if err := config.DB.Create(&process).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
+		return
+	}
+	// สร้าง pickup queue ทันทีหลังสร้าง order
+    pickupQueue := entity.Queue{
+	    Queue_type: "pickup",
+	    Status:     "waiting",
+	    OrderID:    order.ID,
+    }
+    config.DB.Create(&pickupQueue)
+
+
 	c.JSON(http.StatusOK, order)
 }
 
@@ -213,7 +239,7 @@ func UpdateMainAddress(c *gin.Context) {
 }
 
 // ลดจำนวน InStock ของน้ำยาทางร้านเมื่อมีการสร้างออเดอร์
-func DecreaseDetergentStock(detergentIDs []uint) error {
+func DecreaseDetergentStock(detergentIDs []uint, customerID uint) error {
 	for _, id := range detergentIDs {
 		var detergent entity.Detergent
 		if err := config.DB.First(&detergent, id).Error; err != nil {
@@ -222,6 +248,16 @@ func DecreaseDetergentStock(detergentIDs []uint) error {
 		if detergent.InStock > 0 {
 			detergent.InStock -= 1
 			if err := config.DB.Save(&detergent).Error; err != nil {
+				return err
+			}
+			// เพิ่มบันทึกการใช้งาน
+			history := entity.DetergentUsageHistory{
+				UserID: customerID,
+				DetergentID: detergent.ID,
+				QuantityUsed: 1,
+				Reason: "ใช้จากออเดอร์ลูกค้า",
+			}
+			if err := config.DB.Create(&history).Error; err != nil {
 				return err
 			}
 		}

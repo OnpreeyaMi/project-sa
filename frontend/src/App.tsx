@@ -25,9 +25,10 @@ import OrderPage from "./pages/orders/create";
 import HistoryPage from "./pages/orders/history";
 import StockAdminPage from "./pages/stock/Admin";
 import CustomerHomePage from "./pages/Home/CustomerHome";
-import PurchaseHistoryPage from './pages/stock/Admin/history'; 
-import StockEmployeePage from "./pages/stock/employee";
-import { UserProvider } from "./hooks/UserContext";
+import LaundryHistoryPage from "./pages/laundryCheck/LaundryHistoryPage";
+import PurchaseHistoryPage from "./pages/stock/Admin/history";
+import UsageHistoryPage from "./pages/stock/Admin/usage";
+import DeleteHistoryPage from "./pages/stock/Admin/delete";
 
 const App: React.FC = () => {
   return (
@@ -49,12 +50,15 @@ const App: React.FC = () => {
           <Route path="complaint" element={<ComplaintAdminPage />} />
         </Route>
 
-        {/* Admin routes */}
-        <Route path="/admin" >
-          <Route path="employees" element={<EmployeePage />} />
-          <Route path="customers" element={<CustomerManagement />} />
-          <Route path="promotions" element={<PromotionManagement />} />
-          <Route path="stock" element={<StockAdminPage />} />
+        {/* Admin */}
+        <Route path="/admin">
+          <Route path="employees" element={<RequireRole role="admin"><EmployeePage /></RequireRole>} />
+          <Route path="customers" element={<RequireRole role="admin"><CustomerManagement /></RequireRole>} />
+          <Route path="promotions" element={<RequireRole role="admin"><PromotionManagement /></RequireRole>} />
+          <Route path="stock" element={<RequireRole role="admin"><StockAdminPage /></RequireRole>} />
+          <Route path="stock/history" element={<RequireRole role="admin"><PurchaseHistoryPage /></RequireRole>} />
+          <Route path="stock/usage" element={<RequireRole role="admin"><UsageHistoryPage /></RequireRole>} />
+          <Route path="stock/delete" element={<RequireRole role="admin"><DeleteHistoryPage /></RequireRole>} />
         </Route>
 
         {/* Customer routes */}

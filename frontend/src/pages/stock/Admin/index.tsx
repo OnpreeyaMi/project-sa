@@ -281,7 +281,7 @@ const StockAdminPage: React.FC = () => {
       <div style={{
         width: '100%',
         padding: '32px 0 24px 0',
-        background: 'linear-gradient(90deg, #EAF1FF 0%, #FFF9E5 100%)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         borderRadius: '0 0 32px 32px',
         boxShadow: '0 4px 24px #eaeaea',
         display: 'flex',
@@ -289,10 +289,10 @@ const StockAdminPage: React.FC = () => {
         gap: 24,
         marginBottom: 32
       }}>
-        <FaChartBar size={48} style={{ color: '#43A047', marginLeft: 32 }} />
+        <FaChartBar size={48} style={{ color: '#fff', marginLeft: 32 }} />
         <div>
-          <Title level={2} style={{ margin: 0 }}>แดชบอร์ดสต็อกสินค้า</Title>
-          <Text type="secondary">ระบบติดตามและวิเคราะห์สต็อก พร้อมคำแนะนำการจัดซื้อ</Text>
+          <Title level={2} style={{ margin: 0, color: '#fff' }}>คลังสินค้า</Title>
+          <Text type="secondary" style={{ color: '#fff' }}>ระบบติดตามและวิเคราะห์สต็อก พร้อมคำแนะนำการจัดซื้อ</Text>
         </div>
       </div>
 
@@ -367,31 +367,35 @@ const StockAdminPage: React.FC = () => {
 
       <Row gutter={[16, 16]} justify="center" style={{ marginBottom: 24 , gap: 12 }}>
         <Button
-          type="primary"
-          style={{ height: 40, fontSize: 16 }}
+          type="default"
+          icon={<UploadOutlined />}
+          style={{ height: 44, fontSize: 17, borderRadius: 12, boxShadow: '0 2px 8px #6DA3D340', background: '#F9FBFF', border: '1.5px solid #6DA3D3', color: '#20639B', fontWeight: 600, letterSpacing: 1 }}
           onClick={() => setIsModalVisible(true)}
         >
           เพิ่มรายการสินค้า
         </Button>
         <Button
-          type="primary"
-          style={{ height: 40, fontSize: 16 }}
+          type="default"
+          icon={<FaChartBar style={{ color: '#20639B' }} />}
+          style={{ height: 44, fontSize: 17, borderRadius: 12, boxShadow: '0 2px 8px #20639B30', background: '#F9FBFF', border: '1.5px solid #20639B', color: '#20639B', fontWeight: 600, letterSpacing: 1 }}
           onClick={() => navigate("/admin/stock/history")}
         >
           ประวัติการซื้อสินค้า
         </Button>
         <Button
-          type="primary"
-          style={{ height: 40, fontSize: 16 }}
-          onClick={() => {
-            fetchUsageHistory();
-            setHistoryModal(true);
-          }}
+          type="default"
+          icon={<FaCheckCircle style={{ color: '#43A047' }} />}
+          style={{ height: 44, fontSize: 17, borderRadius: 12, boxShadow: '0 2px 8px #43A04730', background: '#F6FBEA', border: '1.5px solid #43A047', color: '#43A047', fontWeight: 600, letterSpacing: 1 }}
+          onClick={() => navigate("/admin/stock/usage")}
         >
           ประวัติการใช้สินค้า
         </Button>
         <Button
-          type="primary" onClick={() => { setShowDeletedModal(true); fetchDeletedItems(); }} style={{ height: 40, fontSize: 16 }}>
+          type="default"
+          icon={<FaExclamationTriangle style={{ color: '#ED553B' }} />} 
+          style={{ height: 44, fontSize: 17, borderRadius: 12, boxShadow: '0 2px 8px #ED553B30', background: '#FFF9E5', border: '1.5px solid #ED553B', color: '#ED553B', fontWeight: 600, letterSpacing: 1 }}
+          onClick={() => navigate('/admin/stock/delete')}
+        >
           ดูรายการที่ถูกลบ
         </Button>
       </Row>
@@ -445,7 +449,7 @@ const StockAdminPage: React.FC = () => {
                   transition: 'transform 0.2s',
                   cursor: 'pointer',
                 }}
-                bodyStyle={{ padding: 24 }}
+                styles={{ body: { padding: 24 } }}
                 hoverable
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -505,6 +509,7 @@ const StockAdminPage: React.FC = () => {
               color: "#20639B",
               fontWeight: "bold",
               fontSize: "20px",
+              marginTop: "10px",
             }}
           >
             เพิ่มรายการสินค้า
@@ -613,87 +618,6 @@ const StockAdminPage: React.FC = () => {
             <Input placeholder="กรอกเลข Order หรือเลือกจากรายการ" /> 
           </Form.Item>
         </Form>
-      </Modal>
-
-      <Modal
-        title={
-          <span
-            style={{
-              color: "#20639B",
-              fontWeight: "bold",
-              fontSize: "20px",
-            }}
-          >
-            ประวัติการใช้สินค้า
-          </span>
-        }
-        open={historyModal}
-        onCancel={() => setHistoryModal(false)}
-        footer={null}
-        width={700}
-      >
-        <div style={{ maxHeight: 400, overflowY: "auto" }}>
-          {historyData.length === 0 ? (
-            <Text type="secondary">ไม่มีข้อมูล</Text>
-          ) : (
-            historyData.map((h, idx) => (
-              <Card key={idx} style={{ marginBottom: 12, borderRadius: 10 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <div>
-                      <b>สินค้า:</b> {h.Detergent?.Name || "-"}
-                    </div>
-                    <div>
-                      <b>จำนวนที่ใช้:</b> {h.QuantityUsed}
-                    </div>
-                    <div>
-                      <b>เหตุผล:</b> {h.Reason || "-"}
-                    </div>
-                    <div>
-                      <b>ผู้ใช้:</b> {h.User?.Name || "-"}
-                    </div>
-                    <div>
-                      <b>วันที่:</b>{" "}
-                      {h.CreatedAt
-                        ? new Date(h.CreatedAt).toLocaleString("th-TH")
-                        : "-"}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-      </Modal>
-
-      <Modal
-        title="รายการสินค้าที่ถูกลบ"
-        open={showDeletedModal}
-        onCancel={() => setShowDeletedModal(false)}
-        footer={null}
-        centered
-      >
-        {Array.isArray(deletedItems) && deletedItems.length > 0 ? (
-          deletedItems.map((item, idx) => {
-            const data = item as any;
-            return (
-              <Card key={data.key || idx} style={{ marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, fontSize: 18 }}>{data.name || data.Name || '-'}</div>
-                <div>หมวดหมู่: {data.type || data.Type || '-'}</div>
-                <div>จำนวนล่าสุด: {typeof data.quantity === 'number' ? data.quantity : (typeof data.InStock === 'number' ? data.InStock : '-')}</div>
-                {(data.image || data.Image) && <img src={data.image || data.Image} alt={data.name || data.Name} style={{ width: 60, marginTop: 8, borderRadius: 8 }} />}
-              </Card>
-            );
-          })
-        ) : (
-          <Text type="secondary">ไม่มีรายการที่ถูกลบ</Text>
-        )}
       </Modal>
 
       {/* Add styles for row backgrounds */}

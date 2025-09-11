@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // <- ใช้ useNavigate
 import "./Login.css";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,8 +32,7 @@ const Login: React.FC = () => {
           ...data,
           customer: normalizeCustomer(customerData) // ต้อง normalize ตรงนี้!
         }));
-        localStorage.setItem("userId", String(customerData.ID)); // <-- เพิ่มบรรทัดนี้
-
+          localStorage.setItem("userId", String(customerData.ID)); // <-- เพิ่มบรรทัดนี้
         switch (data.role) {
           case "customer":
             navigate("/customer/home");
@@ -87,7 +84,9 @@ const Login: React.FC = () => {
         <span></span><span></span><span></span><span></span><span></span>
       </div>
       <div className="login-card">
-        <div className="logo"><div className="logo-icon">👕</div></div>
+        <div className="logo">
+          <div className="logo-icon">👕</div>
+        </div>
         <h2>เข้าสู่ระบบ</h2>
         <p className="subtitle">delivery laundry</p>
 
@@ -124,4 +123,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-
