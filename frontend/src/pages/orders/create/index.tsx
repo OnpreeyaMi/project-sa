@@ -72,6 +72,7 @@ const OrderPage: React.FC = () => {
   const [newLng, setNewLng] = useState(102.097771);
   const [isMapModal, setIsMapModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const userId = localStorage.getItem("userId");
   // เพิ่ม state สำหรับ address หลัก
   const [primaryAddressId, setPrimaryAddressId] = useState<number | null>(null);
   const [detergentsWashing, setDetergentsWashing] = useState<any[]>([]);
@@ -157,7 +158,11 @@ const OrderPage: React.FC = () => {
     // สมมุติใช้ customer id 1 (หรือดึงจาก auth จริง)
     const fetchUser = async () => {
       try {
-        const res = await fetchCustomerNameById(1);
+        if (!userId) {
+          setCurrentUser(null);
+          return;
+        }
+        const res = await fetchCustomerNameById(userId);
         // ถ้า response เป็น { firstName, lastName, ... }
         if (res && (res.firstName || res.lastName)) {
           setCurrentUser(res);
@@ -171,7 +176,7 @@ const OrderPage: React.FC = () => {
       }
     };
     fetchUser();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     // โหลดน้ำยาซักผ้าและปรับผ้านุ่มแยกประเภท
