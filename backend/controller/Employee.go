@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// --------- Utilities ---------
+/* ====================== Utilities ====================== */
 
 var dateLayouts = []string{
 	"2006-01-02",
@@ -142,7 +142,29 @@ func upsertEmployeeStatus(tx *gorm.DB, name, desc string) (uint, error) {
 	}
 }
 
-// --------- DTO ---------
+// ---------- NEW: role utilities ----------
+func getOrCreateRoleID(tx *gorm.DB, roleName string) (uint, error) {
+	roleName = strings.TrimSpace(roleName)
+	if roleName == "" {
+		return 0, errors.New("empty role name")
+	}
+	var r entity.Role
+	err := tx.Where("name = ?", roleName).First(&r).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		r = entity.Role{Name: roleName}
+		if err := tx.Create(&r).Error; err != nil {
+			return 0, err
+		}
+		return r.ID, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return r.ID, nil
+}
+
+/* ====================== DTO ====================== */
+
 type EmployeePayload struct {
 	Code              string
 	FirstName         string
@@ -160,7 +182,7 @@ type EmployeePayload struct {
 	UserID            uint
 }
 
-// --------- Handlers ---------
+/* ====================== Handlers ====================== */
 
 // POST /employees
 func CreateEmployee(c *gin.Context) {
@@ -198,7 +220,8 @@ func CreateEmployee(c *gin.Context) {
 	statusID, err := upsertEmployeeStatus(tx, p.Status, p.StatusDescription)
 	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// user (unique email)
+	// --------- USER + ROLE = employee ----------
+	// unique email check
 	{
 		var existed entity.User
 		if err := tx.Where("email = ?", p.Email).First(&existed).Error; err == nil {
@@ -207,12 +230,15 @@ func CreateEmployee(c *gin.Context) {
 			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
 		}
 	}
+	empRoleID, err := getOrCreateRoleID(tx, "employee")
+	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": "cannot ensure role: " + err.Error()}); return }
+
 	hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
 	if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": "hash password failed"}); return }
 	u := entity.User{Email: p.Email, Password: string(hashed)}
 	if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// employee code (optional & unique)
+	// code unique check (optional)
 	code := strings.TrimSpace(p.Code)
 	if code != "" {
 		var dup entity.Employee
@@ -236,7 +262,7 @@ func CreateEmployee(c *gin.Context) {
 	}
 	if err := tx.Create(&emp).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 
-	// gen code
+	// gen code if empty
 	if emp.Code == "" {
 		gen := fmt.Sprintf("EMP%03d", emp.ID)
 		if err := tx.Model(&entity.Employee{}).Where("id = ?", emp.ID).Update("code", gen).Error; err != nil {
@@ -353,7 +379,7 @@ func UpdateEmployee(c *gin.Context) {
 	e.Phone      = p.Phone
 	e.PositionID = newPosID
 
-	// user (email/password)
+	// user (email/password) + ensure role = employee เมื่อสร้างใหม่
 	if e.UserID != 0 {
 		var user entity.User
 		if err := tx.First(&user, e.UserID).Error; err == nil {
@@ -369,9 +395,16 @@ func UpdateEmployee(c *gin.Context) {
 				if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"hash password failed"}); return }
 				user.Password = string(hashed)
 			}
+			// ถ้า user ยังไม่มี role (กรณีข้อมูลเก่า) -> set เป็น employee
+			if user.RoleID == 0 {
+				empRoleID, err := getOrCreateRoleID(tx, "employee")
+				if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"cannot ensure role: " + err.Error()}); return }
+				user.RoleID = empRoleID
+			}
 			if err := tx.Save(&user).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 		}
 	} else if strings.TrimSpace(p.Email) != "" {
+		// สร้าง user ใหม่และผูก role = employee
 		if strings.TrimSpace(p.Password) == "" {
 			tx.Rollback(); c.JSON(400, gin.H{"error":"password required to create user"}); return
 		}
@@ -379,9 +412,11 @@ func UpdateEmployee(c *gin.Context) {
 		if err := tx.Where("email = ?", p.Email).First(&exists).Error; err == nil {
 			tx.Rollback(); c.JSON(409, gin.H{"error":"email already exists"}); return
 		}
+		empRoleID, err := getOrCreateRoleID(tx, "employee")
+		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"cannot ensure role: " + err.Error()}); return }
 		hashed, err := bcrypt.GenerateFromPassword([]byte(p.Password), bcrypt.DefaultCost)
 		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error":"hash password failed"}); return }
-		u := entity.User{Email: p.Email, Password: string(hashed)}
+		u := entity.User{Email: p.Email, Password: string(hashed), RoleID: empRoleID}
 		if err := tx.Create(&u).Error; err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
 		e.UserID = u.ID
 	}
@@ -435,7 +470,7 @@ func DeleteEmployee(c *gin.Context) {
 	if err := tx.Delete(&entity.Employee{}, uint(id)).Error; err != nil {
 		tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return
 	}
-	// ตัวอย่างนี้ลบ user ที่ผูกกันออกไปด้วย
+	// ลบ user ที่ผูก (คงพฤติกรรมเดิม)
 	if userID != 0 {
 		if err := tx.Delete(&entity.User{}, userID).Error; err != nil {
 			tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return

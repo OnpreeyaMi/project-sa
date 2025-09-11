@@ -26,7 +26,7 @@ import {
 } from "@ant-design/icons";
 import { EmployeeService } from "../../services/Employee";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 type EmpStatus = "active" | "inactive" | "onleave";
 type EmpGender = "male" | "female" | "other";
@@ -37,9 +37,10 @@ const STATUS_DESC: Record<EmpStatus, string> = {
   onleave: "ลาพัก",
 };
 
-const STATUS_TAG: Record<EmpStatus, { color: string; text: string }> = {
+// ทำ color เป็น optional เพื่อให้ inactive ใช้โทน default ได้
+const STATUS_TAG: Record<EmpStatus, { color?: string; text: string }> = {
   active: { color: "green", text: "ออนไลน์" },
-  inactive: { color: "default", text: "ออฟไลน์" },
+  inactive: { text: "ออฟไลน์" },          // ไม่กำหนดสี = ใช้ default
   onleave: { color: "orange", text: "ลาพัก" },
 };
 
@@ -57,7 +58,30 @@ type Employee = {
   EmployeeStatus?: { ID: number; StatusName: EmpStatus | string; StatusDescription?: string };
 };
 
-// -------- Helpers (null-safe) --------
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
+/** ---------- helpers ---------- */
+const b64urlToString = (b64url: string) => {
+  try {
+    const b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 ? "=".repeat(4 - (b64.length % 4)) : "";
+    return atob(b64 + pad);
+  } catch {
+    return "";
+  }
+};
+
+const decodeJWT = (token?: string): any | null => {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    return JSON.parse(b64urlToString(parts[1]));
+  } catch {
+    return null;
+  }
+};
+
 const genderLabel = (g?: string | null) => (g === "male" ? "ชาย" : g === "female" ? "หญิง" : "อื่น ๆ");
 const fullName = (e?: Employee | null) => `${e?.FirstName || ""} ${e?.LastName || ""}`.trim();
 const initialsOf = (e?: Employee | null) =>
@@ -70,7 +94,7 @@ const statusOf = (e?: Employee | null): EmpStatus => {
 const statusDescOf = (e?: Employee | null) => e?.EmployeeStatus?.StatusDescription || STATUS_DESC[statusOf(e)];
 const joinDateOf = (e?: Employee | null) => (e?.StartDate ? String(e.StartDate).slice(0, 10) : "-");
 
-// -------- normalize response -> Employee --------
+/** normalize response -> Employee */
 const normalize = (raw: any): Employee => {
   const posObj = raw?.Position || raw?.position || {};
   const posName = posObj?.PositionName || posObj?.positionName || raw?.position || undefined;
@@ -104,13 +128,27 @@ const normalize = (raw: any): Employee => {
 };
 
 const EmployeeProfile: React.FC = () => {
-  // ใช้จาก route param (/:id) หรือ localStorage("employeeId")
   const params = useParams();
+
+  // ---- ดึง token/role/employeeId จาก localStorage + JWT ----
+  const token = useMemo(() => localStorage.getItem("token") || "", []);
+  const role = useMemo(() => localStorage.getItem("role") || "", []);
+  const jwtPayload = useMemo(() => decodeJWT(token), [token]);
+  const employeeIdFromJWT = Number(jwtPayload?.employee_id || 0);
+
   const employeeId = useMemo(() => {
     const fromRoute = Number(params.id || 0);
-    const fromStorage = Number(localStorage.getItem("employeeId") || 0);
-    return fromRoute || fromStorage || 0;
-  }, [params.id]);
+    const fromStorageKey = Number(localStorage.getItem("employeeId") || 0);
+    let fromUserObj = 0;
+    try {
+      const rawUser = localStorage.getItem("user");
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser);
+        fromUserObj = Number(parsed?.employee?.ID || parsed?.employeeId || 0);
+      }
+    } catch {}
+    return fromRoute || employeeIdFromJWT || fromStorageKey || fromUserObj || 0;
+  }, [params.id, employeeIdFromJWT]);
 
   const [loading, setLoading] = useState(false);
   const [emp, setEmp] = useState<Employee | null>(null);
@@ -121,15 +159,43 @@ const EmployeeProfile: React.FC = () => {
   const currentDesc = statusDescOf(emp);
 
   const loadProfile = async () => {
-    if (!employeeId) {
-      message.warning("ไม่พบรหัสพนักงาน (employeeId)");
-      setLoadedOnce(true);
-      return;
-    }
     try {
       setLoading(true);
-      const data = await EmployeeService.get(employeeId);
-      setEmp(normalize(data));
+
+      // 1) ถ้ามี :id ใน URL (ดูคนอื่น) -> ใช้ /employees/:id
+      if (params.id) {
+        const data = await EmployeeService.get(Number(params.id));
+        setEmp(normalize(data));
+        return;
+      }
+
+      // 2) ถ้า role = employee และมี token -> พยายามใช้ /employee/me ก่อน
+      if (role === "employee" && token) {
+        try {
+          const meRes = await fetch(`${baseURL}/employee/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (meRes.ok) {
+            const me = await meRes.json();
+            setEmp(normalize(me));
+            if (me?.ID) localStorage.setItem("employeeId", String(me.ID));
+            return;
+          }
+        } catch {
+          // ไป fallback
+        }
+      }
+
+      // 3) fallback: ใช้ employeeId ที่หาได้
+      if (employeeId) {
+        const data = await EmployeeService.get(employeeId);
+        setEmp(normalize(data));
+        return;
+      }
+
+      // 4) ไม่มีข้อมูลพอ
+      message.warning("ไม่พบรหัสพนักงาน (employeeId)");
+      setEmp(null);
     } catch (e) {
       console.error(e);
       message.error("โหลดข้อมูลโปรไฟล์ไม่สำเร็จ");
@@ -141,7 +207,8 @@ const EmployeeProfile: React.FC = () => {
 
   useEffect(() => {
     loadProfile();
-  }, [employeeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeId, params.id, token, role]);
 
   return (
     <EmployeeSidebar>
@@ -257,7 +324,7 @@ const EmployeeProfile: React.FC = () => {
             </Col>
 
             <Col xs={24} lg={10}>
-              {/* การ์ดว่างไว้สำหรับส่วนขยายภายหลัง (เช่น ประวัติการทำงาน) */}
+              {/* พื้นที่สำหรับส่วนขยายในอนาคต */}
               <Card className="rounded-2xl shadow-sm h-full">
                 <Title level={5} className="!mt-0">สรุปโดยย่อ</Title>
                 <div className="grid grid-cols-1 gap-3 mt-2">

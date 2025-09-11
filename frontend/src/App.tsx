@@ -11,8 +11,10 @@ import RegisterForm from "./pages/register/register";
 import EmployeeHome from "./pages/Home/EmployeeHome";
 import StatusUpdate from "./pages/LaundryProcess/StatusUpdate";
 import OrderDetail from "./pages/LaundryProcess/OrderDetail";
-import StockEmpPage from "./pages/stock/employee";
-import StatusPage from "./pages/LaundryProcess/StatusPage";
+
+import StockEmpPage from "./pages/stock/employee"; // src/pages/stock/employee/index.tsx
+import EmployeeProfile from "./pages/employee/EmployeeProfile";
+
 import CustomerManagement from "./pages/customer/CustomerMangement";
 import PromotionManagement from "./pages/promotion/PromotionManagement";
 import Profile from "./pages/profile/profile";

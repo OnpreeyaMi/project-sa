@@ -24,8 +24,8 @@ export type EmployeeUpsert = Partial<Employee> & {
   JoinDate?: string;
   Status?: EmpStatus;
   StatusDescription?: string;
-  Position?: string;     // ส่งชื่อให้ backend findOrCreate ได้
-  PositionID?: number;   // หรือจะส่งเป็น ID ก็ได้
+  Position?: string;
+  PositionID?: number;
   Gender?: EmpGender | string;
 };
 
@@ -33,6 +33,16 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
   headers: { "Content-Type": "application/json" },
   withCredentials: false,
+});
+
+// แนบ token ทุกคำขออัตโนมัติ
+api.interceptors.request.use((config) => {
+  const t = localStorage.getItem("token");
+  if (t) {
+    config.headers = config.headers || {};
+    (config.headers as any).Authorization = `Bearer ${t}`;
+  }
+  return config;
 });
 
 // แปลง payload เป็น PascalCase ให้ตรงกับ Go
@@ -77,7 +87,7 @@ export const EmployeeService = {
 
   async update(id: number, p: EmployeeUpsert): Promise<Employee> {
     const payload = { ...toApiPayload(p) };
-    if (!p.Password) delete (payload as any).Password; // ไม่เปลี่ยนก็ไม่ต้องส่ง
+    if (!p.Password) delete (payload as any).Password;
     const res = await api.put(`/employees/${id}`, payload);
     return res.data;
   },
@@ -86,5 +96,3 @@ export const EmployeeService = {
     await api.delete(`/employees/${id}`);
   },
 };
-
-

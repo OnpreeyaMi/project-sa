@@ -1,23 +1,20 @@
-import React, { useState } from "react";
-import { Card, Button, Form, Input, Select, Avatar, Row, Col } from "antd";
+import React, { useState, useEffect } from "react";
+import { useUser } from "../../hooks/UserContext";
+import axios from "axios";
+import { Form, Input, Button, Card, Select, List, Modal, Row, Col, Avatar, Typography, Space } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined, HomeOutlined } from "@ant-design/icons";
 import CustomerSidebar from "../../component/layout/customer/CusSidebar";
-import { UserOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
+const { Title, Text } = Typography;
 
-const CustomerProfile: React.FC = () => {
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [profile, setProfile] = useState({
-    fullName: "Alexa",
-    nickName: "Rawles",
-    email: "alexarawles@gmail.com",
-    password: "123456",
-    phone: "0812345678",
-    gender: "Female"
-  });
-
+const Profile: React.FC = () => {
+  const { user, refreshCustomer } = useUser();
+  const [editMode, setEditMode] = useState(false);
   const [form] = Form.useForm();
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [addressModal, setAddressModal] = useState(false);
+  const [addressEdit, setAddressEdit] = useState<any | null>(null);
 
   useEffect(() => {
     if (user?.customer) {
@@ -58,16 +55,51 @@ const CustomerProfile: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
-    form.validateFields().then((values) => {
-      setProfile(values);
-      setIsEditing(false);
+  // ----- เพิ่ม/แก้ไขที่อยู่ -----
+  const handleAddressSubmit = async (values: any) => {
+    try {
+      if (addressEdit) {
+        await axios.put(`http://localhost:8000/address/${addressEdit.id}`, {
+          AddressDetails: values.detail,
+          Latitude: parseFloat(values.latitude),
+          Longitude: parseFloat(values.longitude),
+        }, {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+      } else {
+        await axios.post("http://localhost:8000/address", {
+          AddressDetails: values.detail,
+          Latitude: parseFloat(values.latitude),
+          Longitude: parseFloat(values.longitude),
+        }, {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+      }
+      setAddressModal(false);
+      setAddressEdit(null);
+      await refreshCustomer();
+    } catch {
+      Modal.error({ title: "เพิ่ม/แก้ไขที่อยู่ไม่สำเร็จ" });
+    }
+  };
+
+  // ----- ลบที่อยู่ -----
+  const handleDeleteAddress = async (id: number) => {
+    Modal.confirm({
+      title: "ต้องการลบที่อยู่นี้ใช่หรือไม่?",
+      onOk: async () => {
+        try {
+          await axios.delete(`http://localhost:8000/address/${id}`, {
+            headers: { Authorization: `Bearer ${user?.token}` }
+          });
+          await refreshCustomer();
+        } catch {
+          Modal.error({ title: "ลบที่อยู่ไม่สำเร็จ" });
+        }
+      }
     });
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
 
   return (
     <CustomerSidebar>
@@ -83,106 +115,63 @@ const CustomerProfile: React.FC = () => {
               <p style={{ marginTop: 4, color: "gray" }}>{profile.email}</p>
             </div>
           </Card>
-        </Col>
 
-        {/* Card 2 */}
-        <Col xs={24} md={16}>
-          <Card>
-            {isEditing ? (
-              // -------------------- Editing --------------------
-              <Form form={form} layout="vertical" initialValues={profile}>
-                <Row gutter={[16, 12]}>
-                  <Col span={12}>
-                    <Form.Item name="fullName" label={<strong style={{ fontSize: 16 }}>ชื่อ</strong>} rules={[{ required: true }]}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="nickName" label={<strong style={{ fontSize: 16 }}>นามสกุล</strong>}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="email" label={<strong style={{ fontSize: 16 }}>อีเมล</strong>}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="password" label={<strong style={{ fontSize: 16 }}>รหัสผ่าน</strong>} rules={[{ required: true }]}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="phone" label={<strong style={{ fontSize: 16 }}>เบอร์โทร</strong>}>
-                      <Input />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item name="gender" label={<strong style={{ fontSize: 16 }}>เพศ</strong>}>
-                      <Select>
-                        <Option value="Male">ชาย</Option>
-                        <Option value="Female">หญิง</Option>
-                        <Option value="Other">อื่น</Option>
-                      </Select>
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 16 }}>
-                  <Button onClick={handleCancel}>Cancel</Button>
-                  <Button type="primary" onClick={handleSave}>
-                    Save
-                  </Button>
-                </div>
-              </Form>
-            ) : (
-              // -------------------- View Mode --------------------
-              <Form layout="vertical">
-                <Row gutter={[16, 12]}>
-                  <Col span={12}>
-                    <Form.Item label={<span style={{ fontWeight: "bold", fontSize: 16 }}>ชื่อ</span>}>
-                      <span style={{ color: "#000", fontSize: 14 }}>{profile.fullName}</span>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label={<span style={{ fontWeight: "bold", fontSize: 16 }}>นามสกุล</span>}>
-                      <span style={{ color: "#000", fontSize: 14 }}>{profile.nickName}</span>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label={<span style={{ fontWeight: "bold", fontSize: 16 }}>อีเมล</span>}>
-                      <span style={{ color: "#000", fontSize: 14 }}>{profile.email}</span>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label={<span style={{ fontWeight: "bold", fontSize: 16 }}>รหัสผ่าน</span>}>
-                      <span style={{ color: "#000", fontSize: 14 }}>********</span>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label={<span style={{ fontWeight: "bold", fontSize: 16 }}>เบอร์โทร</span>}>
-                      <span style={{ color: "#000", fontSize: 14 }}>{profile.phone}</span>
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item label={<span style={{ fontWeight: "bold", fontSize: 16 }}>เพศ</span>}>
-                      <span style={{ color: "#000", fontSize: 14 }}>{profile.gender}</span>
-                    </Form.Item>
-                  </Col>
-                </Row>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
-                  <Button type="primary" onClick={handleEdit}>
-                    Edit
-                  </Button>
-                </div>
-              </Form>
-            )}
+          {/* ส่วนล่าง: รายการที่อยู่ */}
+          <Card title={<span><HomeOutlined /> ที่อยู่ของฉัน  </span>} style={{ borderRadius: 16, boxShadow: "0 2px 8px #f0f1f2" }}>
+            <List
+              itemLayout="horizontal"
+              dataSource={addresses}
+              locale={{ emptyText: "ยังไม่มีที่อยู่" }}
+              renderItem={addr => (
+                <List.Item
+                  actions={[
+                    <Button icon={<EditOutlined />} type="link" onClick={() => { setAddressEdit(addr); setAddressModal(true); }}>Edit</Button>,
+                    <Button icon={<DeleteOutlined />} type="link" danger onClick={() => handleDeleteAddress(addr.id)}>Delete</Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={<Avatar icon={<HomeOutlined />} />}
+                    title={<span>{addr.detail}</span>}
+                    description={<span>Lat: {addr.latitude}, Lng: {addr.longitude}</span>}
+                  />
+                </List.Item>
+              )}
+            />
+            <Button type="dashed" icon={<PlusOutlined />} style={{ marginTop: 16 }} onClick={() => { setAddressEdit(null); setAddressModal(true); }}>เพิ่มที่อยู่ใหม่</Button>
           </Card>
+
+          {/* Modal สำหรับเพิ่ม/แก้ไขที่อยู่ */}
+          <Modal
+            title={addressEdit ? "Edit Address" : "Add Address"}
+            open={addressModal}
+            onCancel={() => { setAddressModal(false); setAddressEdit(null); }}
+            footer={null}
+          >
+            <Form
+              layout="vertical"
+              initialValues={addressEdit ? {
+                detail: addressEdit.detail,
+                latitude: addressEdit.latitude,
+                longitude: addressEdit.longitude,
+              } : { detail: "", latitude: "", longitude: "" }}
+              onFinish={handleAddressSubmit}
+            >
+              <Form.Item label="รายละเอียดที่อยู่" name="detail" rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="Latitude" name="latitude" rules={[{ required: true, message: "กรุณากรอก Latitude" }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="Longitude" name="longitude" rules={[{ required: true, message: "กรุณากรอก Longitude" }]}>
+                <Input />
+              </Form.Item>
+              <Button type="primary" htmlType="submit" style={{ marginTop: 8 }}>บันทึก</Button>
+            </Form>
+          </Modal>
         </Col>
       </Row>
     </CustomerSidebar>
   );
 };
 
-export default CustomerProfile;
+export default Profile;
