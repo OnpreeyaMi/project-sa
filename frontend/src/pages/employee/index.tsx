@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaTrash } from "react-icons/fa";
-import { Modal, Form, Input, Select, Button, Popconfirm, message, Divider } from "antd";
+import { Modal, Form, Input, Select, Button, Popconfirm, message, Divider, DatePicker } from "antd";
+import dayjs from "dayjs";
 import AdminSidebar from "../../component/layout/admin/AdminSidebar";
 import { EmployeeService, type EmployeeUpsert } from "../../services/Employee";
 
@@ -14,7 +15,7 @@ type Employee = {
   LastName?: string;
   Gender?: EmpGender | string;
   Phone?: string;
-  StartDate?: string;
+  StartDate?: string; // ISO string หรือ "YYYY-MM-DD"
   User?: { ID?: number; Email?: string };
   PositionID?: number;
   Position?: { ID: number; PositionName: string };
@@ -22,6 +23,12 @@ type Employee = {
 };
 
 const initialEmployees: Employee[] = [];
+
+// ✅ ตัวเลือกตำแหน่ง
+const POSITION_CHOICES = [
+  { value: "พนักงานขนส่งผ้า", label: "พนักงานขนส่งผ้า" },
+  { value: "พนักงานซักผ้า", label: "พนักงานซักผ้า" },
+];
 
 const statusMeta: Record<EmpStatus, { label: string; badge: string; dot: string }> = {
   active: { label: "ออนไลน์", badge: "bg-green-100 text-green-700", dot: "bg-green-500" },
@@ -44,7 +51,7 @@ const statusOf = (e: Employee): EmpStatus => {
   return (["active", "inactive", "onleave"].includes(s) ? s : "inactive") as EmpStatus;
 };
 const statusDescOf = (e: Employee) => e.EmployeeStatus?.StatusDescription || STATUS_DESC[statusOf(e)];
-const joinDateOf = (e: Employee) => (e.StartDate ? String(e.StartDate).slice(0, 10) : "");
+const joinDateOf = (e: Employee) => (e.StartDate ? dayjs(e.StartDate).format("YYYY-MM-DD") : "");
 
 const EmployeePage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
@@ -81,8 +88,11 @@ const EmployeePage: React.FC = () => {
       StartDate: startDateStr,
       User: userObj,
       PositionID: raw.PositionID ?? raw.positionID ?? posObj.ID ?? posObj.id,
-      Position: raw.Position ? { ID: raw.Position.ID ?? raw.Position.id, PositionName: posName } :
-        posName ? { ID: raw.PositionID ?? 0, PositionName: posName } : undefined,
+      Position: raw.Position
+        ? { ID: raw.Position.ID ?? raw.Position.id, PositionName: posName }
+        : posName
+        ? { ID: raw.PositionID ?? 0, PositionName: posName }
+        : undefined,
       EmployeeStatus: raw.EmployeeStatus
         ? {
             ID: raw.EmployeeStatus.ID ?? raw.EmployeeStatus.id,
@@ -179,14 +189,20 @@ const EmployeePage: React.FC = () => {
       Position: positionNameOf(emp),
       Email: emp.User?.Email,
       Phone: emp.Phone,
-      JoinDate: joinDateOf(emp),
+      // ✅ แสดงใน DatePicker ต้องเป็น dayjs object
+      JoinDate: emp.StartDate ? dayjs(emp.StartDate) : undefined,
       Status: statusOf(emp),
       StatusDescription: statusDescOf(emp),
     });
     setIsModalOpen(true);
   };
 
-  const handleConfirmDelete = async (id: number) => { try { await deleteEmployeeAPI(id); } catch {} };
+  const handleConfirmDelete = async (id: number) => {
+    try {
+      await deleteEmployeeAPI(id);
+    } catch {}
+  };
+
   const handleDeleteInModal = async () => {
     if (!editingEmployee) return;
     await handleConfirmDelete(editingEmployee.ID);
@@ -202,11 +218,12 @@ const EmployeePage: React.FC = () => {
       FirstName: values.FirstName,
       LastName: values.LastName,
       Gender: values.Gender,
-      Position: values.Position,
+      Position: values.Position, // ✅ ส่งชื่อ Position
       Email: values.Email,
       Password: values.Password ?? "",
       Phone: values.Phone,
-      JoinDate: values.JoinDate,
+      // ✅ แปลงจาก dayjs → string ก่อนส่ง API
+      JoinDate: values.JoinDate ? values.JoinDate.format("YYYY-MM-DD") : undefined,
       Status: statusVal,
       StatusDescription: values.StatusDescription || STATUS_DESC[statusVal],
     };
@@ -217,10 +234,12 @@ const EmployeePage: React.FC = () => {
         await updateEmployeeAPI(editingEmployee.ID, payload);
       } else {
         if (!payload.Password || String(payload.Password).trim() === "") {
-          message.error("กรุณากรอกรหัสผ่าน"); return;
+          message.error("กรุณากรอกรหัสผ่าน");
+          return;
         }
         if (!payload.Email || String(payload.Email).trim() === "") {
-          message.error("กรุณากรอกอีเมล"); return;
+          message.error("กรุณากรอกอีเมล");
+          return;
         }
         await createEmployeeAPI(payload);
       }
@@ -241,8 +260,10 @@ const EmployeePage: React.FC = () => {
   const positionOptions = useMemo(
     () => [
       { value: "all", label: "ทุกตำแหน่ง" },
-      ...Array.from(new Set(employees.map(e => positionNameOf(e)).filter(Boolean)))
-        .map((p) => ({ value: p as string, label: p as string })),
+      ...Array.from(new Set(employees.map((e) => positionNameOf(e)).filter(Boolean))).map((p) => ({
+        value: p as string,
+        label: p as string,
+      })),
     ],
     [employees]
   );
@@ -260,7 +281,10 @@ const EmployeePage: React.FC = () => {
             onClick={() => {
               setEditingEmployee(null);
               form.resetFields();
-              form.setFieldsValue({ Status: "inactive", StatusDescription: STATUS_DESC["inactive"] });
+              form.setFieldsValue({
+                Status: "inactive",
+                StatusDescription: STATUS_DESC["inactive"],
+              });
               setIsModalOpen(true);
             }}
           >
@@ -270,15 +294,21 @@ const EmployeePage: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <Input placeholder="ค้นหา (ชื่อ, ตำแหน่ง, อีเมล, เบอร์โทร, คำอธิบายสถานะ)" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input
+              placeholder="ค้นหา (ชื่อ, ตำแหน่ง, อีเมล, เบอร์โทร, คำอธิบายสถานะ)"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <Select
               value={statusFilter}
               onChange={(v) => setStatusFilter(v as any)}
               className="w-full"
-              options={[{ value: "all", label: "สถานะทั้งหมด" },
+              options={[
+                { value: "all", label: "สถานะทั้งหมด" },
                 { value: "active", label: "active" },
                 { value: "inactive", label: "inactive" },
-                { value: "onleave", label: "onleave" }]}
+                { value: "onleave", label: "onleave" },
+              ]}
             />
             <Select
               value={genderFilter}
@@ -300,7 +330,14 @@ const EmployeePage: React.FC = () => {
             />
           </div>
           <div className="mt-3 flex gap-2 justify-end">
-            <Button onClick={() => { setSearch(""); setStatusFilter("all"); setGenderFilter("all"); setPositionFilter("all"); }}>
+            <Button
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setGenderFilter("all");
+                setPositionFilter("all");
+              }}
+            >
               ล้างตัวกรอง
             </Button>
           </div>
@@ -318,10 +355,15 @@ const EmployeePage: React.FC = () => {
               const initials = initialsOf(emp) || "•";
               const badgeText = statusDescOf(emp);
               return (
-                <div key={emp.ID} className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg">
+                <div
+                  key={emp.ID}
+                  className="group relative overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
+                >
                   <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500" />
                   <div className="p-5">
-                    <div className={`absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 select-none ${meta.badge}`}>
+                    <div
+                      className={`absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 select-none ${meta.badge}`}
+                    >
                       <span className={`inline-block w-1.5 h-1.5 rounded-full ${meta.dot}`} />
                       {badgeText}
                     </div>
@@ -332,20 +374,32 @@ const EmployeePage: React.FC = () => {
                       </div>
                       <div>
                         <h2 className="font-semibold leading-tight">{fullName(emp)}</h2>
-                        <p className="text-gray-500 text-sm">{positionNameOf(emp)} • {genderLabel(emp.Gender)}</p>
+                        <p className="text-gray-500 text-sm">
+                          {positionNameOf(emp)} • {genderLabel(emp.Gender)}
+                        </p>
                       </div>
                     </div>
 
                     <div className="text-sm space-y-1.5 text-gray-700">
-                      <p className="flex items-center gap-2"><FaMapMarkerAlt className="text-gray-400" /> รหัส: {emp.Code || `EMP${String(emp.ID).padStart(3, "0")}`}</p>
-                      <p className="flex items-center gap-2"><FaPhone className="text-gray-400" /> {emp.Phone}</p>
-                      <p className="flex items-center gap-2"><FaEnvelope className="text-gray-400" /> {emp.User?.Email || "-"}</p>
+                      <p className="flex items-center gap-2">
+                        <FaMapMarkerAlt className="text-gray-400" /> รหัส:{" "}
+                        {emp.Code || `EMP${String(emp.ID).padStart(3, "0")}`}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <FaPhone className="text-gray-400" /> {emp.Phone}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <FaEnvelope className="text-gray-400" /> {emp.User?.Email || "-"}
+                      </p>
                     </div>
 
                     <p className="text-xs text-gray-400 mt-2">เข้าร่วม: {joinDateOf(emp)}</p>
 
                     <div className="flex justify-end mt-4 pt-3 border-t">
-                      <button className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-600" onClick={() => handleEditClick(emp)}>
+                      <button
+                        className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-600"
+                        onClick={() => handleEditClick(emp)}
+                      >
                         <FaEdit /> แก้ไข
                       </button>
                     </div>
@@ -359,10 +413,27 @@ const EmployeePage: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-8">
           <div className="bg-white rounded-2xl shadow p-5">
             <div className="grid grid-cols-4 gap-4 text-center text-sm font-medium text-gray-700">
-              <div><p className="text-blue-600 text-xl font-bold">{employees.length}</p>ทั้งหมด</div>
-              <div><p className="text-green-600 text-xl font-bold">{employees.filter(e=>statusOf(e)==="active").length}</p>ออนไลน์</div>
-              <div><p className="text-gray-600 text-xl font-bold">{employees.filter(e=>statusOf(e)==="inactive").length}</p>ออฟไลน์</div>
-              <div><p className="text-yellow-600 text-xl font-bold">{employees.filter(e=>statusOf(e)==="onleave").length}</p>ลาพัก</div>
+              <div>
+                <p className="text-blue-600 text-xl font-bold">{employees.length}</p>ทั้งหมด
+              </div>
+              <div>
+                <p className="text-green-600 text-xl font-bold">
+                  {employees.filter((e) => statusOf(e) === "active").length}
+                </p>
+                ออนไลน์
+              </div>
+              <div>
+                <p className="text-gray-600 text-xl font-bold">
+                  {employees.filter((e) => statusOf(e) === "inactive").length}
+                </p>
+                ออฟไลน์
+              </div>
+              <div>
+                <p className="text-yellow-600 text-xl font-bold">
+                  {employees.filter((e) => statusOf(e) === "onleave").length}
+                </p>
+                ลาพัก
+              </div>
             </div>
           </div>
 
@@ -372,17 +443,22 @@ const EmployeePage: React.FC = () => {
               <p className="text-sm text-gray-500">ยังไม่มีข้อมูล</p>
             ) : (
               <ul className="space-y-2">
-                {Object.entries(positionCounts).sort((a,b)=>b[1]-a[1]).map(([position, count]) => (
-                  <li key={position} className="py-2">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-700">{position}</span>
-                      <span className="font-semibold">{count} คน</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500" style={{ width: `${(Number(count) / Math.max(1, employees.length)) * 100}%` }} />
-                    </div>
-                  </li>
-                ))}
+                {Object.entries(positionCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([position, count]) => (
+                    <li key={position} className="py-2">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-700">{position}</span>
+                        <span className="font-semibold">{count} คน</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500"
+                          style={{ width: `${(Number(count) / Math.max(1, employees.length)) * 100}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
               </ul>
             )}
           </div>
@@ -391,44 +467,103 @@ const EmployeePage: React.FC = () => {
         <Modal
           title={editingEmployee ? "แก้ไขข้อมูลพนักงาน" : "เพิ่มพนักงานใหม่"}
           open={isModalOpen}
-          onCancel={() => { setIsModalOpen(false); setEditingEmployee(null); form.resetFields(); }}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setEditingEmployee(null);
+            form.resetFields();
+          }}
           footer={null}
+          destroyOnClose
         >
           <Form form={form} layout="vertical" onFinish={handleSaveEmployee}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Form.Item label="ชื่อ (First name)" name="FirstName" rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}><Input /></Form.Item>
-              <Form.Item label="นามสกุล (Last name)" name="LastName" rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}><Input /></Form.Item>
+              <Form.Item
+                label="ชื่อ (First name)"
+                name="FirstName"
+                rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="นามสกุล (Last name)"
+                name="LastName"
+                rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}
+              >
+                <Input />
+              </Form.Item>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Form.Item label="เพศ" name="Gender" rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}>
-                <Select options={[{ value: "male", label: "ชาย" }, { value: "female", label: "หญิง" }, { value: "other", label: "อื่น ๆ" }]} />
+                <Select
+                  options={[
+                    { value: "male", label: "ชาย" },
+                    { value: "female", label: "หญิง" },
+                    { value: "other", label: "อื่น ๆ" },
+                  ]}
+                />
               </Form.Item>
-              <Form.Item label="ตำแหน่ง (ชื่อ)" name="Position" rules={[{ required: true, message: "กรุณากรอกตำแหน่ง" }]}><Input /></Form.Item>
+
+              {/* ✅ Select เลือกตำแหน่ง */}
+              <Form.Item
+                label="ตำแหน่ง (ชื่อ)"
+                name="Position"
+                rules={[{ required: true, message: "กรุณาเลือกตำแหน่ง" }]}
+              >
+                <Select options={POSITION_CHOICES} placeholder="เลือกตำแหน่ง" />
+              </Form.Item>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Form.Item label="อีเมล" name="Email" rules={[{ required: true, type: "email", message: "อีเมลไม่ถูกต้อง" }]}><Input /></Form.Item>
+              <Form.Item
+                label="อีเมล"
+                name="Email"
+                rules={[{ required: true, type: "email", message: "อีเมลไม่ถูกต้อง" }]}
+              >
+                <Input />
+              </Form.Item>
               <Form.Item
                 label="รหัสผ่าน"
                 name="Password"
-                rules={editingEmployee ? [] : [{ required: true, message: "กรุณากรอกรหัสผ่าน" }, { min: 6, message: "รหัสผ่านอย่างน้อย 6 ตัวอักษร" }]}
+                rules={
+                  editingEmployee
+                    ? []
+                    : [
+                        { required: true, message: "กรุณากรอกรหัสผ่าน" },
+                        { min: 6, message: "รหัสผ่านอย่างน้อย 6 ตัวอักษร" },
+                      ]
+                }
               >
                 <Input.Password />
               </Form.Item>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Form.Item label="เบอร์โทร" name="Phone" rules={[{ required: true, message: "กรุณากรอกเบอร์โทร" }]}><Input /></Form.Item>
+              <Form.Item
+                label="เบอร์โทร"
+                name="Phone"
+                rules={[{ required: true, message: "กรุณากรอกเบอร์โทร" }]}
+              >
+                <Input />
+              </Form.Item>
               <div />
             </div>
 
-            <Form.Item label="วันที่เข้าร่วม" name="JoinDate" rules={[{ required: true, message: "กรุณากรอกวันที่เข้าร่วม" }]}>
-              <Input placeholder="เช่น 15/1/2566 หรือ 2025-09-03" />
+            {/* ✅ ใช้ DatePicker แทน Input */}
+            <Form.Item
+              label="วันที่เข้าร่วม"
+              name="JoinDate"
+              rules={[{ required: true, message: "กรุณาเลือกวันที่เข้าร่วม" }]}
+            >
+              <DatePicker className="w-full" format="YYYY-MM-DD" placeholder="เลือกวันที่" />
             </Form.Item>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Form.Item label="สถานะ (StatusName)" name="Status" rules={[{ required: true, message: "กรุณาเลือกสถานะ" }]}>
+              <Form.Item
+                label="สถานะ (StatusName)"
+                name="Status"
+                rules={[{ required: true, message: "กรุณาเลือกสถานะ" }]}
+              >
                 <Select
                   options={[
                     { value: "active", label: "active" },
@@ -449,7 +584,7 @@ const EmployeePage: React.FC = () => {
               <>
                 <Divider />
                 <div className="flex items-center justify-between">
-                  <div className="text-red-600 font-medium"></div>
+                  <div className="text-red-600 font-medium" />
                   <Popconfirm
                     title="ต้องการลบข้อมูลพนักงานหรือไม่?"
                     description={`คุณกำลังจะลบ "${fullName(editingEmployee)}" ออกจากระบบ`}
@@ -458,7 +593,9 @@ const EmployeePage: React.FC = () => {
                     okButtonProps={{ danger: true }}
                     onConfirm={handleDeleteInModal}
                   >
-                    <Button danger icon={<FaTrash />}>ลบพนักงาน</Button>
+                    <Button danger icon={<FaTrash />}>
+                      ลบพนักงาน
+                    </Button>
                   </Popconfirm>
                 </div>
               </>
@@ -466,9 +603,17 @@ const EmployeePage: React.FC = () => {
 
             <Form.Item>
               <div className="flex items-center mt-4">
-                <Button type="primary" htmlType="submit">{editingEmployee ? "บันทึกการแก้ไข" : "บันทึก"}</Button>
+                <Button type="primary" htmlType="submit">
+                  {editingEmployee ? "บันทึกการแก้ไข" : "บันทึก"}
+                </Button>
                 <div className="ml-auto">
-                  <Button onClick={() => { setIsModalOpen(false); setEditingEmployee(null); form.resetFields(); }}>
+                  <Button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingEmployee(null);
+                      form.resetFields();
+                    }}
+                  >
                     ยกเลิก
                   </Button>
                 </div>

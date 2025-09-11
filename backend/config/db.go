@@ -91,8 +91,8 @@ func MockData() {
 		{Email: "admin@example.com", Password: phash("1234"), RoleID: 1},
 		{Email: "customer1@example.com", Password: phash("1234"), RoleID: 2},
 		{Email: "customer2@example.com", Password: phash("1234"), RoleID: 2},
-		{Email: "employee1@example.com", Password: phash("123456"), RoleID: 3},
-		{Email: "employee2@example.com", Password: phash("123456"), RoleID: 3},
+		// {Email: "employee1@example.com", Password: phash("123456"), RoleID: 3},
+		// {Email: "employee2@example.com", Password: phash("123456"), RoleID: 3},
 	}
 	for _, u := range users {
 		var exist entity.User
@@ -231,44 +231,15 @@ func MockData() {
 		DB.FirstOrCreate(&p, entity.Position{PositionName: p.PositionName})
 	}
 
-	// --- EmployeeStatus (ค่าเริ่มต้น) ---
-	statuses := []entity.EmployeeStatus{
-		{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},
-		{StatusName: "inactive", StatusDescription: "ยังไม่ปฏิบัติงาน"},
-		{StatusName: "onleave", StatusDescription: "ลาพัก"},
-	}
-	for _, s := range statuses {
-		DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
-	}
-
-	// --- Employees ตัวอย่าง (ผูกกับ user employee1/2) ---
-	emps := []entity.Employee{
-		{
-			Code:             "EMP001",
-			FirstName:        "Somchai",
-			LastName:         "S.",
-			Phone:            "0811111111",
-			Gender:           "ชาย",
-			StartDate:        time.Now(),
-			UserID:           4,
-			PositionID:       1,
-			EmployeeStatusID: 1,
-		},
-		{
-			Code:             "EMP002",
-			FirstName:        "Suda",
-			LastName:         "T.",
-			Phone:            "0822222222",
-			Gender:           "หญิง",
-			StartDate:        time.Now(),
-			UserID:           5,
-			PositionID:       2,
-			EmployeeStatusID: 1,
-		},
-	}
-	for _, e := range emps {
-		DB.FirstOrCreate(&e, entity.Employee{Code: e.Code})
-	}
+	// // --- EmployeeStatus (ค่าเริ่มต้น) ---
+	// statuses := []entity.EmployeeStatus{
+	// 	{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},
+	// 	{StatusName: "inactive", StatusDescription: "ยังไม่ปฏิบัติงาน"},
+	// 	{StatusName: "onleave", StatusDescription: "ลาพัก"},
+	// }
+	// for _, s := range statuses {
+	// 	DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
+	// }
 
 	fmt.Println("✅ Mock data added successfully!")
 }
