@@ -6,7 +6,8 @@ type SortedClothes struct {
 	gorm.Model
 	SortedQuantity int
 
-	SortingHistory *SortingHistory `gorm:"foreignKey:SortedClothesID"`
+	// เดิมเป็น *SortingHistory (ตัวเดียว) -> แก้เป็น slice ให้รองรับหลายเหตุการณ์
+	SortingHistories []*SortingHistory `gorm:"foreignKey:SortedClothesID"`
 
 	ClothTypeID uint
 	ClothType   *ClothType `gorm:"foreignKey:ClothTypeID"`

@@ -64,7 +64,10 @@ export interface HistoryEntry {
   ID: number;
   RecordedAt: string;
   Quantity: number;
+  Action: "ADD" | "EDIT" | "DELETE";
+  ClothTypeID?: number;
+  ServiceTypeID?: number;
   ClothTypeName: string;
   ServiceType: string;
-  Action: "ADD" | "EDIT" | "DELETE";
+  CurrentQuantity: number; // 👈 ใช้ค่านี้ตรง ๆ
 }

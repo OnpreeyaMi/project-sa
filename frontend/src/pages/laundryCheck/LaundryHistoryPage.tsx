@@ -50,18 +50,6 @@ const sumUniqueQtyFromOrderItems = (
   return Array.from(m.values()).reduce((a, b) => a + b, 0);
 };
 
-// ดึง "จำนวน (ปัจจุบัน)" จากรายการผ้า (detail.Items) ตรงๆ โดย match ด้วย ชื่อประเภทผ้า + บริการ
-const currentQtyFromItems = (row: HistoryEntry, d?: OrderDetail | null) => {
-  const items = d?.Items || [];
-  const norm = (s?: string) => (s || "").trim().toLowerCase();
-  const matched = items.find(
-    (it) =>
-      norm(it.ClothTypeName) === norm(row.ClothTypeName) &&
-      norm(it.ServiceType) === norm(row.ServiceType)
-  );
-  return matched?.Quantity ?? 0;
-};
-
 const renderServiceTags = (detail?: OrderDetail | null) => {
   const list = (detail as any)?.ServiceTypes as { ID: number; Name: string }[] | undefined;
   if (Array.isArray(list) && list.length > 0) {
@@ -286,9 +274,9 @@ const LaundryHistoryPage: React.FC = () => {
                   },
                   {
                     title: "จำนวน (ปัจจุบัน)",
+                    dataIndex: "CurrentQuantity",   // 👈 ใช้ค่า BE ตรง ๆ
                     width: 160,
                     align: "right" as const,
-                    render: (_: any, r: HistoryEntry) => currentQtyFromItems(r, detail),
                   },
                 ]}
                 size="middle"
@@ -370,7 +358,7 @@ const LaundryHistoryPage: React.FC = () => {
                 {detail?.TotalItems ?? (detail?.Items?.length || 0)}
               </Descriptions.Item>
               <Descriptions.Item label="รวมจำนวนชิ้น (ไม่นับซ้ำประเภทผ้า)">
-                {totalUniqueCloth}
+                {detail?.Items ? sumUniqueQtyFromOrderItems(detail.Items) : 0}
               </Descriptions.Item>
             </Descriptions>
           </div>
