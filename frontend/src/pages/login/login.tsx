@@ -1,6 +1,15 @@
 import React, { useState } from "react";
+<<<<<<< HEAD
 import { Link, useNavigate } from "react-router-dom";
 import { useUser } from "../../hooks/UserContext";
+=======
+<<<<<<< HEAD
+import { Link, useNavigate } from "react-router-dom"; // <- ใช้ useNavigate
+=======
+import { Link, useNavigate } from "react-router-dom";
+import { useUser } from "../../hooks/UserContext";
+>>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
+>>>>>>> mii
 import "./Login.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -8,18 +17,77 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+<<<<<<< HEAD
   const { setUser } = useUser();
+=======
+<<<<<<< HEAD
+=======
+  const { setUser } = useUser();
+>>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
+>>>>>>> mii
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+<<<<<<< HEAD
       const res = await fetch(`${API_BASE}/login`, {
+=======
+<<<<<<< HEAD
+      const res = await fetch("http://localhost:8000/login", {
+=======
+      const res = await fetch(`${API_BASE}/login`, {
+>>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
+>>>>>>> mii
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem("token", data.token); // เก็บเฉพาะ token
+        localStorage.setItem("role", data.role); 
+        // ดึงข้อมูล customer เพิ่มเติม
+        const customerRes = await fetch(`http://localhost:8000/customer/profile`, {
+          headers: { Authorization: `Bearer ${data.token}` }
+        });
+        const customerData = await customerRes.json();
+
+        localStorage.setItem("user", JSON.stringify({
+          ...data,
+          customer: normalizeCustomer(customerData) // ต้อง normalize ตรงนี้!
+        }));
+        localStorage.setItem("userId", String(customerData.ID)); // <-- เพิ่มบรรทัดนี้
+
+        switch (data.role) {
+          case "customer":
+            navigate("/customer/home");
+            window.location.reload();
+            break;
+          case "employee":
+            navigate("/employee/dashboard");
+            window.location.reload();
+            break;
+          case "admin":
+            navigate("/admin/employees");
+            window.location.reload();
+            break;
+          default:
+            navigate("/");
+            window.location.reload();
+        }
+      } else {
+        alert(data.error || "เข้าสู่ระบบไม่สำเร็จ");
+      }
+
+=======
+>>>>>>> mii
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "เข้าสู่ระบบไม่สำเร็จ");
@@ -72,15 +140,51 @@ const Login: React.FC = () => {
       if (baseUser.role === "admin") navigate("/admin/employees");
       else if (baseUser.role === "employee") navigate("/employee/dashboard");
       else navigate("/customer/home");
+<<<<<<< HEAD
+=======
+>>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
+>>>>>>> mii
     } catch (err) {
       console.error(err);
       alert("เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์");
     }
   };
 
+<<<<<<< HEAD
   return (
     <div className="login-container">
       <div className="bubbles"><span></span><span></span><span></span><span></span><span></span></div>
+=======
+<<<<<<< HEAD
+  function normalizeCustomer(raw: any) {
+    return {
+      id: raw.ID,
+      firstName: raw.FirstName,
+      lastName: raw.LastName,
+      phone: raw.PhoneNumber,
+      gender: raw.Gender ? { id: raw.Gender.ID, name: raw.Gender.Name } : { id: 0, name: "" },
+      addresses: (raw.Addresses || []).map((addr: any) => ({
+        id: addr.ID,
+        detail: addr.AddressDetails,
+        latitude: addr.Latitude,
+        longitude: addr.Longitude,
+        isDefault: addr.IsDefault,
+      })),
+      // ...อื่นๆที่ต้องการ
+    };
+  }
+
+  return (
+    <div className="login-container">
+      <div className="bubbles">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+=======
+  return (
+    <div className="login-container">
+      <div className="bubbles"><span></span><span></span><span></span><span></span><span></span></div>
+>>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
+>>>>>>> mii
       <div className="login-card">
         <div className="logo"><div className="logo-icon">👕</div></div>
         <h2>เข้าสู่ระบบ</h2>

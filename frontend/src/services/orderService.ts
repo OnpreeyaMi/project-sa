@@ -74,22 +74,27 @@ export const fetchAddresses = async (customerId: number) => {
 }
 
 // สร้าง address ใหม่
-export const createAddress = async (addressData: {
+export const createNewAddress = async (addressData: {
   addressDetails: string;
   latitude: number;
   longitude: number;
   customerId: number;
 }) => {
+  console.log('createNewAddress payload:', addressData); // debug payload
   try {
+    const token = localStorage.getItem("token");
     const response = await fetch(`${API_BASE}/orderaddress`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
       body: JSON.stringify(addressData),
     });
     if (!response.ok) throw new Error("ไม่สามารถบันทึกที่อยู่ได้");
     return response.json();
   } catch (error) {
-    console.error("Error creating address:", error);
+    console.error("Error creating new address:", error);
     throw error;
   }
 };

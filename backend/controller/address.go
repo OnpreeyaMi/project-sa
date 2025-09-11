@@ -12,13 +12,8 @@ import (
 // -------------------- CREATE --------------------
 type AddressPayload struct {
 	AddressDetails string  `json:"AddressDetails" binding:"required"`
-<<<<<<< HEAD
-	Latitude    float64 `json:"Latitude" binding:"required"`
-	Longitude    float64 `json:"Longitude" binding:"required"`
-=======
 	Latitude       float64 `json:"Latitude" binding:"required"`
 	Longitude      float64 `json:"Longitude" binding:"required"`
->>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
 }
 
 func CreateAddress(c *gin.Context) {
@@ -36,19 +31,11 @@ func CreateAddress(c *gin.Context) {
 	}
 
 	address := entity.Address{
-<<<<<<< HEAD
-		CustomerID: userID,
-		AddressDetails:     payload.AddressDetails,
-		Latitude:        payload.Latitude,
-		Longitude:        payload.Longitude,
-		IsDefault:       false,
-=======
 		CustomerID:     userID,
 		AddressDetails: payload.AddressDetails,
 		Latitude:       payload.Latitude,
 		Longitude:      payload.Longitude,
 		IsDefault:      false,
->>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
 	}
 
 	if err := config.DB.Create(&address).Error; err != nil {
