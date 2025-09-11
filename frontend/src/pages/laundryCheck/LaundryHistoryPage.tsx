@@ -28,15 +28,10 @@ import type { OrderDetail, HistoryEntry } from "../../interfaces/LaundryCheck/ty
 
 const { Title, Text } = Typography;
 
-/* =========================
- * Helpers (ไว้ในไฟล์นี้)
- * ========================= */
-
-// ใช้ key จาก ID ถ้ามี; ถ้าไม่มีใช้ชื่อเป็นตัวคีย์ (normalize ชื่อเป็น lower-case)
+// helper รวมจำนวนแบบไม่ซ้ำ (เหมือนเดิม)
 const clothKey = (name?: string, id?: number) =>
   id ? `id:${id}` : `name:${(name || "").trim().toLowerCase()}`;
 
-/** รวมจำนวนชิ้นจากรายการในออเดอร์ (จาก backend) แบบ "ไม่นับซ้ำประเภทผ้า" — เอาค่าสูงสุดต่อประเภทผ้า */
 const sumUniqueQtyFromOrderItems = (
   items: Array<{ ClothTypeID?: number; ClothTypeName?: string; Quantity?: number }>
 ): number => {
@@ -82,7 +77,6 @@ const LaundryHistoryPage: React.FC = () => {
 
   const [billOpen, setBillOpen] = useState(false);
 
-  // ใช้สูตรเดียวกับหน้าหลัก (แต่วาง helper ไว้ในไฟล์นี้)
   const totalUniqueCloth = useMemo(
     () => (detail?.Items ? sumUniqueQtyFromOrderItems(detail.Items) : 0),
     [detail]
@@ -123,37 +117,6 @@ const LaundryHistoryPage: React.FC = () => {
           .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0 16px; }
           .no-print { display: none !important; }
         }
-        .page-header {
-          background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
-          border: 1px solid #bfdbfe;
-          border-radius: 14px;
-          padding: 16px 18px;
-        }
-        .history-card {
-          border-radius: 14px;
-          box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08);
-          border: 1px solid #e5e7eb;
-        }
-        .soft-divider {
-          margin: 12px 0 16px;
-          border-top: 1px dashed #e2e8f0;
-        }
-        .table-elegant .ant-table-thead > tr > th {
-          background: #f1f5ff;
-          border-color: #e5e7eb !important;
-          font-weight: 600;
-        }
-        .table-elegant .ant-table-tbody > tr:hover > td {
-          background: #f8fbff !important;
-        }
-        .pill {
-          background: #eff6ff;
-          border: 1px solid #bfdbfe;
-          padding: 6px 10px;
-          border-radius: 999px;
-          font-size: 12px;
-          color: #1d4ed8;
-        }
       `}</style>
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -162,7 +125,6 @@ const LaundryHistoryPage: React.FC = () => {
           <Title level={4} style={{ margin: 0, color: "#0f172a" }}>
             ประวัติการรับผ้า
           </Title>
-          <span className="pill">ตรวจสอบย้อนหลัง • ออกบิลพิมพ์ได้</span>
           <div className="ml-auto flex items-center gap-6">
             <Tooltip title="กลับหน้าก่อนหน้า">
               <Button icon={<RollbackOutlined />} onClick={() => navigate(-1)} size="middle" shape="round">
@@ -203,19 +165,13 @@ const LaundryHistoryPage: React.FC = () => {
             </Button>
           </Space>
 
-          <Divider className="soft-divider" />
+          <Divider />
 
           {!detail ? (
             <Alert type="info" showIcon message="กรอกเลขที่ออเดอร์ แล้วกด 'ดึงประวัติ' เพื่อดูรายการย้อนหลัง" />
           ) : (
             <>
-              {/* Order Header */}
-              <Descriptions
-                bordered
-                column={2}
-                size="small"
-                style={{ marginBottom: 12, borderRadius: 10, overflow: "hidden" }}
-              >
+              <Descriptions bordered column={2} size="small" style={{ marginBottom: 12 }}>
                 <Descriptions.Item label="เลขที่ออเดอร์">
                   <Tag color="blue" style={{ fontSize: 12 }}>
                     #{detail.ID}
@@ -244,22 +200,15 @@ const LaundryHistoryPage: React.FC = () => {
                 )}
               </Descriptions>
 
-              {/* History table */}
               <Title level={5} style={{ marginTop: 10 }}>
                 ประวัติ
               </Title>
               <Table<HistoryEntry>
-                className="table-elegant"
                 rowKey={(r) => String(r.ID)}
                 dataSource={history.map((h, idx) => ({ ...h, No: idx + 1 }))}
                 columns={[
                   { title: "ลำดับ", dataIndex: "No", width: 80, align: "center" as const },
-                  {
-                    title: "เวลา",
-                    dataIndex: "RecordedAt",
-                    width: 220,
-                    render: (v) => formatDate(v),
-                  },
+                  { title: "เวลา", dataIndex: "RecordedAt", width: 220, render: (v) => formatDate(v) },
                   { title: "ประเภทผ้า", dataIndex: "ClothTypeName" },
                   { title: "บริการ", dataIndex: "ServiceType", width: 180 },
                   {
@@ -270,11 +219,11 @@ const LaundryHistoryPage: React.FC = () => {
                       const label = a === "ADD" ? "เพิ่ม" : a === "EDIT" ? "แก้ไข" : "ลบ";
                       const color = a === "ADD" ? "green" : a === "EDIT" ? "gold" : "red";
                       return <Tag color={color}>{label}</Tag>;
-                    }
+                    },
                   },
                   {
-                    title: "จำนวน (ปัจจุบัน)",
-                    dataIndex: "CurrentQuantity",   // 👈 ใช้ค่า BE ตรง ๆ
+                    title: "จำนวนหลังรายการ", // ✅ ยอดคงเหลือหลังเหตุการณ์
+                    dataIndex: "AfterQuantity",
                     width: 160,
                     align: "right" as const,
                   },
@@ -284,7 +233,6 @@ const LaundryHistoryPage: React.FC = () => {
                 pagination={{ pageSize: 10, showSizeChanger: false }}
               />
 
-              {/* Quick link */}
               <div className="mt-3">
                 <Tooltip title="เปิดหน้า รับผ้า/แยกผ้า ของออเดอร์นี้">
                   <Button
@@ -301,7 +249,7 @@ const LaundryHistoryPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Modal ใบเสร็จ (ใช้สูตรเดียวกับหน้าหลัก) */}
+      {/* Modal ใบเสร็จ */}
       <Modal
         title={<span>ใบเสร็จรับผ้า — <Text type="secondary">{detail?.ID ?? "-"}</Text></span>}
         open={billOpen}
@@ -319,7 +267,6 @@ const LaundryHistoryPage: React.FC = () => {
             {detail && <Tag color="blue">#{detail.ID}</Tag>}
           </div>
           <Divider style={{ margin: "8px 0" }} />
-
           <Descriptions size="small" column={2} bordered>
             <Descriptions.Item label="เลขที่ออเดอร์">{detail?.ID}</Descriptions.Item>
             <Descriptions.Item label="วันที่สร้าง">{formatDate(detail?.CreatedAt)}</Descriptions.Item>
@@ -362,15 +309,6 @@ const LaundryHistoryPage: React.FC = () => {
               </Descriptions.Item>
             </Descriptions>
           </div>
-
-          {detail?.StaffNote ? (
-            <>
-              <Divider style={{ margin: "12px 0" }} />
-              <Descriptions size="small" column={1} bordered>
-                <Descriptions.Item label="หมายเหตุ (พนักงาน)">{detail.StaffNote}</Descriptions.Item>
-              </Descriptions>
-            </>
-          ) : null}
         </div>
       </Modal>
     </EmployeeSidebar>
