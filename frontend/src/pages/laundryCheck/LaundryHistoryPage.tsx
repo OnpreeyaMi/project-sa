@@ -60,13 +60,13 @@ const LaundryHistoryPage: React.FC = () => {
   // ใบเสร็จ (พิมพ์)
   const [billOpen, setBillOpen] = useState(false);
 
-  // รวมจากประวัติ (จริง)
-  const totalQtyHistory = useMemo(
-    () => history.reduce((s, h) => s + (h.Quantity || 0), 0),
-    [history]
+  // ยอด “ปัจจุบัน” ของออเดอร์ (ใช้ในใบเสร็จ)
+  const currentTotal = useMemo(
+    () => detail?.TotalQuantity ?? (detail?.Items?.reduce((s, x) => s + (x.Quantity || 0), 0) || 0),
+    [detail]
   );
 
-  // เวลาจากประวัติล่าสุด (ไว้โชว์ในบิลแทนการแสดงทั้งตารางประวัติ)
+  // เวลาล่าสุดจากประวัติ (ไว้โชว์ในบิล)
   const latestUpdatedAt = useMemo(() => {
     if (!history.length) return null;
     const max = history.reduce<Date | null>((acc, h) => {
@@ -223,16 +223,7 @@ const LaundryHistoryPage: React.FC = () => {
                 )}
               </Descriptions>
 
-              {/* Summary chips */}
-              <Space size="small" style={{ marginBottom: 8 }}>
-                <span className="pill">จำนวนครั้งที่บันทึก: {history.length}</span>
-                <span className="pill">รวมชิ้น (จากประวัติ): {totalQtyHistory}</span>
-                <span className="pill">
-                  รวมชิ้น (จากรายการปัจจุบัน): {detail.TotalQuantity ?? detail.Items.reduce((s, x) => s + (x.Quantity || 0), 0)}
-                </span>
-              </Space>
-
-              {/* History table (ยังแสดงบนหน้า แต่จะไม่พิมพ์ลงบิล) */}
+              {/* History table */}
               <Title level={5} style={{ marginTop: 10 }}>
                 ประวัติ
               </Title>
@@ -250,7 +241,20 @@ const LaundryHistoryPage: React.FC = () => {
                   },
                   { title: "ประเภทผ้า", dataIndex: "ClothTypeName" },
                   { title: "บริการ", dataIndex: "ServiceType", width: 180 },
-                  { title: "จำนวน", dataIndex: "Quantity", width: 120, align: "right" as const },
+                  {
+                    title: "สถานะ",
+                    width: 120,
+                    render: (_, r) =>
+                      r.Quantity < 0 ? <Tag color="error">ลบ</Tag> : <Tag color="success">เพิ่ม</Tag>,
+                  },
+                  {
+                    title: "จำนวน",
+                    dataIndex: "Quantity",
+                    width: 120,
+                    align: "right" as const,
+                    render: (q: number) =>
+                      q < 0 ? <span style={{ color: "#dc2626" }}>{q}</span> : <span>{q}</span>,
+                  },
                 ]}
                 size="middle"
                 bordered
@@ -274,7 +278,7 @@ const LaundryHistoryPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Modal ใบเสร็จสำหรับพิมพ์ — ไม่แสดง 'ประวัติ' ทั้งตาราง, แสดงแค่ข้อมูลล่าสุด */}
+      {/* Modal ใบเสร็จสำหรับพิมพ์ — ไม่แสดงตารางประวัติ, แสดงเฉพาะรายการปัจจุบัน + อัปเดตล่าสุด */}
       <Modal
         title={<span>ใบเสร็จรับผ้า — <Text type="secondary">{detail?.ID ?? "-"}</Text></span>}
         open={billOpen}
@@ -313,7 +317,7 @@ const LaundryHistoryPage: React.FC = () => {
           </Descriptions>
 
           <Divider style={{ margin: "12px 0" }} />
-          {/* แสดงเฉพาะรายการปัจจุบัน (ไม่เอาตารางประวัติ) */}
+          {/* เฉพาะรายการปัจจุบัน */}
           <Table
             dataSource={(detail?.Items || []).map((it, idx) => ({ key: it.ID, No: idx + 1, ...it }))}
             columns={[
@@ -325,20 +329,18 @@ const LaundryHistoryPage: React.FC = () => {
             pagination={false}
             size="small"
           />
-
+          
           <div className="mt-4 flex justify-end">
             <Descriptions column={1} size="small" bordered>
               <Descriptions.Item label="รวมจำนวนรายการ">
                 {detail?.TotalItems ?? (detail?.Items?.length || 0)}
               </Descriptions.Item>
               <Descriptions.Item label="รวมจำนวนชิ้น">
-                {detail?.TotalQuantity ?? (detail?.Items?.reduce((s, x) => s + (x.Quantity || 0), 0) || 0)}
+                {currentTotal}
               </Descriptions.Item>
             </Descriptions>
           </div>
 
-          {/* ไม่แสดงตารางประวัติในบิลตามคำขอ */}
-          {/* หมายเหตุพนักงาน (ถ้ามี) */}
           {detail?.StaffNote ? (
             <>
               <Divider style={{ margin: "12px 0" }} />
