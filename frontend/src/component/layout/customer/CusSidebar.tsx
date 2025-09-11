@@ -49,12 +49,6 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       onClick: () => navigate("/customer/payment"),
     },
     {
-      key: "/customer/status",
-      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>สถานะ</span>,
-      onClick: () => navigate("/customer/status"),
-    },
-    {
       key: "/customer/history",
       icon: <FaHistory style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>ประวัติ</span>,
