@@ -51,9 +51,9 @@ func GetLatestOrderForCustomer(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"orderId":   order.ID,
-		"status":    order.Status,     // ส่งเพิ่มได้ตามต้องใช้
-		"createdAt": order.CreatedAt,  // เผื่อเอาไปโชว์
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"orderId":   order.ID,
+	// 	"status":    order.Status,     // ส่งเพิ่มได้ตามต้องใช้
+	// 	"createdAt": order.CreatedAt,  // เผื่อเอาไปโชว์
+	// })
 }
