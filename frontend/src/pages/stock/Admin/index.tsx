@@ -59,7 +59,6 @@ const StockAdminPage: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [showDeletedModal, setShowDeletedModal] = useState(false);
   // State สำหรับสินค้าที่ถูกลบจาก backend
   const [deletedItems, setDeletedItems] = useState<StockItem[]>([]);
   const navigate = useNavigate();
@@ -69,16 +68,6 @@ const StockAdminPage: React.FC = () => {
     fetchUsageHistory();
     // ดึงข้อมูลครั้งเดียวตอน mount ไม่เกิด loop
   }, []);
-
-  // ฟังก์ชันดึงสินค้าที่ถูกลบจาก backend
-  const fetchDeletedItems = async () => {
-    try {
-      const res = await getDeletedDetergents();
-      setDeletedItems(res.data || []);
-    } catch (err) {
-      message.error('โหลดรายการสินค้าที่ถูกลบไม่สำเร็จ');
-    }
-  };
 
   const fetchStockData = async () => {
     try {

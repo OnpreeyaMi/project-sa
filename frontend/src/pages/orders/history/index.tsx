@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
-import { Card, Tag, Button, Spin, message } from "antd";
+import { Tag, Button, Spin, message, Card as AntCard } from "antd";
 import { fetchOrderHistories } from "../../../services/orderService";
 import type { OrderHistory } from "../../../interfaces/types";
 import dayjs from "dayjs";
+import iconWashing from '../../../assets/iconWashing.png';
 
 const HistoryPage: React.FC = () => {
   const [data, setData] = useState<OrderHistory[]>([]);
@@ -34,60 +35,63 @@ const HistoryPage: React.FC = () => {
 
   return (
     <CustomerSidebar>
-      <h1 style={{ textAlign: "left", marginTop: 20, marginBottom: 20, fontSize: "20px" }}>
-        ประวัติการสั่งซื้อ
-      </h1>
-      <div style={{ width: "100%", maxWidth: 600, margin: "0 auto" }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 0' }}>
+        <div style={{ marginBottom: 24 }}>
+        </div>
         {loading ? (
           <Spin tip="กำลังโหลด..." />
         ) : (
-          data.map((item) => {
-            const order = item.Order || {};
+          data.map((item, idx) => {
+            const order = item || {};
             return (
-              <Card
-                key={item.key}
+              <AntCard
+                key={order.id || idx}
                 hoverable
-                style={{ marginBottom: 18, borderRadius: 12, boxShadow: "0 2px 8px #eee", textAlign: "left" }}
-                bodyStyle={{ padding: 18 }}
+                style={{ marginBottom: 32, borderRadius: 16, boxShadow: '0 2px 8px #eee' }}
+                bodyStyle={{ padding: 24 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ marginBottom: 4 }}>
-                      <b>วันที่สั่งซื้อ:</b> {dayjs(item.CreatedAt).format("DD/MM/YYYY")}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                    <Tag color="#eee" style={{ fontWeight: 600, fontSize: 18, color: '#888', marginRight: 12 }}>#{order.OrderID || '-'}</Tag>
+                    <div style={{ fontSize: 16, color: '#888', marginRight: 18 }}>
+                      วันที่สั่ง: {item.CreatedAt ? dayjs(item.CreatedAt).format('DD/MM/YYYY') : '-'}
                     </div>
-                    <div style={{ color: "#888", fontSize: 15, marginBottom: 4 }}>
-                      รหัสคำสั่ง: {item.OrderID || "-"}
-                    </div>
-                    <div style={{ marginBottom: 4 }}>
-                      <b>ประเภทบริการ:</b> {order.ServiceTypes && order.ServiceTypes.length > 0
-                        ? order.ServiceTypes.map((st: any) => st.name || st.type || "-").join(", ")
-                        : "-"}
-                    </div>
-                    <div style={{ marginBottom: 4 }}>
-                      <b>น้ำยา:</b> {order.detergents && order.detergents.length > 0
-                        ? order.detergents.map((dt: any) => dt.name || dt.type || "-").join(", ")
-                        : "-"}
-                    </div>
-                    <div style={{ marginBottom: 4 }}>
-                      <b>ราคา:</b> {
-                        order.service_types && order.service_types.length > 0
-                          ? `${order.service_types.reduce((sum: number, st: any) => sum + (st.price || 0), 0)} บาท`
-                          : "-"
+                  </div>
+                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                    <Tag color={item.order?.Payment?.PaymentStatus === 'paid' ? 'green' : item.order?.Payment?.PaymentStatus === 'pending' ? 'orange' : 'default'} style={{ fontWeight: 600, fontSize: 16 }}>
+                      {item.order?.Payment?.PaymentStatus || '-'}
+                    </Tag>
+                    <Tag color={item.Status === 'เสร็จสิ้น' ? 'green' : item.Status === 'กำลังดำเนินการ' ? 'blue' : 'orange'} style={{ fontWeight: 600, fontSize: 16 }}>
+                      {item.Status || '-'}
+                    </Tag>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                  <img src={iconWashing} alt="product" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', background: '#f6f6f6' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>{item.order?.service_types && item.order.service_types.length > 0 ? item.order.service_types.map((st: any) => st.name).join(", ") : '-'}</div>
+                    <div style={{ color: '#888', fontSize: 15 }}>{item.order?.order_note || ''}</div>
+                    <div style={{ color: '#888', fontSize: 15 }}>
+                      ถังที่เลือก: {
+                        item.order?.LaundryProcesses && item.order.LaundryProcesses.length > 0 && item.order.LaundryProcesses[0].Machines && item.order.LaundryProcesses[0].Machines.length > 0
+                          ? item.order.LaundryProcesses[0].Machines.map((m: any) => m.Machine_type).join(", ")
+                          : '-'
                       }
                     </div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ marginBottom: 6 }}>
-                      <Tag color={item.status === "เสร็จสิ้น" ? "green" : item.status === "กำลังดำเนินการ" ? "blue" : "orange"}>
-                        {item.status || "-"}
-                      </Tag>
+                    <div style={{ color: '#888', fontSize: 15 }}>น้ำยา: {item.order?.detergents && item.order.detergents.length > 0 ? item.order.detergents.map((dt: any) => dt.name).join(", ") : '-'}</div>
+                    <div style={{ width: '100%', height: 6, background: '#eee', borderRadius: 4, margin: '8px 0' }}>
+                      <div style={{ width: '60%', height: '100%', background: '#ED8A19', borderRadius: 4 }} />
                     </div>
                   </div>
+                  <div style={{ textAlign: 'right', minWidth: 120 }}>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>฿{item.order?.service_types && item.order.service_types.length > 0 ? item.order.service_types.reduce((sum: number, st: any) => sum + (st.price || 0), 0) : '-'}</div>
+                    <Tag color={(item.Status === "เสร็จสิ้น" ? "green" : item.Status === "กำลังดำเนินการ" ? "blue" : "orange")} style={{ fontWeight: 600, fontSize: 15 }}>
+                      {item.Status || "-"}
+                    </Tag>
+                    
+                  </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                  <Button type="primary" ghost>ซื้ออีกครั้ง</Button>
-                </div>
-              </Card>
+              </AntCard>
             );
           })
         )}
