@@ -168,27 +168,6 @@ const OrderDetail: React.FC = () => {
   if (loading) return <p>กำลังโหลด...</p>;
   if (!order) return <p>ไม่พบข้อมูลออเดอร์</p>;
 
-  // ยืนยันอัปเดตสถานะ + หมายเหตุ
-  const confirmStatusUpdate = () => {
-    if (!order || !order.LaundryProcesses?.length || !confirmModal.newStatus) return;
-    const latestProcessId = order.LaundryProcesses[order.LaundryProcesses.length - 1].ID;
-    orderdeailService.updateStatus(latestProcessId, confirmModal.newStatus, statusNote)
-      .then(updated => {
-        setOrder((prev: any) => ({
-          ...prev,
-          LaundryProcesses: prev.LaundryProcesses.map((p: any) =>
-            p.ID === latestProcessId ? { ...p, ...updated } : p
-          ),
-        }));
-        message.success(`✅ อัปเดตสถานะเป็น: ${confirmModal.newStatus}`);
-      })
-      .catch(() => message.error("❌ อัปเดตไม่สำเร็จ"))
-      .finally(() => setConfirmModal({ open: false, newStatus: null }));
-  };
-
-  if (loading) return <p>กำลังโหลด...</p>;
-  if (!order) return <p>ไม่พบข้อมูลออเดอร์</p>;
-
   return (
     <EmployeeSidebar>
       <div className="p-6">

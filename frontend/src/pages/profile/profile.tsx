@@ -44,7 +44,7 @@ const Profile: React.FC = () => {
   const [addressEdit, setAddressEdit] = useState<AddressVM | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // -------- Helpers --------
+  // ------- Helpers -------
   const asAddrVM = (raw: any): AddressVM => ({
     id: raw.ID ?? raw.id,
     detail: raw.AddressDetails ?? raw.detail ?? "",
@@ -53,24 +53,26 @@ const Profile: React.FC = () => {
     isDefault: Boolean(raw.IsDefault ?? raw.isDefault ?? false),
   });
 
+  const hydrateFromContext = () => {
+    const cust = user?.customer || JSON.parse(localStorage.getItem("user") || "{}")?.customer;
+    if (!cust) return;
+
+    form.setFieldsValue({
+      firstName: cust.firstName,
+      lastName: cust.lastName,
+      phone: cust.phone,
+      gender: cust.gender?.id,
+      email: user?.email ?? "",
+    });
+    setAddresses((cust.addresses || []).map(asAddrVM));
+  };
+
   const loadMyProfile = async () => {
     if (!token) return;
     try {
       setLoading(true);
-      await refreshCustomer(); // อัปเดต context จาก /customer/profile
-      const cust = (user?.customer ||
-        JSON.parse(localStorage.getItem("user") || "{}")?.customer) as any;
-
-      if (cust) {
-        form.setFieldsValue({
-          firstName: cust.firstName,
-          lastName: cust.lastName,
-          phone: cust.phone,
-          gender: cust.gender?.id,
-          email: user?.email ?? "",
-        });
-        setAddresses((cust.addresses || []).map(asAddrVM));
-      }
+      await refreshCustomer(); // ดึง /customer/profile เก็บเข้า context
+      hydrateFromContext();
     } catch (e) {
       console.error(e);
       message.error("โหลดข้อมูลโปรไฟล์ไม่สำเร็จ");
@@ -78,6 +80,11 @@ const Profile: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    hydrateFromContext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     loadMyProfile();
@@ -89,7 +96,7 @@ const Profile: React.FC = () => {
     if (!token) return;
     try {
       setLoading(true);
-      // Backend Go มัก bind PascalCase
+      // Backend Go ควรรับ PascalCase
       await axios.put(
         `${API_BASE}/customer/profile`,
         {
@@ -103,7 +110,7 @@ const Profile: React.FC = () => {
       setEditMode(false);
       await loadMyProfile();
       message.success("บันทึกข้อมูลส่วนตัวแล้ว");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       Modal.error({ title: "บันทึกข้อมูลไม่สำเร็จ" });
     } finally {
@@ -168,11 +175,9 @@ const Profile: React.FC = () => {
         }
       },
     });
-    setEditPosition(addr.latlng);
-    setEditModalVisible(true);
   };
 
-  // ----- ตั้งค่าเป็นที่อยู่หลัก -----
+  // ----- ตั้งเป็นที่อยู่หลัก -----
   const handleSetMain = async (id: number) => {
     if (!token) return;
     try {
@@ -209,14 +214,7 @@ const Profile: React.FC = () => {
           </Card>
 
           {/* ส่วนล่าง: รายการที่อยู่ */}
-          <Card
-            title={
-              <span>
-                <HomeOutlined /> ที่อยู่ของฉัน
-              </span>
-            }
-            style={{ borderRadius: 16, boxShadow: "0 2px 8px #f0f1f2" }}
-          >
+          <Card title={<span><HomeOutlined /> ที่อยู่ของฉัน</span>} style={{ borderRadius: 16, boxShadow: "0 2px 8px #f0f1f2" }}>
             <List
               itemLayout="horizontal"
               dataSource={addresses}
@@ -224,30 +222,14 @@ const Profile: React.FC = () => {
               renderItem={(addr) => (
                 <List.Item
                   actions={[
-                    <Button
-                      key="edit"
-                      icon={<EditOutlined />}
-                      type="link"
-                      onClick={() => {
-                        setAddressEdit(addr);
-                        setAddressModal(true);
-                      }}
-                    >
+                    <Button key="edit" icon={<EditOutlined />} type="link" onClick={() => { setAddressEdit(addr); setAddressModal(true); }}>
                       แก้ไข
                     </Button>,
-                    <Button
-                      key="delete"
-                      icon={<DeleteOutlined />}
-                      type="link"
-                      danger
-                      onClick={() => handleDeleteAddress(addr.id)}
-                    >
+                    <Button key="delete" icon={<DeleteOutlined />} type="link" danger onClick={() => handleDeleteAddress(addr.id)}>
                       ลบ
                     </Button>,
                     addr.isDefault ? (
-                      <Tag key="main" color="blue">
-                        ที่อยู่หลัก
-                      </Tag>
+                      <Tag key="main" color="blue">ที่อยู่หลัก</Tag>
                     ) : (
                       <Button key="set-main" type="link" onClick={() => handleSetMain(addr.id)}>
                         ตั้งเป็นที่อยู่หลัก
@@ -305,25 +287,13 @@ const Profile: React.FC = () => {
               }
               onFinish={handleAddressSubmit}
             >
-              <Form.Item
-                label="รายละเอียดที่อยู่"
-                name="detail"
-                rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
-              >
+              <Form.Item label="รายละเอียดที่อยู่" name="detail" rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}>
                 <Input />
               </Form.Item>
-              <Form.Item
-                label="Latitude"
-                name="latitude"
-                rules={[{ required: true, message: "กรุณากรอก Latitude" }]}
-              >
+              <Form.Item label="Latitude" name="latitude" rules={[{ required: true, message: "กรุณากรอก Latitude" }]}>
                 <Input />
               </Form.Item>
-              <Form.Item
-                label="Longitude"
-                name="longitude"
-                rules={[{ required: true, message: "กรุณากรอก Longitude" }]}
-              >
+              <Form.Item label="Longitude" name="longitude" rules={[{ required: true, message: "กรุณากรอก Longitude" }]}>
                 <Input />
               </Form.Item>
               <Space>
