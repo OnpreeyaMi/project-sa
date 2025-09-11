@@ -118,12 +118,7 @@ func MockData() {
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
-<<<<<<< HEAD
 	// Genders
-=======
-
-	// --- Genders ---
->>>>>>> b70f88cba87f12bf976b9aa61ab650e6269c54ee
 	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
@@ -137,20 +132,7 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
-<<<<<<< HEAD
 	// Service Types
-=======
-	// // --- Address ---
-	// addresses := []entity.Address{
-	// 	{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-	// 	{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	// }
-	// for _, a := range addresses {
-	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
-	// }
-
-	// --- ServiceTypes ---
->>>>>>> b70f88cba87f12bf976b9aa61ab650e6269c54ee
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
@@ -239,10 +221,7 @@ func MockData() {
 	}
 	for _, m := range machines {
 		DB.FirstOrCreate(&m, entity.Machine{Machine_type: m.Machine_type, Capacity_kg: m.Capacity_kg, Status: m.Status})
-<<<<<<< HEAD
-=======
 	}
-
 	// --- Positions (ตัวอย่าง) ---
 	positions := []entity.Position{
 		{PositionName: "พนักงานซักผ้า"},
@@ -286,7 +265,6 @@ func MockData() {
 			PositionID:       2,
 			EmployeeStatusID: 1,
 		},
->>>>>>> b70f88cba87f12bf976b9aa61ab650e6269c54ee
 	}
 	for _, e := range emps {
 		DB.FirstOrCreate(&e, entity.Employee{Code: e.Code})
