@@ -11,41 +11,6 @@ const StatusUpdate: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
-<<<<<<< HEAD
-=======
-
-  useEffect(() => {
-    fetch("http://localhost:8000/ordersdetails")
-      .then(res => res.json())
-      .then(data => {
-        setOrders(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching orders:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  // Summary statistics (mocked for now, can be calculated from orders)
-  const safeOrders = Array.isArray(orders) ? orders : [];
-  const pending = safeOrders.filter(o => o.status === "รอดำเนินการ").length;
-  const washing = safeOrders.filter(o => o.status === "กำลังซัก").length;
-  const drying = safeOrders.filter(o => o.status === "กำลังอบ").length;
-  const completed = safeOrders.filter(o => o.status === "เสร็จสิ้น").length;
-
-  // Filtered data
-  const filteredOrders = useMemo(() => {
-    return safeOrders.filter(order => {
-      const customerName = order.Customer ? `${order.Customer.FirstName} ${order.Customer.LastName}` : "";
-      const matchSearch =
-        order.ID?.toString().includes(searchText) ||
-        customerName.toLowerCase().includes(searchText.toLowerCase());
-      const matchStatus = statusFilter ? order.status === statusFilter : true;
-      return matchSearch && matchStatus;
-    });
-  }, [orders, searchText, statusFilter]);
->>>>>>> e041411a08e6d15d3a09f09f177d01f184310261
 
   useEffect(() => {
     fetch("http://localhost:8000/ordersdetails")
