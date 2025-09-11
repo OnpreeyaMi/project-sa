@@ -12,6 +12,9 @@ import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+
+
+
 const { Header, Sider, Content } = Layout;
 
 
@@ -21,7 +24,7 @@ interface SidebarProps {
 
 const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate();  
   const location = useLocation();
 
   const {

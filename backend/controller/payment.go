@@ -1,66 +1,62 @@
 package controller
 
 import (
-	
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"os"
+	
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/OnpreeyaMi/project-sa/config"
+	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-
-	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/entity" // ← ใช้ path โมดูลจริงของโปรเจกต์คุณ
 )
 
+// ========================= EasySlip verify (ของเดิม) =========================
+
 const easySlipURL = "https://developer.easyslip.com/api/v1/verify"
-
-
 var ErrDuplicateSlip = errors.New("duplicate_slip")
 
-
 type verifySlipIn struct {
-	Base64 string `json:"base64" binding:"required"`
-	OrderID uint `json:"orderId" binding:"required"`
+	Base64 string  `json:"base64" binding:"required"`
+	OrderID uint   `json:"orderId" binding:"required"`
 	Amount float64 `json:"amount" binding:"required"`
 }
 
-
-// Only fields we actually need from EasySlip
 type esVerifyReq struct {
-	Image string `json:"image"`
-	CheckDuplicate bool `json:"checkDuplicate"`
+	Image          string `json:"image"`
+	CheckDuplicate bool   `json:"checkDuplicate"`
 }
-
-
-type esBank struct { ID string `json:"id"` }
-
-
-type esAmount struct { Amount float64 `json:"amount"` }
-
-
+type esBank struct{ ID string `json:"id"` }
+type esAmount struct{ Amount float64 `json:"amount"` }
 type esData struct {
-	TransRef string `json:"transRef"`
-	Country string `json:"country"`
-	Date string `json:"date"` // RFC3339
-	Amount esAmount `json:"amount"`
+	TransRef string   `json:"transRef"`
+	Country  string   `json:"country"`
+	Date     string   `json:"date"` // RFC3339
+	Amount   esAmount `json:"amount"`
 	Receiver struct {
-	Bank esBank `json:"bank"`
+		Bank esBank `json:"bank"`
 	} `json:"receiver"`
 }
-
-
 type esVerifyResp struct {
-	Status int `json:"status"`
-	Message string `json:"message"`
-	Data *esData `json:"data"`
+	Status  int     `json:"status"`
+	Message string  `json:"message"`
+	Data    *esData `json:"data"`
 }
 
+// รายการบริการแบบบาง ไม่ต้องประกอบเป็นข้อความ
+type ServiceItemSlim struct {
+    ServiceTypeID uint    `json:"serviceTypeId"`
+    Type          string  `json:"type"`   // map มาจากชื่อ service ในตาราง ServiceType (เช่น Name/ServiceName)
+    Price         float64 `json:"price"`  // map มาจาก price ในตาราง ServiceType
+}
 
 func stripDataURLPrefix(s string) string {
 	prefixes := []string{
@@ -72,38 +68,36 @@ func stripDataURLPrefix(s string) string {
 	for _, p := range prefixes {
 		if strings.HasPrefix(s, p) {
 			return strings.TrimPrefix(s, p)
-	}
+		}
 	}
 	return s
 }
 
-// ---------- Handler ----------
 func VerifySlipBase64(c *gin.Context) {
-    var in verifySlipIn
-    if err := c.ShouldBindJSON(&in); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	var in verifySlipIn
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	token := strings.TrimSpace(os.Getenv("EASYSLIP_TOKEN"))
 	if token == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server_not_configured"})
 		return
 	}
 
-    // 1) normalize base64 (รองรับกรณีส่งเป็น Data URL)
-    raw := stripDataURLPrefix(strings.TrimSpace(in.Base64))
+	// 1) Normalize base64
+	raw := stripDataURLPrefix(strings.TrimSpace(in.Base64))
 	if len(raw) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "empty_image"})
 		return
 	}
-
-    // 2) (แนะนำ) จำกัดขนาดเพื่อกัน payload ใหญ่ผิดปกติ (~2MB base64 ≈ 1.5MB ไฟล์)
-    if len(raw) > 2*1024*1024 { // ~2MB Base64 ≈ 1.5MB image
+	// 2) Size guard
+	if len(raw) > 2*1024*1024 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "image_too_large"})
 		return
 	}
 
-	// 3)เรียก EasySlip
+	// 3) Call EasySlip
 	reqBody, _ := json.Marshal(esVerifyReq{Image: raw, CheckDuplicate: true})
 	httpReq, _ := http.NewRequest("POST", easySlipURL, bytes.NewBuffer(reqBody))
 	httpReq.Header.Set("Content-Type", "application/json")
@@ -116,14 +110,12 @@ func VerifySlipBase64(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-
 	var out esVerifyResp
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "easyslip_bad_response"})
 		return
 	}
 	if out.Status != 200 || out.Data == nil {
-		// Pass through message if available
 		if strings.Contains(strings.ToLower(out.Message), "duplicate") {
 			c.JSON(http.StatusConflict, gin.H{"error": "duplicate_slip"})
 			return
@@ -131,104 +123,321 @@ func VerifySlipBase64(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "easyslip_verify_failed", "message": out.Message})
 		return
 	}
-			
 
-	// 3) Bank must match SHOP_BANK_ID
-	// wantBank := strings.TrimSpace(os.Getenv("SHOP_BANK_ID"))
-	// if wantBank == "" { wantBank = "014" } // default SCB
-
-
-	// gotBank := strings.TrimSpace(out.Data.Receiver.Bank.ID)
-	// if gotBank == "" || gotBank != wantBank {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "receiver_bank_mismatch", "want": wantBank, "got": gotBank})
-	// 	return
-	// }
-
-	// 4) Amount must match (with small tolerance)
-	ea := out.Data.Amount.Amount // float64 from EasySlip
+	// 4) Amount must match (±0.01)
+	ea := out.Data.Amount.Amount
 	if math.Abs(ea-in.Amount) > 0.01 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "amount_mismatch"})
 		return
 	}
-	vamount := int(math.Round(ea))               // สำหรับเก็บลงตาราง (int บาทเต็ม)
-	totalInt := int(math.Round(in.Amount))       // สำหรับ TotalAmount ตอนสร้างแถว
+	vamount := int(math.Round(ea))
+	totalInt := int(math.Round(in.Amount))
 
-		
-	// ---------- บันทึกลงตาราง payments ----------
-	// กันซ้ำโดย Unique Index ที่ TransRef
+	// 5) Save to DB (upsert by order, unique by trans_ref)
 	db := config.DB
 	var savedPaymentID uint
 	var paidAtISO string
-	
+
 	txErr := db.Transaction(func(tx *gorm.DB) error {
 		var pay entity.Payment
-		// หา payment ของออเดอร์นี้ (ออเดอร์ 1 รายการมี 1 payment)
 		if err := tx.Where("order_id = ?", in.OrderID).First(&pay).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				pay = entity.Payment{
 					OrderID:       in.OrderID,
 					PaymentType:   "PromptPay",
-					TotalAmount:   totalInt,        // ← เดิมคุณยัด float ลง int ทำให้คอมไพล์ไม่ผ่าน
+					TotalAmount:   totalInt,
 					PaymentStatus: "pending",
 				}
 				if err := tx.Create(&pay).Error; err != nil {
 					return err
 				}
-			} else {return err}
+			} else {
+				return err
+			}
 		}
 
-
-		// parse time จาก EasySlip
+		// parse slip time
 		var slipTime *time.Time
 		if t, err := time.Parse(time.RFC3339, out.Data.Date); err == nil {
 			slipTime = &t
 		}
+		now := time.Now()
 
 		pay.TransRef = out.Data.TransRef
-		pay.ReceiverBankID = out.Data.Receiver.Bank.ID
-		pay.CountryCode = out.Data.Country
+		// pay.ReceiverBankID = out.Data.Receiver.Bank.ID
+		// pay.CountryCode = out.Data.Country
 		pay.VerifiedAmount = vamount
 		pay.SlipDate = slipTime
-		now := time.Now()
 		pay.SlipVerifiedAt = &now
 		pay.PaymentStatus = "paid"
 		pay.CheckPaymentB64 = raw
 
 		if err := tx.Save(&pay).Error; err != nil {
-			// ถ้า unique ทับ (trans_ref ซ้ำ) => duplicate
-			if strings.Contains(err.Error(), "UNIQUE") || strings.Contains(strings.ToLower(err.Error()), "unique") {
-				return errors.New("duplicate_slip")
+			// unique trans_ref
+			if strings.Contains(strings.ToLower(err.Error()), "unique") {
+				return ErrDuplicateSlip
 			}
 			return err
 		}
-		// ✅ เซ็ตค่าที่จะใช้ตอบกลับ
+
 		savedPaymentID = pay.ID
 		if pay.SlipVerifiedAt != nil {
 			paidAtISO = pay.SlipVerifiedAt.Format(time.RFC3339)
 		}
 		return nil
 	})
-	if txErr != nil {                                                               //เพื่อกัน response หลุดเป็น 200 และกันข้อมูลภายในรั่วออกไป
-		if txErr.Error() == "duplicate_slip" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "duplicate_slip"})
+
+	if txErr != nil {
+		if errors.Is(txErr, ErrDuplicateSlip) {
+			c.JSON(http.StatusConflict, gin.H{"error": "duplicate_slip"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db_error"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "save_payment_failed"})
 		return
 	}
-	// 6) Respond to frontend — keep it lean (no Base64 in response)
+
 	c.JSON(http.StatusOK, gin.H{
-		"ok": true,
-		"message": "ตรวจสอบสลิปสำเร็จ",
-		"transRef": out.Data.TransRef,
-		"date": out.Data.Date,
-		"amount": ea,
-		"paymentId": savedPaymentID,
-		"orderId": in.OrderID,
-		"paidAt": paidAtISO,
+		"status":         "ok",
+		"paymentId":      savedPaymentID,
+		"orderId":        in.OrderID,
+		"transRef":       out.Data.TransRef,
+		"paidAt":         paidAtISO,
+		"verifiedAmount": vamount,
 	})
-	
 }
 
+// ========================= Checkout / Promotions (ใหม่) =========================
+
+// DTO ให้สอดคล้องกับคอมโพเนนต์หน้า UI
+type CheckoutResp struct {
+	Customer struct {
+		FullName string `json:"fullName"`
+		Phone    string `json:"phone"`
+	} `json:"customer"`
+	Address struct {
+		Text string `json:"text"`
+	} `json:"address"`
+	Order struct {
+		ID        uint   `json:"id"`
+		Summary   string `json:"summary"`
+		Subtotal  int    `json:"subtotal"`
+		Paid      bool   `json:"paid"`
+		PaymentID *uint  `json:"paymentId,omitempty"`
+		Items     []ServiceItemSlim `json:"items"`
+	} `json:"order"`
+	Promotions []PromoView `json:"promotions"`
+	BestID     *string     `json:"bestId,omitempty"`
+}
+
+type PromoView struct {
+	ID            string  `json:"id"`
+	Code          string  `json:"code"`
+	Title         string  `json:"title"`
+	Description   string  `json:"description,omitempty"`
+	DiscountType  string  `json:"discountType"` // "percent" | "amount"
+	DiscountValue float64 `json:"discountValue"`
+	MinSpend      *int    `json:"minSpend,omitempty"`
+	ExpiresAt     string  `json:"expiresAt,omitempty"` // ISO-8601
+	Disabled      bool    `json:"disabled,omitempty"`
+	Badge         string  `json:"badge,omitempty"`
+}
+
+// แปลง Address ใดๆ ให้เป็น single line ด้วย reflection เพื่อกันกรณี field ไม่ตรงชื่อ
+// func addressToLine(a *entity.Address) string {
+// 	if a == nil {
+// 		return ""
+// 	}
+// 	v := reflect.ValueOf(a).Elem()
+// 	get := func(name string) string {
+// 		f := v.FieldByName(name)
+// 		if f.IsValid() && f.Kind() == reflect.String {
+// 			return f.String()
+// 		}
+// 		return ""
+// 	}
+// 	parts := []string{
+// 		get("AddressLine"), get("Detail"),
+// 		get("Subdistrict"), get("District"),
+// 		get("Province"), get("ZipCode"),
+// 	}
+// 	out := []string{}
+// 	for _, p := range parts {
+// 		p = strings.TrimSpace(p)
+// 		if p != "" {
+// 			out = append(out, p)
+// 		}
+// 	}
+// 	return strings.Join(out, " ")
+// }
+
+// ดึงค่าจากเงื่อนไข MIN_SPEND / CODE ฯลฯ
+func parseMinSpend(p *entity.Promotion) *int {
+	for _, c := range p.PromotionCondition {
+		if strings.EqualFold(c.ConditionType, "MIN_SPEND") {
+			if n, err := strconv.Atoi(strings.TrimSpace(c.Value)); err == nil {
+				return &n
+			}
+		}
+	}
+	return nil
+}
+func parseCode(p *entity.Promotion) string {
+	for _, c := range p.PromotionCondition {
+		if strings.EqualFold(c.ConditionType, "CODE") {
+			v := strings.TrimSpace(c.Value)
+			if v != "" {
+				return v
+			}
+		}
+	}
+	return fmt.Sprintf("PROMO%v", p.ID)
+}
+
+// mapping ประเภทส่วนลด (ถ้าตาราง DiscountType เป็น 1=percent, 2=amount)
+// *หากโปรเจ็กต์คุณใช้ mapping อื่น ปรับให้ตรงได้เลย*
+func mapDiscountType(p *entity.Promotion) string {
+	if p.DiscountTypeID == 1 {
+		return "percent"
+	}
+	return "amount"
+}
+
+// คำนวณส่วนลดตามยอดและโปร
+func computeDiscount(subtotal int, pv PromoView) int {
+	if pv.MinSpend != nil && subtotal < *pv.MinSpend {
+		return 0
+	}
+	if pv.DiscountType == "amount" {
+		if pv.DiscountValue <= 0 {
+			return 0
+		}
+		off := int(math.Round(pv.DiscountValue))
+		if off > subtotal {
+			return subtotal
+		}
+		return off
+	}
+	// percent
+	if pv.DiscountValue <= 0 {
+		return 0
+	}
+	off := int(math.Round(float64(subtotal) * (pv.DiscountValue / 100.0)))
+	if off > subtotal {
+		return subtotal
+	}
+	return off
+}
+
+// GET /payment/checkout/:orderId
+// ดึงข้อมูลสรุปหน้าเช็คเอาต์: ลูกค้า/ที่อยู่/ออร์เดอร์/โปรโมชัน
+func GetCheckoutData(c *gin.Context) {
+	id := c.Param("orderId")
+	var order entity.Order
+	if err := config.DB.
+		Preload("Customer").
+		Preload("Address").
+		Preload("Payment").
+		Preload("ServiceTypes", func(db *gorm.DB) *gorm.DB {
+			// เลือกเฉพาะคอลัมน์ที่ต้องใช้ ลด payload
+			return db.Select("service_types.id", "service_types.type", "service_types.price")
+			// ถ้าชื่อคอลัมน์จริงเป็น ServiceName/Amount:
+			// return db.Select("service_types.id", "service_types.service_name", "service_types.amount")
+		}).
+		First(&order, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "order_not_found"})
+		return
+	}
+
+	// subtotal: ใช้จาก payment.TotalAmount ถ้ามี (ให้สอดคล้อง Payment entity) :contentReference[oaicite:5]{index=5}
+	subtotal := 0
+	var payID *uint
+	paid := false
+	if order.Payment != nil {
+		subtotal = order.Payment.TotalAmount
+		paid = strings.EqualFold(order.Payment.PaymentStatus, "paid")
+		payID = &order.Payment.ID
+	}
 
 
+	resp := CheckoutResp{}
+	// customer
+	if order.Customer != nil {
+		resp.Customer.FullName = strings.TrimSpace(order.Customer.FirstName + " " + order.Customer.LastName) // :contentReference[oaicite:6]{index=6}
+		resp.Customer.Phone = order.Customer.PhoneNumber                                                     // :contentReference[oaicite:7]{index=7}
+	}
+	// address
+	if order.Address != nil {
+    	resp.Address.Text = strings.TrimSpace(order.Address.AddressDetails)
+	} else {
+		resp.Address.Text = ""
+	}
+	// order
+	resp.Order.ID = order.ID
+	resp.Order.Summary = "ออร์เดอร์ #" + fmt.Sprint(order.ID)
+	resp.Order.Subtotal = subtotal
+	resp.Order.Paid = paid
+	resp.Order.PaymentID = payID
+
+	items := make([]ServiceItemSlim, 0, len(order.ServiceTypes))
+    for _, st := range order.ServiceTypes {
+        // แก้ให้ตรง struct จริงของคุณ:
+        name  := st.Type   // หรือ st.ServiceName
+        price := st.Price  // หรือ float64(st.Amount)
+
+        items = append(items, ServiceItemSlim{
+            ServiceTypeID: st.ID,
+            Type:          name,
+            Price:         price,
+        })
+    }
+    resp.Order.Items = items
+	resp.Promotions = nil
+    resp.BestID = nil
+	c.JSON(http.StatusOK, resp)
+}
+
+// // GET /payment/promotions?subtotal=300
+// // ใช้เดี่ยว ๆ กรณีอยากโหลดโปรโมชันตามยอดตะกร้า
+// func ListAvailablePromotions(c *gin.Context) {
+// 	subtotal, _ := strconv.Atoi(c.DefaultQuery("subtotal", "0"))
+
+// 	var promos []entity.Promotion
+// 	now := time.Now()
+// 	if err := config.DB.
+// 		Preload("PromotionCondition").
+// 		Where("status = ? AND start_date <= ? AND end_date >= ?", "active", now, now).
+// 		Find(&promos).Error; err != nil {
+
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "load_promotions_failed"})
+// 		return
+// 	}
+
+// 	out := make([]PromoView, 0, len(promos))
+// 	bestID := ""
+// 	bestOff := -1
+// 	for _, p := range promos {
+// 		pv := PromoView{
+// 			ID:            fmt.Sprint(p.ID),
+// 			Code:          parseCode(&p),
+// 			Title:         p.PromotionName,
+// 			Description:   p.Description,
+// 			DiscountType:  mapDiscountType(&p),
+// 			DiscountValue: float64(p.DiscountValue),
+// 			ExpiresAt:     p.EndDate.Format("2006-01-02"),
+// 		}
+// 		if ms := parseMinSpend(&p); ms != nil {
+// 			pv.MinSpend = ms
+// 		}
+// 		if pv.MinSpend != nil && subtotal < *pv.MinSpend {
+// 			pv.Disabled = true
+// 		}
+// 		if !pv.Disabled {
+// 			if off := computeDiscount(subtotal, pv); off > bestOff {
+// 				bestOff = off
+// 				bestID = pv.ID
+// 			}
+// 		}
+// 		out = append(out, pv)
+// 	}
+// 	c.JSON(http.StatusOK, gin.H{"promotions": out, "bestId": bestID})
+// }

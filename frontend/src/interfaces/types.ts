@@ -1,7 +1,7 @@
 // src/types.ts
 export interface OrderService {
   customer_id: number;
-  servicetype_ids: number[];
+  service_type_ids: number[];
   detergent_ids: number[];
   order_image?: string | null;
   order_note?: string;

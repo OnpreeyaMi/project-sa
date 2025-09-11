@@ -6,7 +6,7 @@ import (
 	"github.com/OnpreeyaMi/project-sa/config"
     "github.com/gin-gonic/gin"
     "github.com/OnpreeyaMi/project-sa/controller"
-	
+	"github.com/OnpreeyaMi/project-sa/middlewares"
 	 "github.com/joho/godotenv"
 	
 )
@@ -77,6 +77,13 @@ func main() {
 	router.DELETE("/customers/:id", controller.DeleteCustomer)
 	router.GET("/customers/:id", controller.GetCustomerByID)
 
+	// promotion
+	router.POST("/promotions", controller.CreatePromotion)
+	router.GET("/promotions", controller.GetPromotions)
+	router.PUT("/promotions/:id", controller.UpdatePromotion)
+	router.DELETE("/promotions/:id", controller.DeletePromotion)
+
+
 	// Machine
 	router.GET("/machines", controller.GetMachines)
 
@@ -89,6 +96,13 @@ func main() {
 
 	//Payment
 	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
+	router.GET("/payment/checkout/:orderId", controller.GetCheckoutData)   // ข้อมูลหน้าเช็คเอาต์ 
+	authorized := router.Group("/", middlewares.AuthRequired()) 
+	{
+		authorized.GET("/orders/latest", controller.GetLatestOrderForCustomer)
+	}
+
+	
 
 	//complaintCreate
 	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
