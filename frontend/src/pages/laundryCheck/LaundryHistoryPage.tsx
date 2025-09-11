@@ -1,3 +1,4 @@
+// frontend/src/pages/employee/LaundryHistoryPage.tsx
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 import React, { useMemo, useState } from "react";
 import {
@@ -26,6 +27,40 @@ import { FetchOrderDetail, FetchOrderHistory } from "../../services/LaundryCheck
 import type { OrderDetail, HistoryEntry } from "../../interfaces/LaundryCheck/types";
 
 const { Title, Text } = Typography;
+
+/* =========================
+ * Helpers (ไว้ในไฟล์นี้)
+ * ========================= */
+
+// ใช้ key จาก ID ถ้ามี; ถ้าไม่มีใช้ชื่อเป็นตัวคีย์ (normalize ชื่อเป็น lower-case)
+const clothKey = (name?: string, id?: number) =>
+  id ? `id:${id}` : `name:${(name || "").trim().toLowerCase()}`;
+
+/** รวมจำนวนชิ้นจากรายการในออเดอร์ (จาก backend) แบบ "ไม่นับซ้ำประเภทผ้า" — เอาค่าสูงสุดต่อประเภทผ้า */
+const sumUniqueQtyFromOrderItems = (
+  items: Array<{ ClothTypeID?: number; ClothTypeName?: string; Quantity?: number }>
+): number => {
+  const m = new Map<string, number>();
+  for (const it of items || []) {
+    const key = clothKey(it.ClothTypeName, it.ClothTypeID as number | undefined);
+    const q = Number(it.Quantity || 0);
+    const cur = m.get(key) ?? 0;
+    if (q > cur) m.set(key, q);
+  }
+  return Array.from(m.values()).reduce((a, b) => a + b, 0);
+};
+
+// ดึง "จำนวน (ปัจจุบัน)" จากรายการผ้า (detail.Items) ตรงๆ โดย match ด้วย ชื่อประเภทผ้า + บริการ
+const currentQtyFromItems = (row: HistoryEntry, d?: OrderDetail | null) => {
+  const items = d?.Items || [];
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  const matched = items.find(
+    (it) =>
+      norm(it.ClothTypeName) === norm(row.ClothTypeName) &&
+      norm(it.ServiceType) === norm(row.ServiceType)
+  );
+  return matched?.Quantity ?? 0;
+};
 
 const renderServiceTags = (detail?: OrderDetail | null) => {
   const list = (detail as any)?.ServiceTypes as { ID: number; Name: string }[] | undefined;
@@ -57,16 +92,14 @@ const LaundryHistoryPage: React.FC = () => {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ใบเสร็จ (พิมพ์)
   const [billOpen, setBillOpen] = useState(false);
 
-  // รวมจากประวัติ (จริง)
-  const totalQtyHistory = useMemo(
-    () => history.reduce((s, h) => s + (h.Quantity || 0), 0),
-    [history]
+  // ใช้สูตรเดียวกับหน้าหลัก (แต่วาง helper ไว้ในไฟล์นี้)
+  const totalUniqueCloth = useMemo(
+    () => (detail?.Items ? sumUniqueQtyFromOrderItems(detail.Items) : 0),
+    [detail]
   );
 
-  // เวลาจากประวัติล่าสุด (ไว้โชว์ในบิลแทนการแสดงทั้งตารางประวัติ)
   const latestUpdatedAt = useMemo(() => {
     if (!history.length) return null;
     const max = history.reduce<Date | null>((acc, h) => {
@@ -223,16 +256,7 @@ const LaundryHistoryPage: React.FC = () => {
                 )}
               </Descriptions>
 
-              {/* Summary chips */}
-              <Space size="small" style={{ marginBottom: 8 }}>
-                <span className="pill">จำนวนครั้งที่บันทึก: {history.length}</span>
-                <span className="pill">รวมชิ้น (จากประวัติ): {totalQtyHistory}</span>
-                <span className="pill">
-                  รวมชิ้น (จากรายการปัจจุบัน): {detail.TotalQuantity ?? detail.Items.reduce((s, x) => s + (x.Quantity || 0), 0)}
-                </span>
-              </Space>
-
-              {/* History table (ยังแสดงบนหน้า แต่จะไม่พิมพ์ลงบิล) */}
+              {/* History table */}
               <Title level={5} style={{ marginTop: 10 }}>
                 ประวัติ
               </Title>
@@ -250,20 +274,35 @@ const LaundryHistoryPage: React.FC = () => {
                   },
                   { title: "ประเภทผ้า", dataIndex: "ClothTypeName" },
                   { title: "บริการ", dataIndex: "ServiceType", width: 180 },
-                  { title: "จำนวน", dataIndex: "Quantity", width: 120, align: "right" as const },
+                  {
+                    title: "สถานะ",
+                    dataIndex: "Action",
+                    width: 120,
+                    render: (a: HistoryEntry["Action"]) => {
+                      const label = a === "ADD" ? "เพิ่ม" : a === "EDIT" ? "แก้ไข" : "ลบ";
+                      const color = a === "ADD" ? "green" : a === "EDIT" ? "gold" : "red";
+                      return <Tag color={color}>{label}</Tag>;
+                    }
+                  },
+                  {
+                    title: "จำนวน (ปัจจุบัน)",
+                    width: 160,
+                    align: "right" as const,
+                    render: (_: any, r: HistoryEntry) => currentQtyFromItems(r, detail),
+                  },
                 ]}
                 size="middle"
                 bordered
                 pagination={{ pageSize: 10, showSizeChanger: false }}
               />
 
-              {/* Quick link to sorting page */}
+              {/* Quick link */}
               <div className="mt-3">
                 <Tooltip title="เปิดหน้า รับผ้า/แยกผ้า ของออเดอร์นี้">
                   <Button
                     type="link"
                     icon={<LinkOutlined />}
-                    onClick={() => navigate("/employee/laundry-check", { state: { orderId: detail.ID } })}
+                    onClick={() => navigate("/employee/check", { state: { orderId: detail.ID } })}
                   >
                     ไปหน้าแยกผ้า (ออเดอร์ #{detail.ID})
                   </Button>
@@ -274,7 +313,7 @@ const LaundryHistoryPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Modal ใบเสร็จสำหรับพิมพ์ — ไม่แสดง 'ประวัติ' ทั้งตาราง, แสดงแค่ข้อมูลล่าสุด */}
+      {/* Modal ใบเสร็จ (ใช้สูตรเดียวกับหน้าหลัก) */}
       <Modal
         title={<span>ใบเสร็จรับผ้า — <Text type="secondary">{detail?.ID ?? "-"}</Text></span>}
         open={billOpen}
@@ -313,7 +352,6 @@ const LaundryHistoryPage: React.FC = () => {
           </Descriptions>
 
           <Divider style={{ margin: "12px 0" }} />
-          {/* แสดงเฉพาะรายการปัจจุบัน (ไม่เอาตารางประวัติ) */}
           <Table
             dataSource={(detail?.Items || []).map((it, idx) => ({ key: it.ID, No: idx + 1, ...it }))}
             columns={[
@@ -331,14 +369,12 @@ const LaundryHistoryPage: React.FC = () => {
               <Descriptions.Item label="รวมจำนวนรายการ">
                 {detail?.TotalItems ?? (detail?.Items?.length || 0)}
               </Descriptions.Item>
-              <Descriptions.Item label="รวมจำนวนชิ้น">
-                {detail?.TotalQuantity ?? (detail?.Items?.reduce((s, x) => s + (x.Quantity || 0), 0) || 0)}
+              <Descriptions.Item label="รวมจำนวนชิ้น (ไม่นับซ้ำประเภทผ้า)">
+                {totalUniqueCloth}
               </Descriptions.Item>
             </Descriptions>
           </div>
 
-          {/* ไม่แสดงตารางประวัติในบิลตามคำขอ */}
-          {/* หมายเหตุพนักงาน (ถ้ามี) */}
           {detail?.StaffNote ? (
             <>
               <Divider style={{ margin: "12px 0" }} />

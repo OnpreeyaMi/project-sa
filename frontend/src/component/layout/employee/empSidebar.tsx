@@ -175,4 +175,3 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 
 export default EmployeeSidebar;
 
-

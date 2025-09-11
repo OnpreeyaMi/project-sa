@@ -62,42 +62,35 @@ const PromotionManagement: React.FC = () => {
     fetchPromotions();
   }, []);
 
-  // ฟังก์ชันแปลงไฟล์เป็น base64 เพื่อ preview
-  const getBase64 = (file: File | Blob): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-
-  // handle อัปโหลดรูป
-  const handleImageChange = async (info: any) => {
-    const file = info.file.originFileObj;
-    if (file) {
-      const url = await getBase64(file);
-      setImageUrl(url);
-    }
+  // handle อัปโหลดรูป (แบบ orderpage)
+  const handleImageUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImageUrl(reader.result as string);
+    };
   };
 
   // เพิ่มโปรโมชั่น
   const handleAddPromotion = async () => {
     try {
       const values = await form.validateFields();
+      const promoImage = imageUrl || '';
       const payload = {
         promotionName: values.PromotionName,
         description: values.Description,
         discountValue: values.DiscountValue,
         startDate: values.date[0].format("YYYY-MM-DD"),
         endDate: values.date[1].format("YYYY-MM-DD"),
-        status: "ใช้งาน",
-        promoImage: imageUrl || "",
+        status: values.Status || "ใช้งาน",
+        promoImage,
         discountTypeId: values.DiscountTypeID,
         conditions: (values.conditions || []).map((c: any) => ({
           conditionType: c.ConditionType,
           value: c.Value,
         })),
       };
+      console.log("Promotion POST payload:", payload);
       await axios.post("http://localhost:8000/promotions", payload);
       message.success("เพิ่มโปรโมชั่นสำเร็จ");
       setAddModalVisible(false);
@@ -134,6 +127,7 @@ const PromotionManagement: React.FC = () => {
     }
     try {
       const values = await form.validateFields();
+      const promoImage = imageUrl || editingPromotion.PromoImage || "";
       const payload = {
         promotionName: values.PromotionName,
         description: values.Description,
@@ -141,13 +135,14 @@ const PromotionManagement: React.FC = () => {
         startDate: values.date[0].format("YYYY-MM-DD"),
         endDate: values.date[1].format("YYYY-MM-DD"),
         status: values.Status,
-        promoImage: imageUrl || "",
+        promoImage,
         discountTypeId: values.DiscountTypeID,
         conditions: (values.conditions || []).map((c: any) => ({
           conditionType: c.ConditionType,
           value: c.Value,
         })),
       };
+      console.log("Promotion PUT payload:", payload); // debug log
       await axios.put(`http://localhost:8000/promotions/${editingPromotion.ID}`, payload);
       message.success("แก้ไขโปรโมชั่นสำเร็จ");
       setEditModalVisible(false);
@@ -233,36 +228,37 @@ const PromotionManagement: React.FC = () => {
 
   return (
     <AdminSidebar>
-      <div className="min-h-screen p-8 bg-white font-sans">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-blue-900">
-            จัดการโปรโมชั่น
-          </h1>
-          <Button
-            type="primary"
-            style={{ backgroundColor: "#0E4587" }}
-            onClick={() => {
-              form.resetFields();
-              setImageUrl(null);
-              setAddModalVisible(true);
-            }}
-          >
+      <div className="min-h-screen p-8 font-sans bg-gray-50">
+        {/* ส่วนหัว */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">จัดการโปรโมชั่น</h1>
+            <p className="text-gray-500">ข้อมูลโปรโมชั่นทั้งหมดในระบบ</p>
+          </div>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow"
+            onClick={() => { form.resetFields(); setImageUrl(null); setAddModalVisible(true); }}>
             + เพิ่มโปรโมชั่น
-          </Button>
+          </button>
         </div>
 
-        {/* ช่องค้นหา */}
-        <Input.Search
-          placeholder="ค้นหาชื่อ / รายละเอียดโปรโมชั่น"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ marginBottom: 16, maxWidth: 400 }}
-          allowClear
-        />
+        {/* กล่อง filter/search */}
+        <div className="bg-white rounded-xl shadow p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Input.Search
+              placeholder="ค้นหาชื่อ / รายละเอียดโปรโมชั่น"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              style={{ width: "100%" }}
+              allowClear
+            />
+          </div>
+        </div>
 
-        {/* Table */}
-        <Table columns={columns} dataSource={filteredPromotions} rowKey="id" />
+        {/* ตารางโปรโมชั่น */}
+        <div className="bg-white rounded-xl shadow p-4 mb-6">
+          <Table columns={columns} dataSource={filteredPromotions} rowKey="ID" />
+        </div>
 
         {/* Modal เพิ่มโปรโมชั่น */}
         <Modal
@@ -272,122 +268,93 @@ const PromotionManagement: React.FC = () => {
           onOk={handleAddPromotion}
           okText="เพิ่ม"
           cancelText="ยกเลิก"
+          width={1000}
         >
           <Form form={form} layout="vertical">
-            {/* อัปโหลดรูปภาพ */}
-            <Form.Item label="รูปภาพโปรโมชั่น" name="PromoImage">
-              <Upload
-                listType="picture-card"
-                showUploadList={false}
-                beforeUpload={() => false}
-                onChange={handleImageChange}
-                accept="image/*"
-              >
-                {imageUrl ? (
-                  <img src={imageUrl} alt="promotion" style={{ width: "100%" }} />
-                ) : (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>อัปโหลด</div>
-                  </div>
-                )}
-              </Upload>
-            </Form.Item>
-            <Form.Item
-              name="PromotionName"
-              label="ชื่อโปรโมชั่น"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="Description"
-              label="รายละเอียด"
-              rules={[{ required: true }]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item
-              name="DiscountTypeID"
-              label="ประเภท"
-              rules={[{ required: true }]}
-            >
-              <Select>
-                <Select.Option value={1}>เปอร์เซ็นต์</Select.Option>
-                <Select.Option value={2}>จำนวนเงิน</Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.Item
-              name="DiscountValue"
-              label="ส่วนลด"
-              rules={[{ required: true }]}
-            >
-              <InputNumber style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item
-              name="date"
-              label="ช่วงวันที่ใช้งาน"
-              rules={[{ required: true }]}
-            >
-              <DatePicker.RangePicker />
-            </Form.Item>
-            {/* ช่องกำหนดสถานะ */}
-            <Form.Item
-              name="Status"
-              label="สถานะ"
-              rules={[{ required: true }]}
-              initialValue="ใช้งาน"
-            >
-              <Select>
-                <Select.Option value="ใช้งาน">ใช้งาน</Select.Option>
-                <Select.Option value="ไม่ใช้งาน">ไม่ใช้งาน</Select.Option>
-              </Select>
-            </Form.Item>
-            {/* เงื่อนไข */}
-            <Form.List name="conditions">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Space
-                      key={key}
-                      align="baseline"
-                      style={{ display: "flex", marginBottom: 8 }}
-                    >
-                      <Form.Item
-                        {...restField}
-                        name={[name, "ConditionType"]}
-                        rules={[{ required: true }]}
-                      >
-                        <Select placeholder="ประเภทเงื่อนไข">
-                          <Select.Option value="MinOrderAmount">
-                            ยอดสั่งซื้อขั้นต่ำ
-                          </Select.Option>
-                          <Select.Option value="ItemCategory">
-                            หมวดสินค้า
-                          </Select.Option>
-                          <Select.Option value="CustomerGroup">
-                            กลุ่มลูกค้า
-                          </Select.Option>
-                        </Select>
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, "Value"]}
-                        rules={[{ required: true }]}
-                      >
-                        <Input placeholder="ค่า" />
-                      </Form.Item>
-                      <Button danger onClick={() => remove(name)}>
-                        ลบ
+            <div style={{ display: 'flex', gap: 32 }}>
+              {/* ฝั่งซ้าย: ข้อมูลฟอร์ม */}
+              <div style={{ flex: 0.9 }}>
+                <Form.Item name="PromotionName" label="ชื่อโปรโมชั่น" rules={[{ required: true }]}>
+                  <Input />
+                </Form.Item>
+                <Form.Item name="Description" label="รายละเอียด" rules={[{ required: true }]}>
+                  <Input.TextArea />
+                </Form.Item>
+                <Form.Item name="DiscountTypeID" label="ประเภท" rules={[{ required: true }]}>
+                  <Select>
+                    <Select.Option value={1}>เปอร์เซ็นต์</Select.Option>
+                    <Select.Option value={2}>จำนวนเงิน</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item name="DiscountValue" label="ส่วนลด" rules={[{ required: true }]}>
+                  <InputNumber style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.List name="conditions">
+                  {(fields, { add, remove }) => (
+                    <>
+                      {fields.map(({ key, name, ...restField }) => (
+                        <Space key={key} align="baseline" style={{ display: "flex", marginBottom: 8 }}>
+                          <Form.Item {...restField} name={[name, "ConditionType"]} rules={[{ required: true }]}>
+                            <Select placeholder="ประเภทเงื่อนไข">
+                              <Select.Option value="MinOrderAmount">ยอดสั่งซื้อขั้นต่ำ</Select.Option>
+                              <Select.Option value="MinQuantity">จำนวนชิ้นขั้นต่ำ</Select.Option>
+                              <Select.Option value="FirstOrderOnly">เฉพาะออเดอร์แรก</Select.Option>
+                              <Select.Option value="UsageLimit">จำนวนครั้งที่ใช้ได้</Select.Option>
+                            </Select>
+                          </Form.Item>
+                          <Form.Item {...restField} name={[name, "Value"]} rules={[{ required: true }]}>
+                            <Input placeholder="ค่า" />
+                          </Form.Item>
+                          <Button danger onClick={() => remove(name)}>ลบ</Button>
+                        </Space>
+                      ))}
+                      <Button type="dashed" onClick={() => add()} block>
+                        + เพิ่มเงื่อนไข
                       </Button>
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block>
-                    + เพิ่มเงื่อนไข
-                  </Button>
-                </>
-              )}
-            </Form.List>
+                    </>
+                  )}
+                </Form.List>
+              </div>
+              {/* ฝั่งขวา: อัปโหลดรูปภาพ + ช่วงวัน + สถานะ */}
+              <div style={{ width: 400, minWidth: 350, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
+                <Form.Item
+                  label="รูปภาพโปรโมชั่น"
+                  style={{ width: '100%' }}
+                  labelCol={{ span: 24 }}
+                  wrapperCol={{ span: 24 }}
+                >
+                  <Upload
+                    listType="picture-card"
+                    showUploadList={false}
+                    beforeUpload={file => {
+                      handleImageUpload(file);
+                      return false;
+                    }}
+                    onRemove={() => setImageUrl(null)}
+                    accept="image/*"
+                    style={{ width: '100%', height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  >
+                    {!imageUrl ? (
+                      <div style={{ fontSize: 16 }}>
+                        <PlusOutlined />
+                        <div style={{ marginTop: 8 }}>อัปโหลด</div>
+                      </div>
+                    ) : (
+                      <img src={imageUrl} alt="promotion" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    )}
+                  </Upload>
+                </Form.Item>
+                <Form.Item name="date" label="ช่วงวันที่ใช้งาน" rules={[{ required: true }]} style={{ width: '100%', marginTop: 24 }} labelCol={{ span: 24 }} wrapperCol={{ span: 24 }}>
+                  <DatePicker.RangePicker style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name="Status" label="สถานะ" rules={[{ required: true }]} style={{ width: '100%' }} labelCol={{ span: 24 }} wrapperCol={{ span: 24 }}>
+                  <Select>
+                    <Select.Option value="ใช้งาน">ใช้งาน</Select.Option>
+                    <Select.Option value="ไม่ใช้งาน">ไม่ใช้งาน</Select.Option>
+                  </Select>
+                </Form.Item>
+              </div>
+            </div>
           </Form>
         </Modal>
 
@@ -399,120 +366,152 @@ const PromotionManagement: React.FC = () => {
           onOk={handleEditPromotion}
           okText="บันทึก"
           cancelText="ยกเลิก"
+          width={1000}
         >
           <Form form={form} layout="vertical">
-            {/* อัปโหลดรูปภาพ */}
-            <Form.Item label="รูปภาพโปรโมชั่น" name="PromoImage">
-              <Upload
-                listType="picture-card"
-                showUploadList={false}
-                beforeUpload={() => false}
-                onChange={handleImageChange}
-                accept="image/*"
-              >
-                {imageUrl ? (
-                  <img src={imageUrl} alt="promotion" style={{ width: "100%" }} />
-                ) : (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>อัปโหลด</div>
-                  </div>
-                )}
-              </Upload>
-            </Form.Item>
-            <Form.Item
-              name="PromotionName"
-              label="ชื่อโปรโมชั่น"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="Description"
-              label="รายละเอียด"
-              rules={[{ required: true }]}
-            >
-              <Input.TextArea />
-            </Form.Item>
-            <Form.Item
-              name="DiscountTypeID"
-              label="ประเภท"
-              rules={[{ required: true }]}
-            >
-              <Select>
-                <Select.Option value={1}>เปอร์เซ็นต์</Select.Option>
-                <Select.Option value={2}>จำนวนเงิน</Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.Item
-              name="DiscountValue"
-              label="ส่วนลด"
-              rules={[{ required: true }]}
-            >
-              <InputNumber style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item
-              name="date"
-              label="ช่วงวันที่ใช้งาน"
-              rules={[{ required: true }]}
-            >
-              <DatePicker.RangePicker />
-            </Form.Item>
-            {/* ช่องกำหนดสถานะ */}
-            <Form.Item
-              name="Status"
-              label="สถานะ"
-              rules={[{ required: true }]}
-            >
-              <Select>
-                <Select.Option value="ใช้งาน">ใช้งาน</Select.Option>
-                <Select.Option value="ไม่ใช้งาน">ไม่ใช้งาน</Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.List name="conditions">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Space
-                      key={key}
-                      align="baseline"
-                      style={{ display: "flex", marginBottom: 8 }}
-                    >
-                      <Form.Item
-                        {...restField}
-                        name={[name, "ConditionType"]}
-                        rules={[{ required: true }]}
-                      >
-                        <Select placeholder="ประเภทเงื่อนไข">
-                          <Select.Option value="MinOrderAmount">
-                            ยอดสั่งซื้อขั้นต่ำ
-                          </Select.Option>
-                          <Select.Option value="ItemCategory">
-                            หมวดสินค้า
-                          </Select.Option>
-                          <Select.Option value="CustomerGroup">
-                            กลุ่มลูกค้า
-                          </Select.Option>
-                        </Select>
-                      </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, "Value"]}
-                        rules={[{ required: true }]}
-                      >
-                        <Input placeholder="ค่า" />
-                      </Form.Item>
-                      <Button danger onClick={() => remove(name)}>
-                        ลบ
+            <div style={{ display: 'flex', gap: 32 }}>
+              <div style={{ flex: 0.9 }}>
+                <Form.Item
+                  name="PromotionName"
+                  label="ชื่อโปรโมชั่น"
+                  rules={[{ required: true }]}
+                >
+                  <Input />
+                </Form.Item>
+                <Form.Item
+                  name="Description"
+                  label="รายละเอียด"
+                  rules={[{ required: true }]}
+                >
+                  <Input.TextArea />
+                </Form.Item>
+                <Form.Item
+                  name="DiscountTypeID"
+                  label="ประเภท"
+                  rules={[{ required: true }]}
+                >
+                  <Select>
+                    <Select.Option value={1}>เปอร์เซ็นต์</Select.Option>
+                    <Select.Option value={2}>จำนวนเงิน</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item
+                  name="DiscountValue"
+                  label="ส่วนลด"
+                  rules={[{ required: true }]}
+                >
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+                <Form.List name="conditions">
+                  {(fields, { add, remove }) => (
+                    <>
+                      {fields.map(({ key, name, ...restField }) => (
+                        <Space
+                          key={key}
+                          align="baseline"
+                          style={{ display: "flex", marginBottom: 8 }}
+                        >
+                          {/* เลือกประเภทเงื่อนไข */}
+                          <Form.Item
+                            {...restField}
+                            name={[name, "ConditionType"]}
+                            rules={[{ required: true, message: "กรุณาเลือกประเภทเงื่อนไข" }]}
+                          >
+                            <Select placeholder="ประเภทเงื่อนไข" style={{ width: 200 }}>
+                              <Select.Option value="MinOrderAmount">ยอดสั่งซื้อขั้นต่ำ</Select.Option>
+                              <Select.Option value="MinQuantity">จำนวนขั้นต่ำ</Select.Option>
+                              <Select.Option value="FirstOrderOnly">เฉพาะออเดอร์แรก</Select.Option>
+                              <Select.Option value="UsageLimit">จำนวนครั้งที่ใช้ได้</Select.Option>
+                            </Select>
+                          </Form.Item>
+
+                          {/* Input ของค่า Value จะเปลี่ยนตาม ConditionType */}
+                          <Form.Item shouldUpdate noStyle>
+                            {({ getFieldValue }) => {
+                              const type = getFieldValue(["conditions", name, "ConditionType"]);
+
+                              if (type === "MinOrderAmount" || type === "MinQuantity" || type === "UsageLimit") {
+                                return (
+                                  <Form.Item
+                                    {...restField}
+                                    name={[name, "Value"]}
+                                    rules={[{ required: true, message: "กรุณากรอกค่า" }]}
+                                  >
+                                    <InputNumber placeholder="ตัวเลข" style={{ width: 150 }} />
+                                  </Form.Item>
+                                );
+                              }
+
+                              if (type === "FirstOrderOnly") {
+                                return null; // ไม่ต้องกรอกค่า
+                              }
+
+                              return null;
+                            }}
+                          </Form.Item>
+
+                          <Button danger onClick={() => remove(name)}>ลบ</Button>
+                        </Space>
+                      ))}
+                      <Button type="dashed" onClick={() => add()} block>
+                        + เพิ่มเงื่อนไข
                       </Button>
-                    </Space>
-                  ))}
-                  <Button type="dashed" onClick={() => add()} block>
-                    + เพิ่มเงื่อนไข
-                  </Button>
-                </>
-              )}
-            </Form.List>
+                    </>
+                  )}
+                </Form.List>
+
+              </div>
+              <div style={{ width: 400, minWidth: 350, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
+                <Form.Item
+                  label="รูปภาพโปรโมชั่น"
+                  style={{ width: '100%' }}
+                  labelCol={{ span: 24 }}   // label กินเต็มบรรทัด
+                  wrapperCol={{ span: 24 }} // field อยู่บรรทัดใหม่
+                  getValueFromEvent={e => {
+                    if (e && e.file && e.file.originFileObj) {
+                      const reader = new FileReader();
+                      reader.readAsDataURL(e.file.originFileObj);
+                      reader.onload = () => {
+                        setImageUrl(reader.result as string);
+                        form.setFieldsValue({ PromoImage: reader.result });
+                      };
+                      return '';
+                    }
+                    return imageUrl || '';
+                  }}
+                >
+                  <Upload
+                    listType="picture-card"
+                    showUploadList={false}
+                    beforeUpload={file => {
+                      handleImageUpload(file);
+                      return false;
+                    }}
+                    onRemove={() => setImageUrl(null)}
+                    accept="image/*"
+                    style={{ width: '100%', height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                  >
+                    {!imageUrl ? (
+                      <div style={{ fontSize: 16 }}>
+                        <PlusOutlined />
+                        <div style={{ marginTop: 8 }}>อัปโหลด</div>
+                      </div>
+                    ) : (
+                      <img src={imageUrl} alt="promotion" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    )}
+                  </Upload>
+                </Form.Item>
+                <Form.Item name="date" label="ช่วงวันที่ใช้งาน" rules={[{ required: true }]} style={{ width: '100%', marginTop: 24 }} labelCol={{ span: 24 }} wrapperCol={{ span: 24 }}>
+                  <DatePicker.RangePicker style={{ width: '100%' }} />
+                </Form.Item>
+                <Form.Item name="Status" label="สถานะ" rules={[{ required: true }]} style={{ width: '100%' }} labelCol={{ span: 24 }} wrapperCol={{ span: 24 }}>
+                  <Select>
+                    <Select.Option value="ใช้งาน">ใช้งาน</Select.Option>
+                    <Select.Option value="ไม่ใช้งาน">ไม่ใช้งาน</Select.Option>
+                  </Select>
+                </Form.Item>
+              </div>
+            </div>
           </Form>
         </Modal>
       </div>

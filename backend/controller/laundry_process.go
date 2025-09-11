@@ -97,7 +97,6 @@ func GetLatestLaundryProcess(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, process)
 }
-
 // อัปเดตสถานะ
 func UpdateProcessStatus(c *gin.Context) {
 	id := c.Param("id")

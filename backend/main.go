@@ -23,10 +23,13 @@ func main() {
 	_ = router.SetTrustedProxies(nil)
 	router.Use(CORSMiddleware())
 
-	// Public
+	// Login
 	router.POST("/login", controller.Login)
 
-	// Authenticated (customer scope)
+	router.POST("/register", controller.Register)
+	// TimeSlot
+	router.GET("/timeslots", controller.GetTimeSlots)
+
 	customerRoutes := router.Group("/customer")
 	customerRoutes.Use(middlewares.AuthMiddleware())
 	
@@ -54,12 +57,20 @@ func main() {
 		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
 	}
 
+	// Promotion CRUD
+	router.POST("/promotions", controller.CreatePromotion)
+	router.GET("/promotions", controller.GetPromotions)
+	router.PUT("/promotions/:id", controller.UpdatePromotion)
+	router.DELETE("/promotions/:id", controller.DeletePromotion)
+
+
+	// Order CRUD
 	// Orders / Addresses (public or adjust as needed)
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
 	router.GET("/addresses", controller.GetAddresses)
 	router.GET("/customers/name/:id", controller.GetCustomerNameByID)
-	router.POST("/orderaddress", controller.CreateAddress)
+	router.POST("/orderaddress", controller.CreateNewAddress)
 	router.GET("/detergents/type/:type", controller.GetDetergentsByType)
 	router.PUT("/addresses/set-main", controller.UpdateMainAddress)
 
@@ -71,8 +82,15 @@ func main() {
 	router.GET("/detergents/purchase-history", controller.GetPurchaseDetergentHistory)
 	router.POST("/detergents/use", controller.UseDetergent)
 	router.GET("/detergents/usage-history", controller.GetDetergentUsageHistory)
+	router.PUT("/detergents/:id/update-stock", controller.UpdateDetergentStock)
+	router.GET("/detergents/deleted", controller.GetDeletedDetergents) // ดึงรายการที่ถูกลบ
 
-	// Employees
+	// router.POST("/detergents", controller.CreateDetergent)
+	// router.POST("/detergents/purchase", controller.CreateDetergentWithPurchase)
+	// router.GET("/detergents", controller.GetDetergents)
+	// router.DELETE("/detergents/:id", controller.DeleteDetergent)
+
+	// Employee CRUD
 	router.POST("/employees", controller.CreateEmployee)
 	router.GET("/employees", controller.ListEmployees)
 	router.GET("/employees/:id", controller.GetEmployee)
@@ -91,7 +109,7 @@ func main() {
 	router.GET("/servicetypes", controller.ListServiceTypes)
 	router.GET("/laundry-check/customers", controller.GetLaundryCustomers)
 
-	// Laundry Process
+	// Laundry Process (คงเดิม)
 	router.POST("/laundry-process", controller.CreateLaundryProcess)
 	router.GET("/laundry-processes", controller.GetLaundryProcesses)
 	router.GET("/laundry-process/latest", controller.GetLatestLaundryProcess)
@@ -100,18 +118,11 @@ func main() {
 
 	// Orders (อื่นๆ)
 	router.GET("/orders/:id", controller.GetOrderByID)
-	router.GET("/process/:id/order", controller.GetProcessesByOrder)
-	router.GET("/ordersdetails", controller.GetOrdersdetails)
+	router.GET("/process/:id/order", controller.GetProcessesByOrder)                               // ดึง process พร้อม order
+	router.GET("/ordersdetails", controller.GetOrdersdetails)                                      // ดึง order ทั้งหมด (สำหรับหน้า admin)
+	router.DELETE("/laundry-process/:id/machines/:machineId", controller.DeleteMachineFromProcess) // ลบเครื่องจาก process
 
-
-	// promotion
-	router.POST("/promotions", controller.CreatePromotion)
-	router.GET("/promotions", controller.GetPromotions)
-	router.PUT("/promotions/:id", controller.UpdatePromotion)
-	router.DELETE("/promotions/:id", controller.DeletePromotion)
-
-
-	// Machine
+	// ---------- Machines ----------
 	router.GET("/machines", controller.GetMachines)
 
 	// Queue Routes
@@ -122,16 +133,12 @@ func main() {
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 
 	//Payment
-	
 	router.GET("/payment/checkout/:orderId", controller.GetCheckoutData)   // ข้อมูลหน้าเช็คเอาต์ 
 	// router.GET("/orders/latest", middlewares.AuthRequired().controller.GetLatestOrderForCustomer)
 	router.GET("/orders/latest/:customer_id", controller.GetLatestOrderForCustomer)
 	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
 	
 	
-
-	
-
 	//complaintCreate
 	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
 	router.Static("/uploads", "./uploads")
@@ -146,6 +153,13 @@ func main() {
 		emp.PATCH("/complaints/:publicId/status", controller.SetComplaintStatus)
 	}
 
+	router.POST("/queues/:id/assign_timeslot", controller.AssignTimeSlotToQueue) // assign timeslot ให้คิว
+	router.POST("/queues/:id/accept", controller.AcceptQueue)
+	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
+	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
+	router.DELETE("/queues/:id", controller.DeleteQueue)         // ลบคิว
+	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
+	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))

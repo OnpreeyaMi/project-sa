@@ -9,7 +9,6 @@ type Customer struct {
 	FirstName string
 	LastName string
 	PhoneNumber string
-	IsVerified bool
 	
 	GenderID uint
 	Gender *Gender `gorm:"foreignKey:GenderID;references:ID"`
