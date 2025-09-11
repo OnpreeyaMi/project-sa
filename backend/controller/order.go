@@ -61,11 +61,6 @@ func CreateOrder(c *gin.Context) {
 		OrderID: order.ID,
 		Status:  "รอดำเนินการ",
 	}
-	// history เริ่มต้น
-	history := entity.OrderHistory{
-		OrderID: order.ID,
-		Status:  "Pending",
-	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -89,6 +84,24 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 	}
+	// --- PATCH: สร้าง LaundryProcess อัตโนมัติ ---
+	process := entity.LaundryProcess{
+		Status:     "รอดำเนินการ",
+		Start_time: time.Now(),
+		Order:      []*entity.Order{&order},
+	}
+	if err := config.DB.Create(&process).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "สร้าง LaundryProcess ไม่สำเร็จ: " + err.Error()})
+		return
+	}
+	// สร้าง pickup queue ทันทีหลังสร้าง order
+    pickupQueue := entity.Queue{
+	    Queue_type: "pickup",
+	    Status:     "waiting",
+	    OrderID:    order.ID,
+    }
+    config.DB.Create(&pickupQueue)
+
 
 	c.JSON(http.StatusOK, order)
 }

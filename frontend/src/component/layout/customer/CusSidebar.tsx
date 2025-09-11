@@ -49,6 +49,12 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       onClick: () => navigate("/customer/payment"),
     },
     {
+      key: "/customer/status",
+      icon: <MdLocalLaundryService style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>สถานะ</span>,
+      onClick: () => navigate("/customer/status"),
+    },
+    {
       key: "/customer/history",
       icon: <FaHistory style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>ประวัติ</span>,
@@ -114,7 +120,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
         <Menu
           style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[location.pathname]}  // ✅ ไฮไลท์ตาม path ปัจจุบัน (รูปแบบเดียวกัน)
           items={menuItems}
           onClick={({ key }) => {
             const selected = menuItems.find(item => item.key === key);

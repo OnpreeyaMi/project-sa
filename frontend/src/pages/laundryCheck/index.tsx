@@ -64,8 +64,8 @@ const LaundryCheckPage: React.FC = () => {
   const [searchText, setSearchText] = useState("");
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-//   const [billOpen, setBillOpen] = useState(false);
-//   const [billRecord, setBillRecord] = useState<OrderDetail | null>(null);
+  const [billOpen, setBillOpen] = useState(false);
+  const [billRecord, setBillRecord] = useState<OrderDetail | null>(null);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<OrderDetail | null>(null);
@@ -204,19 +204,6 @@ const LaundryCheckPage: React.FC = () => {
         Quantity: it.quantity,
       })),
     };
-
-    const staffNote: string = form.getFieldValue("StaffNote") || "";
-
-//     const payload: LaundryCheckInput = {
-//       CustomerID: selectedCustomer.ID,
-//       AddressID: selectedCustomer.AddressID!,
-//       StaffNote: staffNote,
-//       Items: items.map<LaundryItemInput>(x => ({
-//         ClothTypeID: x.clothTypeId!,
-//         ServiceTypeID: x.serviceTypeId!,
-//         Quantity: x.quantity,
-//       })),
-//     };
 
     try {
       setSaving(true);
@@ -482,6 +469,7 @@ const LaundryCheckPage: React.FC = () => {
                       <InputNumber min={1} value={it.quantity} onChange={(v)=>updateItem(it.id, "quantity", v || 1)} size="small" style={{ width: 60, textAlign: "center" }} />
                       <Button size="small" onClick={()=> updateItem(it.id, "quantity", (it.quantity||0)+1) }>+</Button>
                     </Space>
+
                     <Popconfirm title="ลบรายการนี้?" onConfirm={()=>removeItem(it.id)} okText="ลบ" cancelText="ยกเลิก">
                       <Button danger size="small" icon={<DeleteOutlined />} />
                     </Popconfirm>
@@ -567,7 +555,7 @@ const LaundryCheckPage: React.FC = () => {
               {detailRecord.OrderNote && <Descriptions.Item label="หมายเหตุ (ลูกค้า)">{detailRecord.OrderNote}</Descriptions.Item>}
             </Descriptions>
 
-//             <Divider />
+            <Divider />
 
             <Title level={5}>รายการผ้า</Title>
             <Table
@@ -632,6 +620,7 @@ const LaundryCheckPage: React.FC = () => {
               <Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>{billRecord.OrderNote}</Descriptions.Item>
             ) : null}
           </Descriptions>
+
           <Divider style={{ margin: "12px 0" }} />
           <Table
             dataSource={(billRecord?.Items || []).map((it, idx)=>({ key: it.ID, No: idx+1, ...it }))}

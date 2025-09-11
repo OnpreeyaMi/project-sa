@@ -133,14 +133,14 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
-	// --- Address ---
-	addresses := []entity.Address{
-		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
-		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
-	}
-	for _, a := range addresses {
-		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
-	}
+	// // --- Address ---
+	// addresses := []entity.Address{
+	// 	{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+	// 	{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	// }
+	// for _, a := range addresses {
+	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
+	// }
 
 	// --- ServiceTypes ---
 	services := []entity.ServiceType{
