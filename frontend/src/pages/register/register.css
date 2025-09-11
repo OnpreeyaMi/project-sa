@@ -86,6 +86,13 @@ select.input:focus,
   box-shadow: 0px 0px 4px rgba(59, 130, 246, 0.5);
 }
 
+select.input {
+  color: #888; /* default เป็นสีเทา */
+}
+select.input:valid {
+  color: #222; /* ถ้าเลือกแล้วเป็นสีดำ */
+}
+
 /* row ของ input 2 ช่อง */
 .form-row {
   display: flex;

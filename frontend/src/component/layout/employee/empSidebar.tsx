@@ -1,4 +1,4 @@
-import React, { useState, type ReactNode } from 'react';
+import React, { useState } from 'react';
 import { FaHome } from "react-icons/fa";
 import { IoNewspaper } from "react-icons/io5";
 import { MdLocalLaundryService } from "react-icons/md";
@@ -11,7 +11,7 @@ import {
 import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { useLocation, useNavigate } from 'react-router-dom';
-
+import { MdExitToApp } from "react-icons/md";
 const { Header, Sider, Content } = Layout;
 
 interface SidebarProps {
@@ -62,6 +62,18 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
 
   ];
 
+  const logoutMenuItem = [
+    {
+      key: "logout",
+      icon: <MdExitToApp style={{ fontSize: 18, color: '#6da3d3' }} />,
+      label: <span style={{ color: '#6da3d3' }}>ออกจากระบบ</span>,
+      onClick: () => {
+        localStorage.clear();
+        window.location.href = '/';
+      },
+    },
+  ];
+
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
       <Sider
@@ -103,6 +115,18 @@ const EmployeeSidebar: React.FC<SidebarProps> = ({ children }) => {
             if (selected?.onClick) selected.onClick();
           }}
         />
+        <div style={{ position: 'absolute', bottom: 24, left: 0, width: '100%' }}>
+          <Menu
+            style={{ backgroundColor: '#0E4587', color: 'white', border: 'none' }}
+            mode="inline"
+            selectedKeys={[]}
+            items={logoutMenuItem}
+            onClick={({ key }) => {
+              const selected = logoutMenuItem.find(item => item.key === key);
+              if (selected?.onClick) selected.onClick();
+            }}
+          />
+        </div>
       </Sider>
 
       <Layout style={{ marginLeft: collapsed ? 80 : 200, transition: 'margin-left 0.2s' }}>

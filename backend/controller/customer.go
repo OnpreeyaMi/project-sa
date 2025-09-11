@@ -2,7 +2,7 @@ package controller
 
 import (
 	"net/http"
-	"fmt"
+
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
@@ -35,8 +35,7 @@ func CreateCustomer(c *gin.Context) {
 	user := entity.User{
 		Email:    payload.Email,
 		Password: string(hashedPassword),
-		Status:   "active",
-		RoleID:   1, // ให้เป็น Role ลูกค้าอัตโนมัติ
+		RoleID:   1, // ลูกค้าอัตโนมัติ
 	}
 	if err := config.DB.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -57,7 +56,6 @@ func CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	// Preload User + Gender
 	var createdCustomer entity.Customer
 	config.DB.Preload("User").Preload("Gender").First(&createdCustomer, customer.ID)
 
@@ -68,30 +66,58 @@ func CreateCustomer(c *gin.Context) {
 }
 
 // -------------------- READ --------------------
+// สำหรับ admin ดึงลูกค้าแต่ละคน
+func GetCustomerByID(c *gin.Context) {
+	id := c.Param("id")
+	var customer entity.Customer
+	if err := config.DB.Preload("User").Preload("Gender").Preload("Addresses").
+		First(&customer, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, customer)
+}
+
+// ดึงลูกค้า profile ของตัวเอง (หน้า profile)
+func GetCustomerProfile(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var customer entity.Customer
+	if err := config.DB.
+		Preload("User").
+		Preload("Addresses").
+		Preload("Gender").
+		First(&customer, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, customer)
+}
+
+// ดึงลูกค้าทั้งหมด (หน้า admin)
 func GetCustomers(c *gin.Context) {
 	var customers []entity.Customer
 	if err := config.DB.Preload("User").Preload("Gender").Find(&customers).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	// Force reload User for each customer if missing
+	for i, cust := range customers {
+		if cust.User == nil && cust.UserID != 0 {
+			var user entity.User
+			if err := config.DB.First(&user, cust.UserID).Error; err == nil {
+				customers[i].User = &user
+			}
+		}
+	}
 	c.JSON(http.StatusOK, customers)
 }
-
-func GetCustomerByID(c *gin.Context) {
-	id := c.Param("id")
-	var customer entity.Customer
-	if err := config.DB.Preload("User").Preload("Gender").First(&customer, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
-		return
-	}
-
-	// debug print
-	fmt.Printf("Customer: %s %s, Gender: %+v, Email: %s\n",
-		customer.FirstName, customer.LastName, customer.Gender, customer.User.Email)
-
-	c.JSON(http.StatusOK, customer)
-}
-
 
 // -------------------- UPDATE --------------------
 type CustomerUpdatePayload struct {
@@ -126,7 +152,6 @@ func UpdateCustomer(c *gin.Context) {
 		return
 	}
 
-	// Preload User + Gender
 	var updatedCustomer entity.Customer
 	if err := config.DB.Preload("User").Preload("Gender").First(&updatedCustomer, customer.ID).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -135,6 +160,52 @@ func UpdateCustomer(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Customer updated successfully",
+		"data":    updatedCustomer,
+	})
+}
+
+// -------------------- EDIT PROFILE CUSTOMER (สำหรับลูกค้าแก้ไขโปรไฟล์ตัวเอง) --------------------
+type CustomerEditProfilePayload struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Phone     string `json:"phone"`
+	GenderID  uint   `json:"genderId"`
+}
+
+func EditCustomerProfile(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var payload CustomerEditProfilePayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var customer entity.Customer
+	if err := config.DB.First(&customer, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
+		return
+	}
+
+	customer.FirstName = payload.FirstName
+	customer.LastName = payload.LastName
+	customer.PhoneNumber = payload.Phone
+	customer.GenderID = payload.GenderID
+
+	if err := config.DB.Save(&customer).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var updatedCustomer entity.Customer
+	config.DB.Preload("User").Preload("Gender").Preload("Addresses").First(&updatedCustomer, customer.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Profile updated successfully",
 		"data":    updatedCustomer,
 	})
 }
@@ -149,7 +220,6 @@ func DeleteCustomer(c *gin.Context) {
 		return
 	}
 
-	// ลบทั้ง Customer และ User ที่เกี่ยวข้อง
 	if err := config.DB.Delete(&customer).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
