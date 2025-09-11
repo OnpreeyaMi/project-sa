@@ -12,22 +12,27 @@ import {
   Modal,
   Tooltip,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined ,CheckCircleFilled ,InfoCircleOutlined} from "@ant-design/icons";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
 import { TbWashDrycleanOff, TbWash } from "react-icons/tb";
 import { LuDroplet, LuWind } from "react-icons/lu";
-import { createOrder, fetchDetergentsByType } from '../../../services/orderService';
-import { fetchAddresses, fetchCustomerNameById,  createAddress, setMainAddress } from '../../../services/orderService';
-import { CheckCircleFilled } from '@ant-design/icons';
+import { createOrder, 
+  fetchDetergentsByType, 
+  fetchAddresses, 
+  fetchCustomerNameById, 
+  createAddress, 
+  setMainAddress 
+} from '../../../services/orderService';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+
 import mieleWashingMachineImg from '../../../assets/washing-machine-miele.png';
 import boschDryerImg from '../../../assets/dryer-bosch.png';
-import { InfoCircleOutlined } from '@ant-design/icons';
 
 const descriptionsWashing: Record<number, string> =  {
   10: "เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น",
@@ -63,8 +68,8 @@ const OrderPage: React.FC = () => {
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addingNewAddress, setAddingNewAddress] = useState(false); // toggle โหมดเพิ่มที่อยู่ใหม่
   const [newAddress, setNewAddress] = useState("");
-  const [newLat, setNewLat] = useState(13.7563);
-  const [newLng, setNewLng] = useState(100.5018);
+  const [newLat, setNewLat] = useState(14.979900);
+  const [newLng, setNewLng] = useState(102.097771);
   const [isMapModal, setIsMapModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   // เพิ่ม state สำหรับ address หลัก
@@ -94,7 +99,7 @@ const OrderPage: React.FC = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // ปุ่ม OK ใน Modal
+  // ปุ่ม ยืนยัน ใน Modal
   const handleConfirm = async () => {
     setIsModalVisible(false);
 
@@ -426,10 +431,7 @@ const OrderPage: React.FC = () => {
           <Card style={{ borderRadius: 16, marginBottom: 24, background: '#EAF1FF' }}>
             {/* ข้อมูลผู้รับ */}
             <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>
-              ข้อมูลผู้รับ
-            </div>
-            <div style={{ fontSize: 16, marginBottom: 8 }}>
-              <b>ชื่อ:</b> {customerName}
+              คุณ {customerName}
             </div>
             <Divider style={{ margin: '12px 0' }} />
             {/* ที่อยู่จัดส่ง */}
@@ -526,7 +528,7 @@ const OrderPage: React.FC = () => {
                 })()}</span>
               </div>
             </div>
-          <Card style={{ borderRadius: 16, background: '#F6F6F6' }}>
+          <Card style={{ borderRadius: 16, background: '#FFF' }}>
             {/* สรุปยอดรวม */}
             <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>
               สรุปยอดรวม
@@ -553,7 +555,7 @@ const OrderPage: React.FC = () => {
                   return `฿ ${wash + dry}`;
                 })()}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>         
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>         
                 <Button type="primary" style={{ background: '#43A047', border: 'none' }} onClick={handleConfirm} disabled={!selectedWasher || !selectedAddress}>
                   ✓ ยืนยันการสั่งซื้อ
                 </Button>
