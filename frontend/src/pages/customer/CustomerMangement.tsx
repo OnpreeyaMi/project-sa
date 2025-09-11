@@ -9,7 +9,7 @@ interface Customer {
     LastName: string;
     PhoneNumber: string;
     Gender: { ID: number; name: string };
-    User: { Email: string };
+    User: { email: string };
     CreatedAt: string;
 }
 
@@ -32,6 +32,10 @@ const CustomerManagement: React.FC = () => {
     const [orderHistory, setOrderHistory] = useState<Order[]>([]);
     const [orderHistoryLoading, setOrderHistoryLoading] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [addressModalVisible, setAddressModalVisible] = useState(false);
+    const [addressList, setAddressList] = useState<any[]>([]);
+    const [addressLoading, setAddressLoading] = useState(false);
+    const [selectedAddressCustomer, setSelectedAddressCustomer] = useState<Customer | null>(null);
 
     const API_URL = 'http://localhost:8000/customers'; // backend URL
 
@@ -54,7 +58,7 @@ const CustomerManagement: React.FC = () => {
         c.FirstName.toLowerCase().includes(searchText.toLowerCase()) ||
         c.LastName.toLowerCase().includes(searchText.toLowerCase()) ||
         c.PhoneNumber.includes(searchText) ||
-        c.User.Email.toLowerCase().includes(searchText.toLowerCase())
+        c.User.email.toLowerCase().includes(searchText.toLowerCase())
     );
 
     // ----------------- CRUD -----------------
@@ -84,7 +88,7 @@ const CustomerManagement: React.FC = () => {
             firstName: customer.FirstName,
             lastName: customer.LastName,
             phone: customer.PhoneNumber,
-            email: customer.User.Email,
+            email: customer.User.email,
             genderId: customer.Gender.ID,
         });
         setEditModalVisible(true);
@@ -97,6 +101,7 @@ const CustomerManagement: React.FC = () => {
             await axios.put(`${API_URL}/${editingCustomer.ID}`, {
                 firstName: values.firstName,
                 lastName: values.lastName,
+                email: values.email,
                 phone: values.phone,
                 genderId: values.genderId,
             });
@@ -134,12 +139,56 @@ const CustomerManagement: React.FC = () => {
         setOrderHistoryLoading(false);
     };
 
+    // ดึงที่อยู่ของลูกค้าจาก backend
+    const handleShowAddresses = async (customer: Customer) => {
+        setSelectedAddressCustomer(customer);
+        setAddressList([]);
+        setAddressLoading(true);
+        setAddressModalVisible(true);
+        try {
+            const res = await axios.get(`http://localhost:8000/addresses?customerId=${customer.ID}`);
+            setAddressList(res.data);
+        } catch (err) {
+            message.error("ไม่สามารถดึงข้อมูลที่อยู่ได้");
+        }
+        setAddressLoading(false);
+    };
+
     // ----------------- TABLE -----------------
     const columns = [
         { title: 'ID', dataIndex: 'ID', key: 'ID' },
-        { title: 'ชื่อ', dataIndex: 'FirstName', key: 'FirstName' },
+        { title: 'ชื่อ', dataIndex: 'FirstName', key: 'FirstName',
+          render: (text: string, record: Customer) => {
+            // สร้างไอคอน avatar จากชื่อ-นามสกุล (ใช้ตัวอักษรแรก)
+            const initials = `${record.FirstName?.[0] || ''}${record.LastName?.[0] || ''}`.toUpperCase();
+            let bgColor = '#4f8cff'; // default ชาย
+            if (record.Gender?.ID === 2 || (record.Gender?.name && record.Gender.name.includes('หญิง'))) {
+              bgColor = '#ff69b4'; // หญิงชมพู
+            } else if (record.Gender?.name && record.Gender.name.includes('อื่น')) {
+              bgColor = '#FFD600'; // อื่นๆ เหลือง
+            }
+            return (
+              <span style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: bgColor,
+                  color: '#fff',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 8,
+                }}>{initials}</span>
+                {text}
+              </span>
+            );
+          }
+        },
         { title: 'สกุล', dataIndex: 'LastName', key: 'LastName' },
-        { title: 'อีเมล', key: 'Email', render: (_: any, record: Customer) => record.User?.Email || '-' },
+        { title: 'อีเมล', key: 'Email', render: (_: any, record: Customer) => record.User?.email || '-' },
         { title: 'เบอร์โทร', dataIndex: 'PhoneNumber', key: 'PhoneNumber' },
         { title: 'เพศ', dataIndex: ['Gender', 'name'], key: 'Gender' },
         {
@@ -154,7 +203,8 @@ const CustomerManagement: React.FC = () => {
             render: (_: any, record: Customer) => (
                 <Space>
                     <Button onClick={() => handleShowOrderHistory(record)}>ประวัติออเดอร์</Button>
-                    <Button type="primary" onClick={() => handleEdit(record)}>แก้ไข</Button>
+                    <Button onClick={() => handleShowAddresses(record)} style={{ background: '#4f8cff', color: 'white' }}>ที่อยู่</Button>
+                    <Button type="primary" style={{ backgroundColor: '#ffb547ff' }} onClick={() => handleEdit(record)}>แก้ไข</Button>
                     <Popconfirm
                         title="คุณแน่ใจว่าจะลบลูกค้าคนนี้?"
                         okText="ลบ"
@@ -170,29 +220,75 @@ const CustomerManagement: React.FC = () => {
 
     // ตารางประวัติออเดอร์
     const orderColumns = [
-        { title: "Order ID", dataIndex: "ID", key: "ID" },
-        { title: "วันที่สร้าง", dataIndex: "CreatedAt", key: "CreatedAt", render: (d: string) => new Date(d).toLocaleString() },
-        { title: "รายละเอียดที่อยู่", dataIndex: ["Address", "AddressDetails"], key: "AddressDetails", render: (_: any, rec: Order) => rec.Address?.AddressDetails || "-" },
-        { title: "หมายเหตุ", dataIndex: "OrderNote", key: "OrderNote" },
-    ];
+  { title: "Order ID", dataIndex: "ID", key: "ID" },
+  { 
+    title: "วันที่สร้าง", 
+    dataIndex: "CreatedAt", 
+    key: "CreatedAt", 
+    render: (d: string) => new Date(d).toLocaleString() 
+  },
+  { 
+    title: "รายละเอียดที่อยู่", 
+    dataIndex: ["Address", "AddressDetails"], 
+    key: "AddressDetails", 
+    render: (_: any, rec: Order) => rec.Address?.AddressDetails || "-" 
+  },
+  { title: "หมายเหตุ", dataIndex: "OrderNote", key: "OrderNote" },
+  { 
+    title: "ราคา (บาท)", 
+    dataIndex: "TotalPrice", 
+    key: "TotalPrice", 
+    render: (p: number) => p?.toLocaleString() || "-" 
+  },
+  { 
+    title: "สถานะ", 
+    dataIndex: "Status", 
+    key: "Status", 
+    render: (s: string) => s || "-" 
+  },
+  { 
+    title: "การชำระเงิน", 
+    dataIndex: "PaymentStatus", 
+    key: "PaymentStatus", 
+    render: (p: string) => p || "-" 
+  },
+];
+
 
     return (
         <AdminSidebar>
-            <div className="p-8">
-                <div className="flex justify-between mb-6">
-                    <h1 className="text-2xl font-bold">จัดการข้อมูลลูกค้า</h1>
-                    <Button type="primary" onClick={() => { form.resetFields(); setAddModalVisible(true); }}>+ เพิ่มลูกค้า</Button>
+            <div className="min-h-screen p-8 font-sans bg-gray-50">
+                {/* ส่วนหัว */}
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">จัดการข้อมูลลูกค้า</h1>
+                        <p className="text-gray-500">ข้อมูลลูกค้าทั้งหมดในระบบ</p>
+                    </div>
+                    <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow"
+                        onClick={() => { form.resetFields(); setAddModalVisible(true); }}>
+                        + เพิ่มลูกค้า
+                    </button>
                 </div>
 
-                <Input.Search
-                    placeholder="ค้นหาชื่อ / เบอร์โทร / อีเมล"
-                    value={searchText}
-                    onChange={e => setSearchText(e.target.value)}
-                    style={{ marginBottom: 16, width: 400 }}
-                />
+                {/* กล่อง filter/search */}
+                <div className="bg-white rounded-xl shadow p-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Input.Search
+                            placeholder="ค้นหาชื่อ / เบอร์โทร / อีเมล"
+                            value={searchText}
+                            onChange={e => setSearchText(e.target.value)}
+                            style={{ width: "100%" }}
+                        />
+                    </div>
+                </div>
 
-                <AntTable columns={columns} dataSource={filteredCustomers} rowKey="ID" />
 
+
+                {/* ตารางลูกค้า */}
+                <div className="bg-white rounded-xl shadow p-4 mb-6">
+                    <AntTable columns={columns} dataSource={filteredCustomers} rowKey="ID" />
+                </div>
                 {/* Modal เพิ่มลูกค้า */}
                 <Modal
                     title="เพิ่มลูกค้าใหม่"
@@ -204,8 +300,8 @@ const CustomerManagement: React.FC = () => {
                         <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}><Input /></Form.Item>
                         <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}><Input /></Form.Item>
                         <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true }]}><Input.Password /></Form.Item>
-                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}><Input /></Form.Item>
+                        <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true, min: 6, message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัว' }]}><Input.Password /></Form.Item>
+                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true, pattern: /^\d{10}$/, message: 'กรุณากรอกเบอร์โทร 10 หลัก' }]}><Input /></Form.Item>
                         <Form.Item name="genderId" label="เพศ" rules={[{ required: true }]}>
                             <Select>
                                 <Select.Option value={1}>ชาย</Select.Option>
@@ -225,7 +321,8 @@ const CustomerManagement: React.FC = () => {
                     <Form form={form} layout="vertical">
                         <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}><Input /></Form.Item>
                         <Form.Item name="lastName" label="สกุล" rules={[{ required: true }]}><Input /></Form.Item>
-                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true }]}><Input /></Form.Item>
+                        <Form.Item name="email" label="อีเมล" rules={[{ required: true }]}><Input /></Form.Item>
+                        <Form.Item name="phone" label="เบอร์โทร" rules={[{ required: true, pattern: /^\d{10}$/, message: 'กรุณากรอกเบอร์โทร 10 หลัก' }]}><Input /></Form.Item>
                         <Form.Item name="genderId" label="เพศ" rules={[{ required: true }]}>
                             <Select>
                                 <Select.Option value={1}>ชาย</Select.Option>
@@ -253,7 +350,37 @@ const CustomerManagement: React.FC = () => {
                         locale={{ emptyText: "ไม่มีประวัติออเดอร์" }}
                     />
                 </Modal>
+
+                {/* Modal ที่อยู่ลูกค้า */}
+                <Modal
+                    title={`ที่อยู่ของ: ${selectedAddressCustomer?.FirstName || ""} ${selectedAddressCustomer?.LastName || ""}`}
+                    open={addressModalVisible}
+                    onCancel={() => setAddressModalVisible(false)}
+                    footer={null}
+                    width={600}
+                >
+                    {addressLoading ? (
+                        <div style={{ textAlign: 'center', padding: 32 }}>กำลังโหลดข้อมูล...</div>
+                    ) : addressList.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: 32 }}>ไม่มีข้อมูลที่อยู่</div>
+                    ) : (
+                        <div>
+                            {addressList.map(addr => (
+                                <div key={addr.id || addr.ID} style={{ border: '1px solid #eee', borderRadius: 8, padding: 16, marginBottom: 12, background: addr.isDefault ? '#e6f7ff' : '#fff' }}>
+                                    <div><b>รายละเอียด:</b> {addr.detail || addr.AddressDetails}</div>
+                                    <div><b>Lat:</b> {addr.latitude || addr.Latitude} <b>Lng:</b> {addr.longitude || addr.Longitude}</div>
+                                    <div style={{ marginTop: 8 }}>
+                                        {addr.isDefault ? (
+                                            <span style={{ color: '#1890ff', fontWeight: 'bold' }}>ที่อยู่หลัก</span>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </Modal>
             </div>
+
         </AdminSidebar>
     );
 };

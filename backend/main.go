@@ -50,6 +50,14 @@ func main() {
 		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
 	}
 
+	// Promotion CRUD
+	router.POST("/promotions", controller.CreatePromotion)
+	router.GET("/promotions", controller.GetPromotions)
+	router.PUT("/promotions/:id", controller.UpdatePromotion)
+	router.DELETE("/promotions/:id", controller.DeletePromotion)
+
+
+	// Order CRUD
 	// Orders / Addresses (public or adjust as needed)
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
@@ -139,5 +147,3 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-

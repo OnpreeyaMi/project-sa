@@ -49,7 +49,6 @@ func Register(c *gin.Context) {
 		FirstName:   input.FirstName,
 		LastName:    input.LastName,
 		PhoneNumber: input.PhoneNumber,
-		IsVerified:  false,
 		GenderID:    input.GenderID,
 		UserID:      user.ID,
 	}

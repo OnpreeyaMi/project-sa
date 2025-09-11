@@ -6,6 +6,7 @@ import "./register.css";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import { Input } from "antd";
 
 function LocationMarker({ setPosition, setAddress }: any) {
   useMapEvents({
@@ -60,6 +61,16 @@ export default function RegisterForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ""); // กรองเฉพาะตัวเลข
+    setForm({ ...form, phone: value.slice(0, 10) }); // จำกัด 10 ตัว
+  };
+
+  const isValidThaiPhone = (phone: string) => {
+    // เบอร์ไทยสากล: ขึ้นต้น 08 หรือ 09 และมี 10 หลัก
+    return /^(08|09)\d{8}$/.test(phone);
+  };
+
   const handleSubmit = async () => {
     if (form.password !== form.confirmPassword) {
       alert("รหัสผ่านไม่ตรงกัน");
@@ -67,6 +78,10 @@ export default function RegisterForm() {
     }
     if (form.password.length < 6) {
       alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร");
+      return;
+    }
+    if (!isValidThaiPhone(form.phone)) {
+      alert("กรุณากรอกเบอร์โทรตามรูปแบบไทยสากล (เช่น 08xxxxxxxx หรือ 09xxxxxxxx)");
       return;
     }
     try {
@@ -99,6 +114,11 @@ export default function RegisterForm() {
     else setStep(step - 1);
   };
 
+  const setAddressDetailSync = (value: string) => {
+    setAddressDetail(value);
+    setForm((prev) => ({ ...prev, addressDetail: value }));
+  };
+
   return (
     <div className="register-container">
       {step === 1 && (
@@ -114,7 +134,16 @@ export default function RegisterForm() {
             <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="รหัสผ่าน" className="input" />
             <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="ยืนยันรหัสผ่าน" className="input" />
             <div className="form-row">
-              <input type="text" name="phone" value={form.phone} onChange={handleChange} placeholder="เบอร์โทร" className="input" />
+              <input
+                type="text"
+                name="phone"
+                value={form.phone}
+                onChange={handlePhoneChange}
+                placeholder="เบอร์โทร"
+                className="input"
+                maxLength={10}
+                inputMode="numeric"
+              />
               <select name="genderId" value={form.genderId} onChange={handleChange} className="input" required>
                 <option value="" disabled>เลือกเพศ</option>
                 <option value="1">ชาย</option>
@@ -125,6 +154,10 @@ export default function RegisterForm() {
             <button className="btn" onClick={() => {
               if (!form.firstName || !form.lastName || !form.email || !form.password || !form.confirmPassword || !form.phone || !form.genderId) {
                 alert("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+                return;
+              }
+              if (!isValidThaiPhone(form.phone)) {
+                alert("กรุณากรอกเบอร์โทรตามรูปแบบไทยสากล (เช่น 08xxxxxxxx หรือ 09xxxxxxxx)");
                 return;
               }
               setStep(2);
@@ -143,10 +176,10 @@ export default function RegisterForm() {
           <div className="form-group">
             <MapContainer center={[position.lat, position.lng]} zoom={15} style={{ width: "100%", height: "400px" }}>
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <LocationMarker setPosition={setPosition} setAddress={setAddressDetail} />
+              <LocationMarker setPosition={setPosition} setAddress={setAddressDetailSync} />
               <Marker position={[position.lat, position.lng]} icon={L.icon({ iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41] })} />
             </MapContainer>
-            <input type="text" name="addressDetail" value={addressDetail} readOnly />
+            <Input.TextArea name="addressDetail" value={addressDetail} readOnly style={{ width: "100%", minHeight: "60px", marginTop: "12px" }} />
             <button id="back" className="btn" onClick={handleBack}>ย้อนกลับ</button>
             <button className="btn" onClick={handleSubmit}>สมัครสมาชิก</button>
           </div>
