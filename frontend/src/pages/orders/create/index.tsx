@@ -20,7 +20,7 @@ import { createOrder,
   fetchDetergentsByType, 
   fetchAddresses, 
   fetchCustomerNameById, 
-  createAddress, 
+  createNewAddress, 
   setMainAddress 
 } from '../../../services/orderService';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
@@ -74,8 +74,20 @@ const OrderPage: React.FC = () => {
   const [newLat, setNewLat] = useState(14.979900);
   const [newLng, setNewLng] = useState(102.097771);
   const [isMapModal, setIsMapModal] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const userId = localStorage.getItem("userId");
+  const userObj = localStorage.getItem("user");
+  let currentUserInit = null;
+  if (userObj) {
+    const parsed = JSON.parse(userObj);
+    if (parsed.customer) {
+      currentUserInit = {
+        firstName: parsed.customer.firstName,
+        lastName: parsed.customer.lastName,
+        ID: Number(userId)
+      };
+    }
+  }
+  const [currentUser, setCurrentUser] = useState<any>(currentUserInit);
   // เพิ่ม state สำหรับ address หลัก
   const [primaryAddressId, setPrimaryAddressId] = useState<number | null>(null);
   const [detergentsWashing, setDetergentsWashing] = useState<any[]>([]);
@@ -138,27 +150,29 @@ const OrderPage: React.FC = () => {
   };
   // โหลดที่อยู่เมื่อ currentUser เปลี่ยน
   useEffect(() => {
-    const fetch = async () => {
-      const arr = await fetchAddresses(currentUser?.ID || 1);
-      const customerId = currentUser?.ID || 1;
-      const filtered = arr.filter((a: any) => a.CustomerID === customerId);
-      setAddresses(filtered);
-      // หา address หลัก (isPrimary === true)
-      const primary = filtered.find((a: any) => a.isPrimary);
-      if (primary) {
-        setPrimaryAddressId(primary.ID);
-        setSelectedAddress(primary.ID);
-      } else if (filtered.length > 0) {
-        setPrimaryAddressId(filtered[0].ID);
-        setSelectedAddress(filtered[0].ID);
-      }
-    };
-    fetch();
+    if (currentUser && currentUser.ID) {
+      // ดึง addresses จาก backend ทุกครั้ง ไม่ใช้ localStorage
+      const fetch = async () => {
+        const arrRaw = await fetchAddresses(currentUser.ID);
+        const arr = normalizeAddresses(arrRaw);
+        setAddresses(arr);
+        const primary = arr.find((a: any) => a.isPrimary || a.isDefault);
+        if (primary) {
+          setPrimaryAddressId(primary.ID);
+          setSelectedAddress(primary.ID);
+        } else if (arr.length > 0) {
+          setPrimaryAddressId(arr[0].ID);
+          setSelectedAddress(arr[0].ID);
+        }
+      };
+      fetch();
+    }
     // eslint-disable-next-line
   }, [currentUser]);
 
   useEffect(() => {
-    // สมมุติใช้ customer id 1 (หรือดึงจาก auth จริง)
+    // ถ้า currentUser มีข้อมูลแล้ว ไม่ต้อง fetch ใหม่
+    if (currentUser) return;
     const fetchUser = async () => {
       try {
         if (!userId) {
@@ -166,20 +180,13 @@ const OrderPage: React.FC = () => {
           return;
         }
         const res = await fetchCustomerNameById(Number(userId));
-        // ถ้า response เป็น { firstName, lastName, ... }
-        if (res && (res.firstName || res.lastName)) {
-          setCurrentUser(res);
-        } else if (res && res.data && (res.data.firstName || res.data.lastName)) {
-          setCurrentUser(res.data);
-        } else {
-          setCurrentUser(null);
-        }
+        setCurrentUser({ ...res, ID: Number(userId) });
       } catch (err) {
         setCurrentUser(null);
       }
     };
     fetchUser();
-  }, [userId]);
+  }, [userId, currentUser]);
 
   useEffect(() => {
     // โหลดน้ำยาซักผ้าและปรับผ้านุ่มแยกประเภท
@@ -588,7 +595,7 @@ const OrderPage: React.FC = () => {
           !addingNewAddress ? [
             <Button key="ok" type="primary" onClick={() => {
               setIsMapModal(false);
-            }} disabled={!selectedAddress}>
+            }} disabled={addresses.length === 0}>
               ยืนยันที่อยู่
             </Button>
           ] : null
@@ -598,11 +605,12 @@ const OrderPage: React.FC = () => {
         {!addingNewAddress ? (
           <>
             <div style={{ maxHeight: 350, overflowY: 'auto', marginBottom: 16 }}>
-              {addresses.map(addr => {
+              {addresses.map((addr, idx) => {
                 const isSelected = selectedAddress === addr.ID;
+                const isPrimary = addr.isPrimary || addr.isDefault;
                 return (
                   <div
-                    key={addr.ID}
+                    key={addr.ID || addr.id || idx} // ปรับ key prop ให้ไม่ซ้ำ
                     onClick={() => setSelectedAddress(addr.ID)}
                     style={{
                       border: isSelected ? '2px solid #4CAF50' : '1px solid #ddd',
@@ -624,7 +632,7 @@ const OrderPage: React.FC = () => {
                       )}
                     </div>
                     <div style={{ margin: '8px 0 0 0', color: '#222', fontSize: 15, whiteSpace: 'pre-line' }}>{addr.AddressDetails}</div>
-                    {addr.ID === primaryAddressId && (
+                    {isPrimary && (
                       <div style={{ color: '#43a047', fontWeight: 500, marginTop: 6 }}>ที่อยู่หลัก</div>
                     )}
                     {/* ปุ่มแก้ไข/ลบ/ตั้งเป็นที่อยู่หลัก */}
@@ -632,16 +640,25 @@ const OrderPage: React.FC = () => {
                       <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', marginLeft: 8 }}>
                         <input
                           type="checkbox"
-                          checked={addr.ID === primaryAddressId}
+                          checked={isPrimary}
                           onChange={async e => {
                             e.stopPropagation();
                             if (e.target.checked) {
                               setPrimaryAddressId(addr.ID);
+                              setSelectedAddress(addr.ID);
                               try {
                                 await setMainAddress(currentUser?.ID || 1, addr.ID);
-                                // อัปเดต addresses ใหม่หลังตั้งที่อยู่หลัก
-                                const arr = await fetchAddresses(currentUser?.ID || 1);
+                                const arrRaw = await fetchAddresses(currentUser?.ID || 1);
+                                const arr = normalizeAddresses(arrRaw);
                                 setAddresses(arr);
+                                const primary = arr.find((a: any) => a.isPrimary || a.isDefault);
+                                if (primary) {
+                                  setPrimaryAddressId(primary.ID);
+                                  setSelectedAddress(primary.ID);
+                                } else if (arr.length > 0) {
+                                  setPrimaryAddressId(arr[0].ID);
+                                  setSelectedAddress(arr[0].ID);
+                                }
                               } catch (err) {
                                 AntdModal.error({ title: "ตั้งที่อยู่หลักไม่สำเร็จ" });
                               }
@@ -711,19 +728,25 @@ const OrderPage: React.FC = () => {
               <Button type="primary" onClick={async () => {
                 if (!newAddress.trim()) return;
                 try {
-                  await createAddress({
+                  await createNewAddress({
                     addressDetails: newAddress,
                     latitude: newLat,
                     longitude: newLng,
-                    customerId: currentUser?.ID || 1,
+                    customerId: currentUser?.ID || userId,
                   });
-                  const arr = await fetchAddresses(currentUser?.ID || 1);
+                  const arrRaw = await fetchAddresses(currentUser?.ID || userId);
+                  let arr = normalizeAddresses(arrRaw);
+                  // ถ้าไม่มี address หลัก ให้ตั้ง address ตัวแรกเป็นหลัก
+                  if (!arr.some(a => a.isPrimary || a.isDefault) && arr.length > 0) {
+                    arr = arr.map((a, idx) => idx === 0 ? { ...a, isPrimary: true, isDefault: true } : a);
+                  }
                   setAddresses(arr);
                   setAddingNewAddress(false);
                   setNewAddress("");
                   setNewLat(13.7563);
                   setNewLng(100.5018);
                   setNewIsPrimary(false);
+                  AntdModal.success({ title: "บันทึกที่อยู่สำเร็จ" });
                 } catch (err) {
                   AntdModal.error({ title: "บันทึกที่อยู่ไม่สำเร็จ" });
                 }
@@ -737,6 +760,24 @@ const OrderPage: React.FC = () => {
     </CustomerSidebar>
   );
 };
+
+// Helper: Normalize addresses ให้มี address หลักแค่ตัวเดียว
+function normalizeAddresses(arrRaw: any[]): any[] {
+  console.log('addresses raw:', arrRaw);
+  let found = false;
+  let hasPrimary = arrRaw.some(a => !!a.isPrimary || !!a.isDefault || !!a.IsPrimary || !!a.IsDefault);
+  const arr = arrRaw.map((a, idx) => {
+    let isPrimary = !!a.isPrimary || !!a.isDefault || !!a.IsPrimary || !!a.IsDefault;
+    if (!hasPrimary && idx === 0) isPrimary = true; // ถ้าไม่มี address หลัก ให้ตัวแรกเป็นหลัก
+    if (isPrimary && !found) {
+      found = true;
+      return { ...a, isPrimary: true, isDefault: true, ID: a.ID || a.id, AddressDetails: a.AddressDetails || a.detail };
+    }
+    return { ...a, isPrimary: false, isDefault: false, ID: a.ID || a.id, AddressDetails: a.AddressDetails || a.detail };
+  });
+  console.log('addresses normalized:', arr);
+  return arr;
+}
 
 // เพิ่ม helper component สำหรับปักหมุดและ reverse geocode
 function LocationMarker({ setLat, setLng, setAddress }: { setLat: (lat: number) => void, setLng: (lng: number) => void, setAddress: (addr: string) => void }) {

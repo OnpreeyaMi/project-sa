@@ -34,6 +34,7 @@ const Login: React.FC = () => {
           ...data,
           customer: normalizeCustomer(customerData) // ต้อง normalize ตรงนี้!
         }));
+        localStorage.setItem("userId", String(customerData.ID)); // <-- เพิ่มบรรทัดนี้
 
         switch (data.role) {
           case "customer":
