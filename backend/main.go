@@ -29,6 +29,7 @@ func main() {
 	// Authenticated (customer scope)
 	customerRoutes := router.Group("/customer")
 	customerRoutes.Use(middlewares.AuthMiddleware())
+	
 	{
 		customerRoutes.GET("/profile", controller.GetCustomerProfile)
 		customerRoutes.PUT("/profile", controller.EditCustomerProfile)
@@ -37,7 +38,9 @@ func main() {
 		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)
 		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
 	}
-
+	
+	
+	
 	// Convenience endpoint for employee (need token)
 	router.GET("/employee/me", middlewares.AuthMiddleware(), controller.GetEmployeeMe)
 
@@ -100,12 +103,6 @@ func main() {
 	router.GET("/process/:id/order", controller.GetProcessesByOrder)
 	router.GET("/ordersdetails", controller.GetOrdersdetails)
 
-	// Customer
-	router.POST("/customers", controller.CreateCustomer)
-	router.GET("/customers", controller.GetCustomers)
-	router.PUT("/customers/:id", controller.UpdateCustomer)
-	router.DELETE("/customers/:id", controller.DeleteCustomer)
-	router.GET("/customers/:id", controller.GetCustomerByID)
 
 	// promotion
 	router.POST("/promotions", controller.CreatePromotion)
@@ -125,12 +122,13 @@ func main() {
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 
 	//Payment
-	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
+	
 	router.GET("/payment/checkout/:orderId", controller.GetCheckoutData)   // ข้อมูลหน้าเช็คเอาต์ 
-	authorized := router.Group("/", middlewares.AuthRequired()) 
-	{
-		authorized.GET("/orders/latest", controller.GetLatestOrderForCustomer)
-	}
+	// router.GET("/orders/latest", middlewares.AuthRequired().controller.GetLatestOrderForCustomer)
+	router.GET("/orders/latest/:customer_id", controller.GetLatestOrderForCustomer)
+	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
+	
+	
 
 	
 
@@ -167,3 +165,5 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+

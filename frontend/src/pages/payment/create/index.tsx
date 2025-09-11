@@ -67,7 +67,7 @@ export default function Payment() {
   const qOrderId = new URLSearchParams(location.search).get("orderId");
   const orderId = routeOrderId ? parseInt(routeOrderId, 10) : qOrderId ? parseInt(qOrderId, 10) : 0;
 
-  const BASE_RAW = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  const BASE_RAW = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
   const BASE = String(BASE_RAW).replace(/\/+$/, "");
 
   // ---------- Page UI states ----------

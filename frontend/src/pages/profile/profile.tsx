@@ -43,7 +43,7 @@ const Profile: React.FC = () => {
   const [addressModal, setAddressModal] = useState(false);
   const [addressEdit, setAddressEdit] = useState<AddressVM | null>(null);
   const [loading, setLoading] = useState(false);
-
+  
   // ------- Helpers -------
   const asAddrVM = (raw: any): AddressVM => ({
     id: raw.ID ?? raw.id,
@@ -197,7 +197,7 @@ const Profile: React.FC = () => {
       setLoading(false);
     }
   };
-
+  console.log("customer id",user?.customer?.id)
   return (
     <CustomerSidebar>
       <Row justify="center" style={{ marginTop: 32 }} gutter={32}>

@@ -145,6 +145,7 @@ func VerifySlipBase64(c *gin.Context) {
 				pay = entity.Payment{
 					OrderID:       in.OrderID,
 					PaymentType:   "PromptPay",
+					
 					TotalAmount:   totalInt,
 					PaymentStatus: "pending",
 				}
@@ -396,48 +397,4 @@ func GetCheckoutData(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// // GET /payment/promotions?subtotal=300
-// // ใช้เดี่ยว ๆ กรณีอยากโหลดโปรโมชันตามยอดตะกร้า
-// func ListAvailablePromotions(c *gin.Context) {
-// 	subtotal, _ := strconv.Atoi(c.DefaultQuery("subtotal", "0"))
 
-// 	var promos []entity.Promotion
-// 	now := time.Now()
-// 	if err := config.DB.
-// 		Preload("PromotionCondition").
-// 		Where("status = ? AND start_date <= ? AND end_date >= ?", "active", now, now).
-// 		Find(&promos).Error; err != nil {
-
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "load_promotions_failed"})
-// 		return
-// 	}
-
-// 	out := make([]PromoView, 0, len(promos))
-// 	bestID := ""
-// 	bestOff := -1
-// 	for _, p := range promos {
-// 		pv := PromoView{
-// 			ID:            fmt.Sprint(p.ID),
-// 			Code:          parseCode(&p),
-// 			Title:         p.PromotionName,
-// 			Description:   p.Description,
-// 			DiscountType:  mapDiscountType(&p),
-// 			DiscountValue: float64(p.DiscountValue),
-// 			ExpiresAt:     p.EndDate.Format("2006-01-02"),
-// 		}
-// 		if ms := parseMinSpend(&p); ms != nil {
-// 			pv.MinSpend = ms
-// 		}
-// 		if pv.MinSpend != nil && subtotal < *pv.MinSpend {
-// 			pv.Disabled = true
-// 		}
-// 		if !pv.Disabled {
-// 			if off := computeDiscount(subtotal, pv); off > bestOff {
-// 				bestOff = off
-// 				bestID = pv.ID
-// 			}
-// 		}
-// 		out = append(out, pv)
-// 	}
-// 	c.JSON(http.StatusOK, gin.H{"promotions": out, "bestId": bestID})
-// }

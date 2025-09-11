@@ -25,6 +25,7 @@ type Payment struct {
 
 	// อ้างไปยังออเดอร์
 	OrderID       uint      `json:"order_id"`
+	
 
 	// ---------------- จาก EasySlip ----------------
 	// อ้างอิงธุรกรรม (ใช้กันซ้ำ)

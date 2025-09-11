@@ -2,9 +2,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Search, Mail, Eye, Send, Loader2 } from "lucide-react";
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
+import { useUser } from "../../hooks/UserContext";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const EMP_ID = 1;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 
 type Status = "new" | "in_progress" | "resolved";
 type Priority = "low" | "medium" | "high";
@@ -29,6 +30,8 @@ const thStatus: Record<Status, string> = {
   in_progress: "กำลังดำเนินการ",
   resolved: "ปิดงานแล้ว",
 };
+
+
 
 function timeAgo(iso: string) {
   const t = new Date(iso).getTime();
@@ -61,11 +64,21 @@ async function apiGetComplaintDetail(publicId: string): Promise<ComplaintDetail>
   return res.json();
 }
 
-async function apiAddReply(publicId: string, text: string, newStatus?: Status) {
+function getEmpIdFromAnywhere(user: ReturnType<typeof useUser>["user"]) {
+  const fromCtx = user?.employeeId ? Number(user.employeeId) : 0;
+  const fromLS = Number(localStorage.getItem("employeeId") || 0);
+  return fromCtx || fromLS || 0;
+}
+
+async function apiAddReply(publicId: string, text: string, newStatus: Status | undefined, userToken?: string, empId?: number) {
+  if (!empId) throw new Error("ไม่พบรหัสพนักงาน (empId)");
   const res = await fetch(`${API_BASE}/employee/complaints/${publicId}/replies`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ empId: EMP_ID, text, newStatus: newStatus ?? null }),
+    headers: {
+      "Content-Type": "application/json",
+      ...(userToken ? { Authorization: `Bearer ${userToken}` } : {}), // เผื่ออนาคตมี auth
+    },
+    body: JSON.stringify({ empId, text, newStatus: newStatus ?? null }),
   });
   if (!res.ok) throw new Error("บันทึกการตอบกลับไม่สำเร็จ");
   return res.json() as Promise<{ ok: true; reply: ReplyItem }>;
@@ -87,10 +100,19 @@ function ReplyDrawer({
   open: boolean; onClose: () => void; item: ComplaintRow | null;
   onStatusChanged?: (s: Status) => void;
 }) {
+  const { user, refreshEmployee } = useUser(); // ⬅️ ใช้ Context
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<ComplaintDetail | null>(null);
   const [text, setText] = useState("");
   const [chooseStatus, setChooseStatus] = useState<Status | "">("");
+
+  // ถ้าไม่มี employeeId ให้ลอง refresh เพื่อเติมให้ครบ
+  useEffect(() => {
+    if (user?.role === "employee") {
+      const empId = getEmpIdFromAnywhere(user);
+      if (!empId) { void refreshEmployee(); } // จะอัปเดตทั้ง context และ localStorage
+    }
+  }, [user, refreshEmployee]);
 
   useEffect(() => {
     let on = true;
@@ -111,19 +133,28 @@ function ReplyDrawer({
     if (!text.trim()) return;
     try {
       setLoading(true);
-      await apiAddReply(item.id, text.trim(), chooseStatus || undefined);
+      const empId = getEmpIdFromAnywhere(user);
+      if (!empId) {
+        await refreshEmployee();
+      }
+      const finalEmpId = getEmpIdFromAnywhere(user);
+      if (!finalEmpId) {
+        alert("ไม่พบรหัสพนักงานในระบบ กรุณาลองใหม่หรือลงชื่อเข้าใช้ใหม่");
+        return;
+      }
+
+      await apiAddReply(item.id, text.trim(), chooseStatus || undefined, user?.token, finalEmpId);
       setText("");
       if (chooseStatus) onStatusChanged?.(chooseStatus);
       const d = await apiGetComplaintDetail(item.id);
       setDetail(d);
       setChooseStatus("");
-    } catch {
+    } catch (e) {
       alert("บันทึกการตอบกลับไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/20" onClick={onClose} />

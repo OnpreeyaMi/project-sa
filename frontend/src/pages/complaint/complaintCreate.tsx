@@ -11,7 +11,7 @@ export type NewComplaintPayload = {
   attachments?: File[];
 };
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export default function CustomerComplaintPage() {
   const currentCustomerId =  2; // TODO: เปลี่ยนเป็น id จริงของลูกค้าที่ล็อกอิน

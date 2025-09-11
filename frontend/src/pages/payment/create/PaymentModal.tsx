@@ -99,7 +99,7 @@ type PaymentModalProps = {
 
   // ชี้ไปที่ backend จริง (ปรับให้ตรงกับพอร์ตของคุณ)
   
-  const RAW_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  const RAW_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
   const BASE = RAW_BASE.replace(/\/+$/, "");   // กันกรณีมี / ท้าย
   const VERIFY_URL = `${BASE}/verify-slip-base64`;
   
