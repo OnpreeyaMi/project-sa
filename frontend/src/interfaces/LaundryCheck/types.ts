@@ -11,8 +11,8 @@ export interface ClothType { ID: number; Name: string; }
 export interface ServiceType { ID: number; Name: string; }
 
 export interface LaundryItemInput {
-  ClothTypeID?: number;      // (ไม่ได้ใช้ตอนพิมพ์ชื่อเอง)
-  ClothTypeName?: string;    // ใช้กรณีพิมพ์เอง
+  ClothTypeID?: number;
+  ClothTypeName?: string;
   ServiceTypeID: number;
   Quantity: number;
 }
@@ -32,7 +32,6 @@ export interface OrderSummary {
   LatestHistoryAt?: string | null;
   TotalItems: number;
   TotalQuantity: number;
-  // ถ้าคุณอยากโชว์บริการในตารางด้วย ให้เพิ่ม field นี้ที่ FE ด้วย
   ServiceTypes?: { ID: number; Name: string }[];
 }
 
@@ -55,7 +54,6 @@ export interface OrderDetail {
   Address: string;
   OrderNote: string;
   StaffNote: string;
-  // ✅ เพิ่ม: บริการของออเดอร์
   ServiceTypes: { ID: number; Name: string }[];
   Items: OrderItemView[];
   TotalItems: number;

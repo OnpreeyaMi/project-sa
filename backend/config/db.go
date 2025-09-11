@@ -2,10 +2,13 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/OnpreeyaMi/project-sa/entity"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"time"
 )
 
 var DB *gorm.DB
@@ -20,8 +23,6 @@ func ConnectDatabase() {
 }
 
 func SetupDatabase() {
-	// สร้างตารางตามโมเดล (ไม่มีการใส่ mock data)
-	// AutoMigrate สำหรับทุก entity
 	err := DB.AutoMigrate(
 		&entity.Address{},
 		&entity.ClothType{},
@@ -67,12 +68,49 @@ func SetupDatabase() {
 		fmt.Println("AutoMigrate completed successfully.")
 	}
 
-	// ใส่ mock data หลัง AutoMigrate
 	MockData()
 }
 
+func phash(p string) string {
+	b, err := bcrypt.GenerateFromPassword([]byte(p), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 func MockData() {
-	// --- Mock Customers ---
+	// --- Roles ---
+	roles := []entity.Role{{Name: "admin"}, {Name: "customer"}, {Name: "employee"}}
+	for _, r := range roles {
+		DB.FirstOrCreate(&r, entity.Role{Name: r.Name})
+	}
+
+	// --- Users (ensure bcrypt hash) ---
+	users := []entity.User{
+		{Email: "admin@example.com", Password: phash("1234"), RoleID: 1},
+		{Email: "customer1@example.com", Password: phash("1234"), RoleID: 2},
+		{Email: "customer2@example.com", Password: phash("1234"), RoleID: 2},
+		{Email: "employee1@example.com", Password: phash("123456"), RoleID: 3},
+		{Email: "employee2@example.com", Password: phash("123456"), RoleID: 3},
+	}
+	for _, u := range users {
+		var exist entity.User
+		if err := DB.Where("email = ?", u.Email).First(&exist).Error; err == nil {
+			// อัปเกรด record เดิมถ้ายังเป็น plain
+			if len(exist.Password) > 0 && exist.Password[0] != '$' {
+				exist.Password = phash(exist.Password)
+				DB.Save(&exist)
+			}
+			continue
+		} else if err != nil && err != gorm.ErrRecordNotFound {
+			log.Println(err)
+		} else {
+			DB.Create(&u)
+		}
+	}
+
+	// --- Customers ---
 	customers := []entity.Customer{
 		{FirstName: "Nuntawut", LastName: "K.", PhoneNumber: "0812345678", GenderID: 1, IsVerified: true, UserID: 2},
 		{FirstName: "Alice", LastName: "B.", PhoneNumber: "0898765432", GenderID: 1, IsVerified: false, UserID: 3},
@@ -81,35 +119,8 @@ func MockData() {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
 
-	// --- Mock Role ---
-	roles := []entity.Role{
-		{Name: "admin"},
-		{Name: "customer"},
-		{Name: "employee"},
-	}
-	for _, r := range roles {
-		DB.FirstOrCreate(&r, entity.Role{Name: r.Name})
-	}
-
-	// --- Mock User ---
-	// --- Mock User (ต่อจากเดิม) ---
-	users := []entity.User{
-		{Email: "admin@example.com", Password: "1234", RoleID: 1},
-		{Email: "customer1@example.com", Password: "1234", RoleID: 2},
-		{Email: "customer2@example.com", Password: "1234", RoleID: 2},
-		{Email: "employee1@example.com", Password: "1234", RoleID: 3},
-		{Email: "employee2@example.com", Password: "1234", RoleID: 3},
-	}
-	for _, u := range users {
-		DB.FirstOrCreate(&u, entity.User{Email: u.Email})
-	}
-
-	// --- Mock Gender ---
-	genders := []entity.Gender{
-		{Name: "ชาย"},
-		{Name: "หญิง"},
-		{Name: "อืนๆ"},
-	}
+	// --- Genders ---
+	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
@@ -122,7 +133,16 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
-	// --- Mock ServiceType ---
+	// // --- Address ---
+	// addresses := []entity.Address{
+	// 	{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
+	// 	{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
+	// }
+	// for _, a := range addresses {
+	// 	DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
+	// }
+
+	// --- ServiceTypes ---
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
@@ -141,11 +161,11 @@ func MockData() {
 		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
 		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
 	}
-
 	for _, c := range categories {
 		DB.FirstOrCreate(&c, entity.DetergentCategory{Name: c.Name})
 	}
-	// --- Mock DiscountType ---
+
+	// --- DiscountType ---
 	discountTypes := []entity.DiscountType{
 		{TypeName: "เปอร์เซ็นต์", Description: "ลดเป็นเปอร์เซ็นต์"},
 		{TypeName: "จำนวนเงิน", Description: "ลดเป็นจำนวนเงิน"},
@@ -154,7 +174,7 @@ func MockData() {
 		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
 	}
 
-	// --- Mock Promotion ---
+	// --- Promotions ---
 	promotions := []entity.Promotion{
 		{
 			PromotionName:  "โปรลดหน้าฝน",
@@ -181,7 +201,7 @@ func MockData() {
 		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
 	}
 
-	// --- Mock PromotionCondition ---
+	// --- PromotionConditions ---
 	conds := []entity.PromotionCondition{
 		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
 		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
@@ -189,25 +209,28 @@ func MockData() {
 	for _, c := range conds {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
-	
-	// --- Mock Machines ---
+
+	// --- LaundryProcess (ตัวอย่างเล็กน้อย) ---
+	processes := []entity.LaundryProcess{
+		{Status: "รอดำเนินการ"},
+		{Status: "กำลังซัก"},
+	}
+	for _, lp := range processes {
+		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status})
+	}
+
+	// --- Machines ---
 	machines := []entity.Machine{
-	{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
-	{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 1, Capacity_kg: 7, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 2, Capacity_kg: 10, Status: "available"},
-	{Machine_type: "drying",  Machine_number: 3, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "washing", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "washing", Machine_number: 3, Capacity_kg: 8, Status: "available"},
+		{Machine_type: "washing", Machine_number: 4, Capacity_kg: 12, Status: "available"},
+		{Machine_type: "drying", Machine_number: 1, Capacity_kg: 7, Status: "available"},
+		{Machine_type: "drying", Machine_number: 2, Capacity_kg: 10, Status: "available"},
+		{Machine_type: "drying", Machine_number: 3, Capacity_kg: 12, Status: "available"},
 	}
 	for _, m := range machines {
-	DB.FirstOrCreate(
-		&m,
-		entity.Machine{
-			Machine_type: m.Machine_type,
-			Capacity_kg:  m.Capacity_kg, 
-		},
-		)
+		DB.FirstOrCreate(&m, entity.Machine{Machine_type: m.Machine_type, Capacity_kg: m.Capacity_kg, Status: m.Status})
 	}
 	// --- Mock TimeSlot ---
 	var countTS int64

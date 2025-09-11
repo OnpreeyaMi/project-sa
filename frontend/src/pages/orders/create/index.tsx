@@ -115,7 +115,7 @@ const OrderPage: React.FC = () => {
 
     const orderData = {
       customer_id: currentUser?.ID || 1,
-      service_type_ids: serviceTypeIds, // เปลี่ยนชื่อ field ให้ตรง backend
+      service_type_ids: serviceTypeIds, // ส่งเป็น array ของ id จริง
       detergent_ids: detergentIds,
       order_image: orderImage,
       order_note: orderNote,
@@ -162,7 +162,7 @@ const OrderPage: React.FC = () => {
           setCurrentUser(null);
           return;
         }
-        const res = await fetchCustomerNameById(userId);
+        const res = await fetchCustomerNameById(Number(userId));
         // ถ้า response เป็น { firstName, lastName, ... }
         if (res && (res.firstName || res.lastName)) {
           setCurrentUser(res);

@@ -1,5 +1,5 @@
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -11,8 +11,16 @@ import {
   Typography,
   Space,
   Modal,
+  Alert,
+  Tooltip,
 } from "antd";
-import { SearchOutlined, RollbackOutlined, PrinterOutlined } from "@ant-design/icons";
+import {
+  SearchOutlined,
+  RollbackOutlined,
+  PrinterOutlined,
+  ReloadOutlined,
+  LinkOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { FetchOrderDetail, FetchOrderHistory } from "../../services/LaundryCheck";
 import type { OrderDetail, HistoryEntry } from "../../interfaces/LaundryCheck/types";
@@ -31,17 +39,42 @@ const renderServiceTags = (detail?: OrderDetail | null) => {
   return <span>-</span>;
 };
 
+const formatDate = (v?: string | Date | null) => {
+  if (!v) return "-";
+  try {
+    const d = typeof v === "string" ? new Date(v) : v;
+    return d.toLocaleString();
+  } catch {
+    return "-";
+  }
+};
+
 const LaundryHistoryPage: React.FC = () => {
   const navigate = useNavigate();
+
   const [orderId, setOrderId] = useState<number | undefined>();
   const [detail, setDetail] = useState<OrderDetail | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ใบเสร็จ
+  // ใบเสร็จ (พิมพ์)
   const [billOpen, setBillOpen] = useState(false);
 
-  const totalQty = useMemo(() => history.reduce((s, h) => s + (h.Quantity || 0), 0), [history]);
+  // รวมจากประวัติ (จริง)
+  const totalQtyHistory = useMemo(
+    () => history.reduce((s, h) => s + (h.Quantity || 0), 0),
+    [history]
+  );
+
+  // เวลาจากประวัติล่าสุด (ไว้โชว์ในบิลแทนการแสดงทั้งตารางประวัติ)
+  const latestUpdatedAt = useMemo(() => {
+    if (!history.length) return null;
+    const max = history.reduce<Date | null>((acc, h) => {
+      const d = new Date(h.RecordedAt);
+      return !acc || d > acc ? d : acc;
+    }, null);
+    return max;
+  }, [history]);
 
   const load = async () => {
     if (!orderId) return;
@@ -57,6 +90,8 @@ const LaundryHistoryPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const canPrint = !!detail;
 
   return (
     <EmployeeSidebar>
@@ -106,26 +141,25 @@ const LaundryHistoryPage: React.FC = () => {
           <Title level={4} style={{ margin: 0, color: "#0f172a" }}>
             ประวัติการรับผ้า
           </Title>
-          <span className="pill">ตรวจสอบย้อนหลัง • ป้องกันตกหล่น</span>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              icon={<RollbackOutlined />}
-              onClick={() => navigate(-1)}
-              size="middle"
-              shape="round"
-            >
-              ย้อนกลับ
-            </Button>
-            <Button
-              type="primary"
-              icon={<PrinterOutlined />}
-              disabled={!detail}
-              onClick={() => setBillOpen(true)}
-              size="middle"
-              shape="round"
-            >
-              ออกบิล
-            </Button>
+          <span className="pill">ตรวจสอบย้อนหลัง • ออกบิลพิมพ์ได้</span>
+          <div className="ml-auto flex items-center gap-6">
+            <Tooltip title="กลับหน้าก่อนหน้า">
+              <Button icon={<RollbackOutlined />} onClick={() => navigate(-1)} size="middle" shape="round">
+                ย้อนกลับ
+              </Button>
+            </Tooltip>
+            <Tooltip title="พิมพ์ใบเสร็จจากข้อมูลล่าสุดที่โหลด">
+              <Button
+                type="primary"
+                icon={<PrinterOutlined />}
+                disabled={!canPrint}
+                onClick={() => setBillOpen(true)}
+                size="middle"
+                shape="round"
+              >
+                ออกบิล
+              </Button>
+            </Tooltip>
           </div>
         </div>
 
@@ -139,18 +173,22 @@ const LaundryHistoryPage: React.FC = () => {
               type="number"
               value={orderId ?? undefined}
               onChange={(e) => setOrderId(Number(e.target.value || 0) || undefined)}
+              onPressEnter={load}
               style={{ width: 260 }}
               size="large"
             />
-            <Button type="primary" onClick={load} loading={loading} size="large" shape="round">
+            <Button type="primary" onClick={load} loading={loading} size="large" shape="round" icon={<ReloadOutlined />}>
               ดึงประวัติ
             </Button>
           </Space>
 
           <Divider className="soft-divider" />
 
-          {detail ? (
+          {!detail ? (
+            <Alert type="info" showIcon message="กรอกเลขที่ออเดอร์ แล้วกด 'ดึงประวัติ' เพื่อดูรายการย้อนหลัง" />
+          ) : (
             <>
+              {/* Order Header */}
               <Descriptions
                 bordered
                 column={2}
@@ -163,7 +201,7 @@ const LaundryHistoryPage: React.FC = () => {
                   </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="วันที่สร้าง">
-                  {new Date(detail.CreatedAt).toLocaleString()}
+                  {formatDate(detail.CreatedAt)}
                 </Descriptions.Item>
                 <Descriptions.Item label="ลูกค้า">{detail.CustomerName}</Descriptions.Item>
                 <Descriptions.Item label="เบอร์">{detail.Phone}</Descriptions.Item>
@@ -188,9 +226,13 @@ const LaundryHistoryPage: React.FC = () => {
               {/* Summary chips */}
               <Space size="small" style={{ marginBottom: 8 }}>
                 <span className="pill">จำนวนครั้งที่บันทึก: {history.length}</span>
-                <span className="pill">รวมชิ้น: {totalQty}</span>
+                <span className="pill">รวมชิ้น (จากประวัติ): {totalQtyHistory}</span>
+                <span className="pill">
+                  รวมชิ้น (จากรายการปัจจุบัน): {detail.TotalQuantity ?? detail.Items.reduce((s, x) => s + (x.Quantity || 0), 0)}
+                </span>
               </Space>
 
+              {/* History table (ยังแสดงบนหน้า แต่จะไม่พิมพ์ลงบิล) */}
               <Title level={5} style={{ marginTop: 10 }}>
                 ประวัติ
               </Title>
@@ -204,7 +246,7 @@ const LaundryHistoryPage: React.FC = () => {
                     title: "เวลา",
                     dataIndex: "RecordedAt",
                     width: 220,
-                    render: (v) => new Date(v).toLocaleString(),
+                    render: (v) => formatDate(v),
                   },
                   { title: "ประเภทผ้า", dataIndex: "ClothTypeName" },
                   { title: "บริการ", dataIndex: "ServiceType", width: 180 },
@@ -214,12 +256,25 @@ const LaundryHistoryPage: React.FC = () => {
                 bordered
                 pagination={{ pageSize: 10, showSizeChanger: false }}
               />
+
+              {/* Quick link to sorting page */}
+              <div className="mt-3">
+                <Tooltip title="เปิดหน้า รับผ้า/แยกผ้า ของออเดอร์นี้">
+                  <Button
+                    type="link"
+                    icon={<LinkOutlined />}
+                    onClick={() => navigate("/employee/laundry-check", { state: { orderId: detail.ID } })}
+                  >
+                    ไปหน้าแยกผ้า (ออเดอร์ #{detail.ID})
+                  </Button>
+                </Tooltip>
+              </div>
             </>
-          ) : null}
+          )}
         </Card>
       </div>
 
-      {/* Modal ใบเสร็จสำหรับพิมพ์ */}
+      {/* Modal ใบเสร็จสำหรับพิมพ์ — ไม่แสดง 'ประวัติ' ทั้งตาราง, แสดงแค่ข้อมูลล่าสุด */}
       <Modal
         title={<span>ใบเสร็จรับผ้า — <Text type="secondary">{detail?.ID ?? "-"}</Text></span>}
         open={billOpen}
@@ -240,23 +295,25 @@ const LaundryHistoryPage: React.FC = () => {
 
           <Descriptions size="small" column={2} bordered>
             <Descriptions.Item label="เลขที่ออเดอร์">{detail?.ID}</Descriptions.Item>
-            <Descriptions.Item label="วันที่สร้าง">
-              {detail ? new Date(detail.CreatedAt).toLocaleString() : "-"}
-            </Descriptions.Item>
+            <Descriptions.Item label="วันที่สร้าง">{formatDate(detail?.CreatedAt)}</Descriptions.Item>
             <Descriptions.Item label="ลูกค้า">{detail?.CustomerName}</Descriptions.Item>
             <Descriptions.Item label="เบอร์">{detail?.Phone}</Descriptions.Item>
             <Descriptions.Item label="ที่อยู่" span={2}>{detail?.Address}</Descriptions.Item>
             <Descriptions.Item label="บริการ" span={2}>
               {renderServiceTags(detail)}
             </Descriptions.Item>
-            {detail?.OrderNote && (
+            {latestUpdatedAt ? (
+              <Descriptions.Item label="อัปเดตล่าสุด" span={2}>{formatDate(latestUpdatedAt)}</Descriptions.Item>
+            ) : null}
+            {detail?.OrderNote ? (
               <Descriptions.Item label="หมายเหตุ (ลูกค้า)" span={2}>
                 {detail.OrderNote}
               </Descriptions.Item>
-            )}
+            ) : null}
           </Descriptions>
 
           <Divider style={{ margin: "12px 0" }} />
+          {/* แสดงเฉพาะรายการปัจจุบัน (ไม่เอาตารางประวัติ) */}
           <Table
             dataSource={(detail?.Items || []).map((it, idx) => ({ key: it.ID, No: idx + 1, ...it }))}
             columns={[
@@ -271,27 +328,17 @@ const LaundryHistoryPage: React.FC = () => {
 
           <div className="mt-4 flex justify-end">
             <Descriptions column={1} size="small" bordered>
-              <Descriptions.Item label="รวมจำนวนรายการ">{detail?.TotalItems ?? (detail?.Items?.length || 0)}</Descriptions.Item>
-              <Descriptions.Item label="รวมจำนวนชิ้น">{detail?.TotalQuantity ?? (detail?.Items?.reduce((s, x) => s + (x.Quantity || 0), 0) || 0)}</Descriptions.Item>
+              <Descriptions.Item label="รวมจำนวนรายการ">
+                {detail?.TotalItems ?? (detail?.Items?.length || 0)}
+              </Descriptions.Item>
+              <Descriptions.Item label="รวมจำนวนชิ้น">
+                {detail?.TotalQuantity ?? (detail?.Items?.reduce((s, x) => s + (x.Quantity || 0), 0) || 0)}
+              </Descriptions.Item>
             </Descriptions>
           </div>
 
-          <Divider style={{ margin: "12px 0" }} />
-          <Title level={5} style={{ marginTop: 0 }}>ประวัติการรับผ้า</Title>
-          <Table<HistoryEntry>
-            size="small"
-            rowKey={(r) => String(r.ID)}
-            dataSource={history.map((h, idx) => ({ ...h, No: idx + 1 }))}
-            columns={[
-              { title: "ลำดับ", dataIndex: "No", width: 80, align: "center" as const },
-              { title: "เวลา", dataIndex: "RecordedAt", width: 220, render: (v) => new Date(v).toLocaleString() },
-              { title: "ประเภทผ้า", dataIndex: "ClothTypeName" },
-              { title: "บริการ", dataIndex: "ServiceType", width: 160 },
-              { title: "จำนวน", dataIndex: "Quantity", width: 120, align: "right" as const },
-            ]}
-            pagination={false}
-          />
-
+          {/* ไม่แสดงตารางประวัติในบิลตามคำขอ */}
+          {/* หมายเหตุพนักงาน (ถ้ามี) */}
           {detail?.StaffNote ? (
             <>
               <Divider style={{ margin: "12px 0" }} />
