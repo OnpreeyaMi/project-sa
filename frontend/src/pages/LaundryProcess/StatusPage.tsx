@@ -116,17 +116,32 @@ const OrderStatusPage: React.FC = () => {
       description: 'ส่งผ้าถึงลูกค้าเรียบร้อยแล้ว'
     },
   ];
-
-  // เลือก order ที่ต้องการแสดง (ล่าสุด/แรกสุด/เลือกได้)
   const selectedOrder = orders.find(o => o.ID === selectedOrderId) || (orders.length > 0 ? orders[orders.length-1] : null);
-  // หา customer_id ของ order ที่เลือก (หรือใช้ order ล่าสุด)
   const selectedCustomerId = selectedOrder ? selectedOrder.customer_id : null;
-  // filter orders ที่ customer_id เดียวกัน
   const sameCustomerOrders = selectedCustomerId
     ? orders.filter(o => o.customer_id === selectedCustomerId)
     : orders;
 
-  // ใช้ status ที่ backend ส่งมาเป็นตัวกำหนดทั้ง orderStatus และ currentStep
+  // ปรับ logic mapping สถานะตามลำดับและแหล่งข้อมูลจริง (LaundryProcess/Queue)
+  // Helper: หา Queue ตาม type
+  const getQueueByType = (type: string) => {
+    if (!selectedOrder || !('Queues' in selectedOrder)) return undefined;
+    const queues = (selectedOrder as any).Queues as any[];
+    if (!Array.isArray(queues)) return undefined;
+    return queues.find(q => q.Queue_type === type);
+  };
+
+  // Helper: หา LaundryProcess ล่าสุด
+  const getLastLaundryProcess = () => {
+    if (!selectedOrder || !selectedOrder.LaundryProcesses || selectedOrder.LaundryProcesses.length === 0) return undefined;
+    return selectedOrder.LaundryProcesses[selectedOrder.LaundryProcesses.length - 1];
+  };
+
+  const lastProcess = getLastLaundryProcess();
+  const pickupQueue = getQueueByType('pickup');
+  const deliveryQueue = getQueueByType('delivery');
+
+  // Map status string จาก backend → index ของ statusSteps
   const statusToStepIndex: Record<string, number> = {
     'รอดำเนินการ': 0,
     'กำลังไปรับผ้า': 1,
@@ -136,9 +151,30 @@ const OrderStatusPage: React.FC = () => {
     'เสร็จสิ้น': 5,
     'กำลังจัดส่ง': 6,
     'จัดส่งเรียบร้อยแล้ว': 7,
+    // กรณี backend ส่ง status เป็นอังกฤษ (optional)
+    'pending': 0,
+    'pickup_in_progress': 1,
+    'picked_up': 2,
+    'washing': 3,
+    'drying': 4,
+    'finished': 5,
+    'delivery_in_progress': 6,
+    'delivered': 7,
   };
-  const orderStatus = selectedOrder?.status || '';
-  const currentStep = statusToStepIndex[orderStatus] ?? 0;
+
+  // ใช้ status field จาก backend เป็นตัวกำหนด currentStep และ orderStatus
+  let currentStep = 0;
+  let orderStatus = '';
+  if (selectedOrder && selectedOrder.status) {
+    const status = selectedOrder.status;
+    if (statusToStepIndex.hasOwnProperty(status)) {
+      currentStep = statusToStepIndex[status];
+      orderStatus = statusSteps[currentStep]?.title || status;
+    } else {
+      // fallback: ถ้า status ไม่ตรง map ให้แสดง status เดิม
+      orderStatus = status;
+    }
+  }
 
   const progressPercent = Math.round((currentStep >= 0 ? currentStep : 0) / (statusSteps.length - 1) * 100);
 
@@ -157,8 +193,15 @@ const OrderStatusPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [currentStep]);
 
+  // Logic สำหรับไทม์ไลน์: เช็คแต่ละขั้นว่าข้อมูลจริงถึงขั้นไหนแล้ว
+  // ปรับ logic: completedSteps ไล่สถานะย้อนหลัง (ถ้าอยู่ขั้น 4 ให้ 0-4 เป็น finish)
+  const completedSteps = Array(statusSteps.length).fill(false);
+  for (let i = 0; i <= currentStep; i++) {
+    completedSteps[i] = true;
+  }
+
   const getStepStatus = (index: number) => {
-    if (index < currentStep) return 'finish';
+    if (completedSteps[index]) return 'finish';
     if (index === currentStep) return 'process';
     return 'wait';
   };
