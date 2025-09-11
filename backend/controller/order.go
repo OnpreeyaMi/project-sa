@@ -102,7 +102,7 @@ func GetOrderHistories(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, histories)
 }
-
+// ดึงออเดอร์ทั้งหมด
 func GetOrders(c *gin.Context) {
 	var orders []entity.Order
 	if err := config.DB.Preload("Customer").Find(&orders).Error; err != nil {
