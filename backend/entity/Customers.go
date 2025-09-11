@@ -19,6 +19,6 @@ type Customer struct {
 
 	Addresses []*Address `gorm:"foreignKey:CustomerID"`
 
-	Orders []*Order `gorm:"foreignKey:CustomerID;references:ID"`
+	Orders []*Order `gorm:"foreignKey:CustomerID"`
 
 }

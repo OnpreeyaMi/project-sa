@@ -109,6 +109,7 @@ func main() {
 	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
 
 	router.Run(fmt.Sprintf(":%d", port))
+
 }
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -124,3 +125,5 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+
