@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"time"
+	"strings"
 
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity"
@@ -387,7 +388,7 @@ func GetAvailableMachines(c *gin.Context) {
 // ดึง order พร้อมสถานะล่าสุด
 func GetOrdersdetails(c *gin.Context) {
        var orders []entity.Order
-       config.DB.Preload("Customer").Preload("Address").Preload("LaundryProcesses").Preload("SortingRecord.SortedClothes").Find(&orders)
+       config.DB.Preload("Customer").Preload("Address").Preload("LaundryProcesses").Preload("SortingRecord.SortedClothes").Preload("ServiceTypes").Find(&orders)
 
        var result []map[string]interface{}
        for _, o := range orders {
@@ -408,10 +409,10 @@ func GetOrdersdetails(c *gin.Context) {
 	       if o.ServiceTypes != nil {
 		       for _, st := range o.ServiceTypes {
 			       if st != nil && st.Type != "" {
-				       if st.Type != "อบ" && st.Type != "ไม่อบ" && washerCap == 0 {
+				       if !strings.HasPrefix(st.Type, "อบ") && st.Type != "ไม่อบ" && washerCap == 0 {
 					       washerCap = st.Capacity
 				       }
-				       if st.Type == "อบ" && dryerCap == 0 {
+				       if strings.HasPrefix(st.Type, "อบ") && dryerCap == 0 {
 					       dryerCap = st.Capacity
 				       }
 			       }

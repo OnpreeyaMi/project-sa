@@ -39,11 +39,45 @@ import "./TransportQueuePage.css";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
-
-const EMPLOYEE_ID = 1; // สมมติพนักงานคนนี้คือ id=1
-const EMPLOYEE_NAME = "สมชาย ใจดี";
+import { useUser } from '../../context/UserContext';
+import axios from 'axios';
 
 const TransportQueuePage: React.FC = () => {
+  const { user } = useUser();
+  const [employee, setEmployee] = useState<any>(null);
+  const [empLoading, setEmpLoading] = useState(true);
+  const [empError, setEmpError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      setEmpLoading(true);
+      setEmpError(null);
+      try {
+        let token = user?.token;
+        if (!token) {
+          const u = localStorage.getItem('user');
+          if (u) {
+            try { token = JSON.parse(u).token; } catch {}
+          }
+        }
+        if (!token) throw new Error('ไม่พบ token');
+        const res = await axios.get('http://localhost:8000/employee/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setEmployee(res.data);
+      } catch (err: any) {
+        setEmpError(err?.response?.data?.error || err.message || 'โหลดข้อมูลพนักงานล้มเหลว');
+        setEmployee(null);
+      } finally {
+        setEmpLoading(false);
+      }
+    };
+    fetchEmployee();
+  }, [user]);
+
+  const EMPLOYEE_ID = employee?.ID || employee?.id || 0;
+  const EMPLOYEE_NAME = employee ? `${employee.FirstName || employee.first_name || ''} ${employee.LastName || employee.last_name || ''}`.trim() : "-";
+
   const [pickupQueues, setPickupQueues] = useState<Queue[]>([]);
   const [deliveryQueues, setDeliveryQueues] = useState<Queue[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -69,11 +103,25 @@ const TransportQueuePage: React.FC = () => {
     }
   };
 
-  const deliveryEmployee = {
-    name: EMPLOYEE_NAME,
-    phone: "081-234-5678",
-    gender: "ชาย",
-    position: "พนักงานขนส่ง",
+  // ใช้ข้อมูลจริงจาก employee
+  const deliveryEmployee = employee ? {
+  code: employee.Code || employee.code,
+  name: `${employee.FirstName || employee.first_name || ''} ${employee.LastName || employee.last_name || ''}`.trim(),
+  phone: employee.Phone || employee.phone,
+  gender: (() => {
+    const g = (employee.Gender || employee.gender || '').toLowerCase();
+    if (g === 'male' || g === 'm' || g === 'ชาย') return 'ชาย';
+    if (g === 'female' || g === 'f' || g === 'หญิง') return 'หญิง';
+    if (g === 'other' || g === 'อื่นๆ' || g === 'อื่น') return 'อื่นๆ';
+    return g || '-';
+  })(),
+  position: (employee.Position && (employee.Position.PositionName || employee.Position.position_name)) || employee.PositionID || employee.position_id || "-",
+  } : {
+    code: "-",
+    name: "-",
+    phone: "-",
+    gender: "-",
+    position: "-",
   };
 
   // โหลดคิวจาก backend
@@ -210,7 +258,6 @@ const TransportQueuePage: React.FC = () => {
   };
 
   const getStatusColor = (q: Queue) => {
-    const type = q.Queue_type?.toLowerCase().trim();
     const status = q.Status?.toLowerCase().trim();
     if (status === "waiting") return "#f39c12";
     if (status === "pickup_in_progress" || status === "delivery_in_progress") return "#3498db";

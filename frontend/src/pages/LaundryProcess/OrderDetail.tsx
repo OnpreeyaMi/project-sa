@@ -118,6 +118,7 @@ const OrderDetail: React.FC = () => {
         ...(selectedDryMachine ? [selectedDryMachine] : []),
       ]);
       message.success("บันทึกเครื่องซัก/อบ สำเร็จ");
+      console.log(selectedWashMachine, selectedDryMachine);
       loadOrder();
     } catch (err) {
       console.error(err);

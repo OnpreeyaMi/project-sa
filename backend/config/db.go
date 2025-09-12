@@ -230,7 +230,26 @@ func MockData() {
 	for _, p := range positions {
 		DB.FirstOrCreate(&p, entity.Position{PositionName: p.PositionName})
 	}
-
+	// --- Mock TimeSlot ---
+	var countTS int64
+	DB.Model(&entity.TimeSlot{}).Count(&countTS)
+	if countTS == 0 {
+		now := time.Now()
+		pickupSlots := []entity.TimeSlot{
+			{Start_time: now.Add(1 * time.Hour), End_time: now.Add(2 * time.Hour), SlotType: "pickup", Capacity: 5, Status: "available"},
+			{Start_time: now.Add(3 * time.Hour), End_time: now.Add(4 * time.Hour), SlotType: "pickup", Capacity: 5, Status: "available"},
+		}
+		deliverySlots := []entity.TimeSlot{
+			{Start_time: now.Add(5 * time.Hour), End_time: now.Add(6 * time.Hour), SlotType: "delivery", Capacity: 5, Status: "available"},
+			{Start_time: now.Add(7 * time.Hour), End_time: now.Add(8 * time.Hour), SlotType: "delivery", Capacity: 5, Status: "available"},
+		}
+		for _, ts := range pickupSlots {
+			DB.Create(&ts)
+		}
+		for _, ts := range deliverySlots {
+			DB.Create(&ts)
+		}
+	}
 	// // --- EmployeeStatus (ค่าเริ่มต้น) ---
 	// statuses := []entity.EmployeeStatus{
 	// 	{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},

@@ -4,13 +4,15 @@ export interface Machine {
   Machine_type: string;
   Capacity_kg: number;
   Machine_number: number;
-  status?: string;
+  Status?: string;
 }
 
 export interface Customer {
+  ID: number;
   FirstName: string;
   LastName: string;
-  PhoneNumber: string; 
+  PhoneNumber: string;
+  Address: Address[];
 }
 
 export interface Address {
@@ -30,7 +32,6 @@ export interface Order {
   customer_id?: number; // เพิ่มให้ตรง backend
   created_at?: string;  // เพิ่มให้ตรง backend
   Customer?: Customer;
-  Address?: Address;
   LaundryProcesses?: LaundryProcess[];
   status?: string;
 }
@@ -44,7 +45,7 @@ export const orderdeailService = {
     if (!res.ok) throw new Error("Failed to fetch order");
     return res.json();
   },
-  getProcessesByOrder: async (orderId:string ) => {
+  getProcessesByOrder: async (orderId: string) => {
     const res = await fetch(`${API_BASE}/process/${orderId}/order`);
     if (!res.ok) throw new Error("Failed to fetch processes by order");
     return res.json();
@@ -52,18 +53,18 @@ export const orderdeailService = {
   },
   // ดึงเครื่องซัก/อบทั้งหมด
   getMachines: async (): Promise<Machine[]> => {
-    const res = await fetch(`${API_BASE}/machines` );
+    const res = await fetch(`${API_BASE}/machines`);
     if (!res.ok) throw new Error("Failed to fetch machines");
     return res.json();
   },
 
   // บันทึกเครื่องซัก/อบสำหรับ LaundryProcess
   saveMachines: async (processId: number | string, machine_ids: number[]) => {
-    // เปลี่ยนชื่อ key เป็น MachineIDs ให้ตรงกับ backend
+    // ส่งทั้ง MachineIDs และ machine_ids เพื่อรองรับ backend ทั้งสองแบบ
     const res = await fetch(`${API_BASE}/laundry-process/${processId}/machines`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ machine_ids: machine_ids }),
+      body: JSON.stringify({ MachineIDs: machine_ids, machine_ids: machine_ids }),
     });
     if (!res.ok) throw new Error("Failed to save machines");
     return res.json();
@@ -80,10 +81,10 @@ export const orderdeailService = {
     return res.json();
   },
   deleteMachine: async (processId: number, machineId: number) => {
-  const res = await fetch(`${API_BASE}/laundry-process/${processId}/machines/${machineId}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Failed to delete machine");
-  return res.json();
-},
+    const res = await fetch(`${API_BASE}/laundry-process/${processId}/machines/${machineId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Failed to delete machine");
+    return res.json();
+  },
 };
