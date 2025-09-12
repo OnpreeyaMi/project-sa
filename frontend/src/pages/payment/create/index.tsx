@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { BsQrCode, BsCashCoin } from "react-icons/bs";
 import { GiWashingMachine } from "react-icons/gi";
+import axios from "axios";
 
 import PromotionSelector, { type Promo as PromoSelectorType } from "./PromotionDemo";
 import PaymentModal from "./PaymentModal";
@@ -80,6 +81,7 @@ export default function Payment() {
   const [fullAddress, setFullAddress] = useState<string>("-");
 
   // Order
+  const [order, setOrder] = useState<CheckoutResp["order"] | null>(null);
   const [orderSummary, setOrderSummary] = useState<string>("ออร์เดอร์ #");
   const [items, setItems] = useState<ServiceItemSlim[]>([]);
   const [totalAmount, setTotalAmount] = useState<number>(0);
@@ -118,6 +120,7 @@ export default function Payment() {
         setFullAddress(addrText);
 
         // Order basic
+        setOrder(checkout.order || null);
         setOrderSummary(checkout.order?.summary || `ออร์เดอร์ #${orderId}`);
         setItems(checkout.order?.items || []);
         setPaid(!!checkout.order?.paid);
@@ -315,10 +318,25 @@ export default function Payment() {
           amountTHB={finalTotal}            // ✅ send final amount
           orderId={orderId}
           durationSec={600}
-          onVerified={(r) => {
+          onVerified={async (r) => {
             setOpenQR(false);
             setPaidAt(r?.date ? new Date(r.date) : new Date());
             setPaid(true);
+            // --- เพิ่มการบันทึก PromotionUsage ---
+            if (selectedPromo && orderId && customerName !== "-" && order ) {
+              try {
+                await axios.post(`${BASE}/promotion-usages`, {
+                  UsageDate: new Date().toISOString().slice(0, 10),
+                  Status: "ใช้แล้ว",
+                  PromotionID: Number(selectedPromo.id),
+                  OrderID: orderId,
+
+                });
+              } catch (e) {
+                // สามารถแจ้งเตือนหรือ log error ได้
+                console.error("บันทึก PromotionUsage ไม่สำเร็จ", e);
+              }
+            }
           }}
         />
 

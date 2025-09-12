@@ -24,7 +24,7 @@ type PromotionPayload struct {
 
 type PromotionConditionPayload struct {
 	ConditionType string `json:"conditionType"`
-	Value         uint `json:"value"`
+	Value         string `json:"value"`
 }
 
 func CreatePromotion(c *gin.Context) {

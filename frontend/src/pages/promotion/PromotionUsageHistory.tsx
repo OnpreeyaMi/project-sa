@@ -45,7 +45,7 @@ const PromotionUsageHistory: React.FC = () => {
   };
 
   // ฟิลเตอร์ข้อมูล
-  const filteredUsages = usages.filter((usage) => {
+  const filteredUsages = Array.isArray(usages) ? usages.filter((usage) => {
     const matchText =
       usage.CustomerName.toLowerCase().includes(searchText.toLowerCase()) ||
       usage.PromotionName.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -56,19 +56,15 @@ const PromotionUsageHistory: React.FC = () => {
       ? usage.UsageDate >= dateRange[0].format("YYYY-MM-DD") && usage.UsageDate <= dateRange[1].format("YYYY-MM-DD")
       : true;
     return matchText && matchPromotion && matchStatus && matchDate;
-  });
+  }) : [];
 
   const columns = [
-    { title: "ชื่อลูกค้า", dataIndex: "CustomerName", key: "CustomerName" },
     { title: "รหัส/ชื่อโปรโมชั่น", dataIndex: "PromotionName", key: "PromotionName", render: (_: any, record: PromotionUsage) => `${record.PromotionCode} / ${record.PromotionName}` },
     { title: "รหัสออเดอร์", dataIndex: "OrderID", key: "OrderID" },
     { title: "วันที่ใช้", dataIndex: "UsageDate", key: "UsageDate" },
     { title: "สถานะ", dataIndex: "Status", key: "Status", render: (status: string) => <Tag color={status === "ใช้แล้ว" ? "green" : status === "ยกเลิก" ? "red" : "default"}>{status}</Tag> },
   ];
 
-  // promotionOptions = รายชื่อโปรโมชั่นทั้งหมดในระบบ
-  const promotionOptions = Array.from(new Set(promotions.map(p => p.PromotionName)));
-  const statusOptions = ["ใช้แล้ว", "ยกเลิก", "หมดอายุ"];
 
   return (
     <AdminSidebar>
@@ -87,33 +83,6 @@ const PromotionUsageHistory: React.FC = () => {
               onChange={e => setSearchText(e.target.value)}
               style={{ width: "100%" }}
               allowClear
-            />
-            <Select
-              placeholder="เลือกโปรโมชั่น"
-              value={selectedPromotion || undefined}
-              onChange={v => setSelectedPromotion(v)}
-              allowClear
-              style={{ width: "100%" }}
-            >
-              {promotionOptions.map(promo => (
-                <Select.Option key={promo} value={promo}>{promo}</Select.Option>
-              ))}
-            </Select>
-            <Select
-              placeholder="สถานะ"
-              value={selectedStatus || undefined}
-              onChange={v => setSelectedStatus(v)}
-              allowClear
-              style={{ width: "100%" }}
-            >
-              {statusOptions.map(status => (
-                <Select.Option key={status} value={status}>{status}</Select.Option>
-              ))}
-            </Select>
-            <DatePicker.RangePicker
-              style={{ width: "100%" }}
-              value={dateRange}
-              onChange={setDateRange}
             />
           </div>
         </div>

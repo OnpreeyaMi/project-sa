@@ -274,8 +274,6 @@ const OrderStatusPage: React.FC = () => {
     // รายการซัก: เพิ่มเองถ้ามีข้อมูลใน latestOrder
   ] : [];
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Loading...</div>;
-  if (error) return <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>{error}</div>;
   if (orders.length === 0) {
     return (
       <CustomerSidebar>

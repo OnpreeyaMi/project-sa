@@ -89,7 +89,7 @@ const PromotionManagement: React.FC = () => {
         discountTypeId: values.DiscountTypeID,
         conditions: (values.conditions || []).map((c: any) => ({
           conditionType: c.ConditionType,
-          value: c.Value,
+          value: String(c.Value ?? ""), // แปลงเป็น string
         })),
       };
       console.log("Promotion POST payload:", payload);
@@ -141,7 +141,7 @@ const PromotionManagement: React.FC = () => {
         discountTypeId: values.DiscountTypeID,
         conditions: (values.conditions || []).map((c: any) => ({
           conditionType: c.ConditionType,
-          value: c.Value,
+          value: String(c.Value ?? ""), // แปลงเป็น string
         })),
       };
       console.log("Promotion PUT payload:", payload); // debug log
@@ -316,6 +316,7 @@ const PromotionManagement: React.FC = () => {
                               <Select.Option value="UsageLimit">จำนวนครั้งที่ใช้ได้</Select.Option>
                             </Select>
                           </Form.Item>
+                          
 
                           {/* Input ของค่า Value จะเปลี่ยนตาม ConditionType */}
                           <Form.Item shouldUpdate noStyle>

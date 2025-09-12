@@ -131,8 +131,18 @@ const CustomerManagement: React.FC = () => {
         setOrderHistoryLoading(true);
         setOrderHistoryModalVisible(true);
         try {
-            const res = await axios.get(`http://localhost:8000/orders?customerId=${customer.ID}`);
-            setOrderHistory(res.data);
+            const res = await axios.get(`http://localhost:8000/order-histories?customerId=${customer.ID}`);
+            // กรองเฉพาะออเดอร์ที่ customerId ตรงกับที่เลือก
+            const filteredOrders = Array.isArray(res.data)
+                ? res.data.filter((item: any) => {
+                    // กรณี Order อยู่ใน item หรือ item เองมี CustomerID
+                    if (item.Order && item.Order.CustomerID) {
+                        return item.Order.CustomerID === customer.ID;
+                    }
+                    return item.CustomerID === customer.ID;
+                })
+                : [];
+            setOrderHistory(filteredOrders);
         } catch (err) {
             message.error("ไม่สามารถดึงประวัติออเดอร์ได้");
         }
@@ -147,7 +157,11 @@ const CustomerManagement: React.FC = () => {
         setAddressModalVisible(true);
         try {
             const res = await axios.get(`http://localhost:8000/addresses?customerId=${customer.ID}`);
-            setAddressList(res.data);
+            // กรองเฉพาะ address ที่ CustomerID ตรงกับลูกค้าที่เลือก
+            const filteredAddresses = Array.isArray(res.data)
+                ? res.data.filter((addr: any) => addr.CustomerID === customer.ID)
+                : [];
+            setAddressList(filteredAddresses);
         } catch (err) {
             message.error("ไม่สามารถดึงข้อมูลที่อยู่ได้");
         }
@@ -220,39 +234,29 @@ const CustomerManagement: React.FC = () => {
 
     // ตารางประวัติออเดอร์
     const orderColumns = [
-  { title: "Order ID", dataIndex: "ID", key: "ID" },
-  { 
-    title: "วันที่สร้าง", 
-    dataIndex: "CreatedAt", 
-    key: "CreatedAt", 
-    render: (d: string) => new Date(d).toLocaleString() 
-  },
-  { 
-    title: "รายละเอียดที่อยู่", 
-    dataIndex: ["Address", "AddressDetails"], 
-    key: "AddressDetails", 
-    render: (_: any, rec: Order) => rec.Address?.AddressDetails || "-" 
-  },
-  { title: "หมายเหตุ", dataIndex: "OrderNote", key: "OrderNote" },
-  { 
-    title: "ราคา (บาท)", 
-    dataIndex: "TotalPrice", 
-    key: "TotalPrice", 
-    render: (p: number) => p?.toLocaleString() || "-" 
-  },
-  { 
-    title: "สถานะ", 
-    dataIndex: "Status", 
-    key: "Status", 
-    render: (s: string) => s || "-" 
-  },
-  { 
-    title: "การชำระเงิน", 
-    dataIndex: "PaymentStatus", 
-    key: "PaymentStatus", 
-    render: (p: string) => p || "-" 
-  },
-];
+      { title: "Order ID", dataIndex: "OrderID", key: "OrderID", render: (_: any, rec: any) => rec.Order?.ID || rec.OrderID || "-" },
+      { 
+        title: "วันที่สร้าง", 
+        dataIndex: "CreatedAt", 
+        key: "CreatedAt", 
+        render: (_: any, rec: any) => rec.Order?.CreatedAt ? new Date(rec.Order.CreatedAt).toLocaleString() : "-"
+      },
+      { 
+        title: "รายละเอียดที่อยู่", 
+        dataIndex: ["Order", "Address", "AddressDetails"], 
+        key: "AddressDetails", 
+        render: (_: any, rec: any) => rec.Order?.Address?.AddressDetails || rec.Order?.AddressDetails || "-"
+      },
+      { title: "หมายเหตุ", dataIndex: "OrderNote", key: "OrderNote", render: (_: any, rec: any) => rec.Order?.OrderNote || rec.OrderNote || "-" },
+      { 
+        title: "ประเภทบริการ", 
+        dataIndex: "ServiceTypes", 
+        key: "ServiceTypes", 
+        render: (_: any, rec: any) => Array.isArray(rec.Order?.ServiceTypes) && rec.Order.ServiceTypes.length > 0
+          ? rec.Order.ServiceTypes.map((st: any) => st.Type).join(", ")
+          : "-"
+      },
+    ];
 
 
     return (
