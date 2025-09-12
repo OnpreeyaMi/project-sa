@@ -8,6 +8,7 @@ import (
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // -------------------- CREATE --------------------
@@ -78,7 +79,9 @@ func CreateCustomer(c *gin.Context) {
 func GetCustomerByID(c *gin.Context) {
 	id := c.Param("id")
 	var customer entity.Customer
-	if err := config.DB.Preload("User").Preload("Gender").Preload("Addresses").
+	if err := config.DB.Preload("User").Preload("Gender").Preload("Addresses").Preload("Orders", func(db *gorm.DB) *gorm.DB {
+        return db.Order("created_at DESC") // ดึงทั้งหมด เรียงล่าสุดก่อน
+    }).
 		First(&customer, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Customer not found"})
 		return

@@ -1,20 +1,31 @@
-import React, { useMemo, useRef, useState } from "react";
+// src/pages/complaint/CustomerComplaintPage.tsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Send, Upload, X, CheckCircle2, AlertCircle } from "lucide-react";
 import CustomerSidebar from "../../component/layout/customer/CusSidebar";
+import { useUser } from "../../hooks/UserContext";
+
+type OrderOption = {
+  id: number;
+  code?: string;       // เช่น ORD-2025-0001 หรือ publicId
+  status?: string;
+  total?: number;
+  createdAt?: string;
+};
 
 export type NewComplaintPayload = {
-  customerName: string; // ใช้แสดงเฉย ๆ ฝั่ง backend ไม่ได้อ่าน
+  customerName: string; // แสดงเฉย ๆ
   email?: string;
-  orderId?: string;
-  subject: string;      // จะ map -> title
-  message: string;      // จะ map -> description
+  orderId?: string;     // -> string เพื่อส่ง FormData ง่าย
+  subject: string;      // -> title
+  message: string;      // -> description
   attachments?: File[];
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export default function CustomerComplaintPage() {
-  const currentCustomerId =  2; // TODO: เปลี่ยนเป็น id จริงของลูกค้าที่ล็อกอิน
+  const { user } = useUser();
+
   const [form, setForm] = useState<NewComplaintPayload>({
     customerName: "",
     email: "",
@@ -23,48 +34,148 @@ export default function CustomerComplaintPage() {
     message: "",
     attachments: [],
   });
+  const [orders, setOrders] = useState<OrderOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [successId, setSuccessId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const isValid = useMemo(() => {
-    return (
-      form.subject.trim().length > 3 &&
-      form.message.trim().length > 5
-    );
-  }, [form]);
+  // ---- หา customerId จาก Context (fallback localStorage) ----
+  const customerId: number = (() => {
+    if (user?.customer?.id) return user.customer.id;
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      return stored?.customer?.id ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
 
+  // helper แปลงรายการออเดอร์จาก API เป็น OrderOption[]
+  const mapOrders = (raw: any[]): OrderOption[] =>
+    (raw || []).map((o: any) => ({
+      id: o.id ?? o.ID,
+      code: o.code ?? o.publicId ?? o.PublicID,
+      status: o.status ?? o.Status,
+      total: o.total_amount ?? o.TotalAmount ?? o.total ?? o.Total,
+      createdAt: o.created_at ?? o.CreatedAt,
+    }));
+
+  // ---- โหลดข้อมูลลูกค้า + ออเดอร์ทั้งหมด (ไม่ auto-select) ----
+  useEffect(() => {
+    async function fetchCustomerAndOrders() {
+      if (!customerId) return;
+
+      try {
+        // 1) ดึงโปรไฟล์ลูกค้า (และ orders ถ้าคุณ preload มาแล้ว)
+        const res = await fetch(`${API_BASE}/customers/${customerId}`, {
+          headers: { Authorization: user?.token ? `Bearer ${user.token}` : "" },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        // เติมชื่อ/อีเมล
+        const first =
+          data?.FirstName ??
+          data?.firstName ??
+          data?.User?.Name?.split(" ")?.[0] ??
+          "";
+        const last =
+          data?.LastName ??
+          data?.lastName ??
+          (data?.User?.Name ? data.User.Name.split(" ").slice(1).join(" ") : "") ??
+          "";
+        const email = data?.User?.Email ?? data?.email ?? "";
+
+        setForm((f) => ({
+          ...f,
+          customerName: `${first} ${last}`.trim(),
+          email,
+        }));
+
+        // 2) ใช้ orders จาก response นี้ก่อน (รองรับทั้ง orders/Orders)
+        let list: OrderOption[] = [];
+        if (Array.isArray(data?.orders) || Array.isArray(data?.Orders)) {
+          list = mapOrders(data.orders ?? data.Orders ?? []);
+        } else {
+          // 3) fallback: ไป endpoint /customers/:id/orders
+          const r2 = await fetch(`${API_BASE}/customers/${customerId}/orders`, {
+            headers: { Authorization: user?.token ? `Bearer ${user.token}` : "" },
+          });
+          if (r2.ok) {
+            const arr: any[] = await r2.json();
+            list = mapOrders(arr);
+          }
+        }
+
+        // เรียงล่าสุดก่อน (กันกรณี backend ไม่เรียง)
+        list.sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime()
+        );
+        setOrders(list);
+
+        // ❌ ไม่ auto-select ออเดอร์ใด ๆ ให้ผู้ใช้เลือกเอง
+      } catch (err) {
+        console.error("fetch customer/orders failed", err);
+        setErrorMsg("โหลดข้อมูลลูกค้า/ออเดอร์ไม่สำเร็จ");
+      }
+    }
+
+    fetchCustomerAndOrders();
+    // ไม่ใส่ form/orderId ใน deps เพื่อเลี่ยง loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerId, user?.token]);
+
+  // ---- validation ----
+  // ถ้าต้อง "บังคับเลือกออเดอร์" ให้เติม && !!form.orderId
+  const isValid = useMemo(
+    () => form.subject.trim().length > 3 && form.message.trim().length > 5,
+    [form]
+  );
+
+  // ---- file handlers ----
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setForm((f) => ({ ...f, attachments: [...(f.attachments || []), ...files].slice(0, 5) }));
+    setForm((f) => ({
+      ...f,
+      attachments: [...(f.attachments || []), ...files].slice(0, 5),
+    }));
   };
 
   const removeFile = (idx: number) => {
-    setForm((f) => ({ ...f, attachments: (f.attachments || []).filter((_, i) => i !== idx) }));
+    setForm((f) => ({
+      ...f,
+      attachments: (f.attachments || []).filter((_, i) => i !== idx),
+    }));
   };
 
+  // ---- submit ----
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid) return;
+    if (!customerId) {
+      setErrorMsg("ไม่พบรหัสลูกค้า กรุณาเข้าสู่ระบบอีกครั้ง");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg(null);
 
     try {
       const fd = new FormData();
-      // map ให้ตรง backend controller
-      fd.append("title", form.subject);          // << map จาก subject
-      fd.append("description", form.message);       // << map จาก message
-      if (currentCustomerId > 0) fd.append("customerId", String(currentCustomerId));
-    
-      if (form.email)  fd.append("email", form.email);
+      fd.append("title", form.subject);
+      fd.append("description", form.message);
+      fd.append("customerId", String(customerId));
+      if (form.email) fd.append("email", form.email);
       if (form.orderId) fd.append("orderId", form.orderId);
       (form.attachments || []).forEach((f) => fd.append("attachments", f, f.name));
 
       const res = await fetch(`${API_BASE}/complaints`, {
         method: "POST",
         body: fd,
-        
+        headers: { Authorization: user?.token ? `Bearer ${user.token}` : "" },
       });
 
       if (!res.ok) {
@@ -73,8 +184,7 @@ export default function CustomerComplaintPage() {
       }
       const data = await res.json();
 
-      setSuccessId(data.id || "");
-      setSubmitting(false);
+      setSuccessId(data.id || data.publicId || "");
       setForm({
         customerName: "",
         email: "",
@@ -85,13 +195,21 @@ export default function CustomerComplaintPage() {
       });
       if (fileRef.current) fileRef.current.value = "";
     } catch (err: any) {
-      setSubmitting(false);
+      console.error(err);
       setErrorMsg(err?.message || "ไม่สามารถส่งคำร้องเรียนได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   const charCount = form.message.length;
   const charMax = 2000;
+
+  // label ของ dropdown ออเดอร์
+  const renderOrderLabel = (o: OrderOption) =>
+    `${o.code || "#" + o.id}${o.status ? " • " + o.status : ""}${
+      o.createdAt ? " • " + new Date(o.createdAt).toLocaleString() : ""
+    }`;
 
   return (
     <CustomerSidebar>
@@ -128,21 +246,22 @@ export default function CustomerComplaintPage() {
               <div>
                 <label className="block text-xl font-medium text-gray-700">ชื่อลูกค้า *</label>
                 <input
-                  className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border px-3 py-2 bg-gray-50 text-gray-700 cursor-not-allowed"
                   placeholder="ชื่อ-นามสกุล"
                   value={form.customerName}
-                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                  required
+                  readOnly
+                  tabIndex={-1}
                 />
               </div>
               <div>
                 <label className="block text-xl font-medium text-gray-700">อีเมล</label>
                 <input
                   type="email"
-                  className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border px-3 py-2 bg-gray-50 text-gray-700 cursor-not-allowed"
                   placeholder="you@example.com"
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  readOnly
+                  tabIndex={-1}
                 />
               </div>
             </div>
@@ -160,12 +279,23 @@ export default function CustomerComplaintPage() {
               </div>
               <div>
                 <label className="block text-xl font-medium text-gray-700">เลขคำสั่งซื้อ</label>
-                <input
+                <select
                   className="mt-1 w-full rounded-xl border px-3 py-2 focus:ring-2 focus:ring-blue-600 focus:outline-none"
-                  placeholder="#123456"
                   value={form.orderId}
                   onChange={(e) => setForm({ ...form, orderId: e.target.value })}
-                />
+                >
+                  <option value="">— เลือกออเดอร์ —</option>
+                  {orders.map((o) => (
+                    <option key={o.id} value={String(o.id)}>
+                      {renderOrderLabel(o)}
+                    </option>
+                  ))}
+                </select>
+                {!orders.length && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    ไม่พบออเดอร์ในระบบ คุณยังสามารถส่งคำร้องเรียนโดยไม่ระบุเลขคำสั่งซื้อได้
+                  </div>
+                )}
               </div>
             </div>
 
@@ -181,33 +311,42 @@ export default function CustomerComplaintPage() {
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                   required
                 />
-                <div className="mt-1 text-xs text-gray-500">{charCount}/{charMax} ตัวอักษร</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {charCount}/{charMax} ตัวอักษร
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">แนบไฟล์ (ไม่เกิน 5 ไฟล์)</label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input ref={fileRef} type="file" multiple onChange={onPickFiles} className="hidden" />
-                  <button type="button" onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 hover:bg-gray-50">
-                    <Upload className="size-4" /> เลือกไฟล์
-                  </button>
-                  <span className="text-xs text-gray-500">รองรับภาพ/เอกสาร (รวมไม่ควรเกิน ~10MB)</span>
-                </div>
-                {form.attachments && form.attachments.length > 0 && (
-                  <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {form.attachments.map((f, idx) => (
-                      <li key={idx} className="border rounded-lg px-3 py-2 text-sm flex items-center justify-between">
-                        <span className="truncate mr-2">{f.name}</span>
-                        <button type="button" onClick={() => removeFile(idx)} className="p-1 rounded hover:bg-gray-100" aria-label="remove">
-                          <X className="size-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">แนบไฟล์ (ไม่เกิน 5 ไฟล์)</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input ref={fileRef} type="file" multiple onChange={onPickFiles} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 hover:bg-gray-50"
+                >
+                  <Upload className="size-4" /> เลือกไฟล์
+                </button>
+                <span className="text-xs text-gray-500">รองรับภาพ/เอกสาร (รวมไม่ควรเกิน ~10MB)</span>
               </div>
+              {form.attachments?.length ? (
+                <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {form.attachments.map((f, idx) => (
+                    <li key={idx} className="border rounded-lg px-3 py-2 text-sm flex items-center justify-between">
+                      <span className="truncate mr-2">{f.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="p-1 rounded hover:bg-gray-100"
+                        aria-label="remove"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -220,7 +359,6 @@ export default function CustomerComplaintPage() {
               </button>
             </div>
           </form>
-
         </div>
       </div>
     </CustomerSidebar>

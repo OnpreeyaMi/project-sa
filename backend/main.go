@@ -139,12 +139,13 @@ func main() {
 	// router.GET("/orders/latest", middlewares.AuthRequired().controller.GetLatestOrderForCustomer)
 	router.GET("/orders/latest/:customer_id", controller.GetLatestOrderForCustomer)
 	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
-	
+	router.POST("/payments/cash", controller.PayByCashSimple)
 
 	//complaintCreate
 	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
 	router.Static("/uploads", "./uploads")
 	router.POST("/complaints", controller.CreateComplaint)
+	
 	//complaintReply
 	emp := router.Group("/employee")
 	{

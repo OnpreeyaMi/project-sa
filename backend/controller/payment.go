@@ -252,56 +252,11 @@ type PromoView struct {
 	Badge         string  `json:"badge,omitempty"`
 }
 
-// แปลง Address ใดๆ ให้เป็น single line ด้วย reflection เพื่อกันกรณี field ไม่ตรงชื่อ
-// func addressToLine(a *entity.Address) string {
-// 	if a == nil {
-// 		return ""
-// 	}
-// 	v := reflect.ValueOf(a).Elem()
-// 	get := func(name string) string {
-// 		f := v.FieldByName(name)
-// 		if f.IsValid() && f.Kind() == reflect.String {
-// 			return f.String()
-// 		}
-// 		return ""
-// 	}
-// 	parts := []string{
-// 		get("AddressLine"), get("Detail"),
-// 		get("Subdistrict"), get("District"),
-// 		get("Province"), get("ZipCode"),
-// 	}
-// 	out := []string{}
-// 	for _, p := range parts {
-// 		p = strings.TrimSpace(p)
-// 		if p != "" {
-// 			out = append(out, p)
-// 		}
-// 	}
-// 	return strings.Join(out, " ")
-// }
+type PayCashRequest struct {
+	OrderID uint `json:"order_id" binding:"required"`
+	Amount  *int   `json:"amount,omitempty"` // ถ้าส่งมา จะ override ยอด
+}
 
-// // ดึงค่าจากเงื่อนไข MIN_SPEND / CODE ฯลฯ
-// func parseMinSpend(p *entity.Promotion) *int {
-// 	for _, c := range p.PromotionCondition {
-// 		if strings.EqualFold(c.ConditionType, "MIN_SPEND") {
-// 			if n, err := strconv.Atoi(strings.TrimSpace(c.Value)); err == nil {
-// 				return &n
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-// func parseCode(p *entity.Promotion) string {
-// 	for _, c := range p.PromotionCondition {
-// 		if strings.EqualFold(c.ConditionType, "CODE") {
-// 			v := strings.TrimSpace(c.Value)
-// 			if v != "" {
-// 				return v
-// 			}
-// 		}
-// 	}
-// 	return fmt.Sprintf("PROMO%v", p.ID)
-// }
 
 // mapping ประเภทส่วนลด (ถ้าตาราง DiscountType เป็น 1=percent, 2=amount)
 // *หากโปรเจ็กต์คุณใช้ mapping อื่น ปรับให้ตรงได้เลย*
@@ -312,31 +267,7 @@ func mapDiscountType(p *entity.Promotion) string {
 	return "amount"
 }
 
-// // คำนวณส่วนลดตามยอดและโปร
-// func computeDiscount(subtotal int, pv PromoView) int {
-// 	if pv.MinSpend != nil && subtotal < *pv.MinSpend {
-// 		return 0
-// 	}
-// 	if pv.DiscountType == "amount" {
-// 		if pv.DiscountValue <= 0 {
-// 			return 0
-// 		}
-// 		off := int(math.Round(pv.DiscountValue))
-// 		if off > subtotal {
-// 			return subtotal
-// 		}
-// 		return off
-// 	}
-// 	// percent
-// 	if pv.DiscountValue <= 0 {
-// 		return 0
-// 	}
-// 	off := int(math.Round(float64(subtotal) * (pv.DiscountValue / 100.0)))
-// 	if off > subtotal {
-// 		return subtotal
-// 	}
-// 	return off
-// }
+
 
 // GET /payment/checkout/:orderId
 // ดึงข้อมูลสรุปหน้าเช็คเอาต์: ลูกค้า/ที่อยู่/ออร์เดอร์/โปรโมชัน
@@ -406,4 +337,59 @@ func GetCheckoutData(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// POST /payments/cash
+func PayByCashSimple(c *gin.Context) {
+	var req PayCashRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
+	// ✅ ถ้า frontend ส่ง amount มาด้วย → ใช้เลย (ถือว่าเป็นยอดสุทธิหลังหักโปร)
+	total := 0
+	if req.Amount != nil && *req.Amount > 0 {
+		total = *req.Amount
+	} else {
+		// ❌ ไม่ส่ง amount → fallback: sum ของ ServiceTypes
+		var order entity.Order
+		if err := config.DB.Preload("ServiceTypes").First(&order, req.OrderID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "order_not_found"})
+			return
+		}
+		sum := 0.0
+		for _, st := range order.ServiceTypes {
+			sum += st.Price
+		}
+		total = int(math.Round(sum))
+	}
+
+	// gen trans_ref กันชน UNIQUE
+	transRef := fmt.Sprintf("CASH-%d-%d", req.OrderID, time.Now().UnixNano())
+
+	payment := entity.Payment{
+		OrderID:        req.OrderID,
+		PaymentType:    "cash",
+		PaymentStatus:  "paid",
+		VerifiedAmount: total,
+		TotalAmount:    total,
+		TransRef:       transRef,
+	}
+
+	if err := config.DB.Create(&payment).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot_create_payment"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ok":         true,
+		"orderId":    req.OrderID,
+		"total":      total,
+		"payment_id": payment.ID,
+		"trans_ref":  transRef,
+		"payment":    payment,
+	})
+}
+
+
+
+	
