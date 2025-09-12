@@ -52,42 +52,34 @@ const HistoryPage: React.FC = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                    <Tag color="#eee" style={{ fontWeight: 600, fontSize: 18, color: '#888', marginRight: 12 }}>#{order.OrderID || '-'}</Tag>
+                    <Tag color="#eee" style={{ fontWeight: 600, fontSize: 18, color: '#888', marginRight: 12 }}>#{order.Order?.ID || '-'}</Tag>
                     <div style={{ fontSize: 16, color: '#888', marginRight: 18 }}>
-                      วันที่สั่ง: {item.CreatedAt ? dayjs(item.CreatedAt).format('DD/MM/YYYY') : '-'}
+                      วันที่สั่ง: {item.Order?.CreatedAt ? dayjs(item.Order.CreatedAt).format('DD/MM/YYYY') : '-'}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <Tag color={item.order?.Payment?.PaymentStatus === 'paid' ? 'green' : item.order?.Payment?.PaymentStatus === 'pending' ? 'orange' : 'default'} style={{ fontWeight: 600, fontSize: 16 }}>
-                      {item.order?.Payment?.PaymentStatus || '-'}
+                      {item.Order?.Payment?.PaymentStatus || '-'}
                     </Tag>
-                    <Tag color={item.Status === 'เสร็จสิ้น' ? 'green' : item.Status === 'กำลังดำเนินการ' ? 'blue' : 'orange'} style={{ fontWeight: 600, fontSize: 16 }}>
-                      {item.Status || '-'}
-                    </Tag>
-                  </div>
+                    </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
                   <img src={iconWashing} alt="product" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', background: '#f6f6f6' }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 18 }}>{item.order?.service_types && item.order.service_types.length > 0 ? item.order.service_types.map((st: any) => st.name).join(", ") : '-'}</div>
-                    <div style={{ color: '#888', fontSize: 15 }}>{item.order?.order_note || ''}</div>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>{item.Order?.ServiceTypes && item.Order?.ServiceTypes.length > 0 ? item.Order?.ServiceTypes.map((st: any) => st.Type).join(", ") : '-'}</div>
+                    <div style={{ color: '#888', fontSize: 15 }}>หมายเหตุ: {item.Order?.OrderNote || ''}</div>
                     <div style={{ color: '#888', fontSize: 15 }}>
                       ถังที่เลือก: {
-                        item.order?.LaundryProcesses && item.order.LaundryProcesses.length > 0 && item.order.LaundryProcesses[0].Machines && item.order.LaundryProcesses[0].Machines.length > 0
-                          ? item.order.LaundryProcesses[0].Machines.map((m: any) => m.Machine_type).join(", ")
-                          : '-'
+                        item.Order?.ServiceTypes?.length ? item.Order.ServiceTypes.map((st: any) => st.Type || st.name).join(", ") : '-'
                       }
                     </div>
-                    <div style={{ color: '#888', fontSize: 15 }}>น้ำยา: {item.order?.detergents && item.order.detergents.length > 0 ? item.order.detergents.map((dt: any) => dt.name).join(", ") : '-'}</div>
+                    <div style={{ color: '#888', fontSize: 15 }}>น้ำยา: {item.Order?.Detergents?.length ? item.Order.Detergents.map((dt: any) => dt.Name).join(", ") : '-'}</div>
                     <div style={{ width: '100%', height: 6, background: '#eee', borderRadius: 4, margin: '8px 0' }}>
                       <div style={{ width: '60%', height: '100%', background: '#ED8A19', borderRadius: 4 }} />
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 120 }}>
-                    <div style={{ fontWeight: 700, fontSize: 18 }}>฿{item.order?.service_types && item.order.service_types.length > 0 ? item.order.service_types.reduce((sum: number, st: any) => sum + (st.price || 0), 0) : '-'}</div>
-                    <Tag color={(item.Status === "เสร็จสิ้น" ? "green" : item.Status === "กำลังดำเนินการ" ? "blue" : "orange")} style={{ fontWeight: 600, fontSize: 15 }}>
-                      {item.Status || "-"}
-                    </Tag>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>฿{item.Order?.ServiceTypes && item.Order.ServiceTypes.length > 0 ? item.Order.ServiceTypes.reduce((sum: number, st: any) => sum + (st.Price || 0), 0) : '-'}</div>
                     
                   </div>
                 </div>

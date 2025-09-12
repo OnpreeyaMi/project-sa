@@ -41,6 +41,12 @@ export interface OrderHistory {
     address_id: number;
     service_types: { id: number; name: string; price?: number }[];
     detergents: { id: number; name: string; type: "Liquid"|"Powder"; inStock: number }[];
+    LaundryProcesses?: {
+      Machines?: { Machine_type: string }[];
+    }[];
+    Payment?: {
+      PaymentStatus: string;
+    };
   }
 };
 

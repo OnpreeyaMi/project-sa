@@ -11,6 +11,7 @@ import {
   Modal as AntdModal,
   Modal,
   Tooltip,
+  message
 } from "antd";
 import { UploadOutlined ,CheckCircleFilled ,InfoCircleOutlined} from "@ant-design/icons";
 import CustomerSidebar from "../../../component/layout/customer/CusSidebar";
