@@ -1,8 +1,10 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"strings" // ✅ เพิ่มเข้ามา
 	"time"
 
 	"github.com/OnpreeyaMi/project-sa/entity"
@@ -13,16 +15,37 @@ import (
 
 var DB *gorm.DB
 
+// ------------------------------
+// Connect + Setup (เรียกจาก main)
+// ------------------------------
 func ConnectDatabase() {
-	database, err := gorm.Open(sqlite.Open("sa_laundry.db"), &gorm.Config{})
+	// ใช้ WAL + busy_timeout + foreign_keys
+	dsn := "file:sa_laundry.db?_journal_mode=WAL&_busy_timeout=10000&_foreign_keys=on"
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("ไม่สามารถเชื่อมต่อฐานข้อมูลได้")
 	}
-	DB = database
-	fmt.Println("เชื่อมต่อ SQLite สำเร็จ!")
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic("ได้ gorm.DB แต่ดึง *sql.DB ไม่ได้")
+	}
+
+	// สำคัญ: SQLite แนะนำ serialize writes
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+
+	// ย้ำ PRAGMA เผื่อ driver param ไม่ถูกใช้
+	db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA foreign_keys=ON;")
+	db.Exec("PRAGMA busy_timeout=10000;")
+
+	DB = db
+	fmt.Println("เชื่อมต่อ SQLite (WAL) สำเร็จ!")
 }
 
 func SetupDatabase() {
+	// ---------- AutoMigrate ----------
 	err := DB.AutoMigrate(
 		&entity.Address{},
 		&entity.ClothType{},
@@ -53,12 +76,10 @@ func SetupDatabase() {
 		&entity.TimeSlot{},
 		&entity.User{},
 		&entity.Gender{},
-		&entity.History{},
-		&entity.HistoryComplain{},
 		&entity.Promotion{},
 		&entity.PromotionCondition{},
 		&entity.PromotionUsage{},
-		&entity.ComplaintAttachment{},  //เพิ่มตาราง เก็บการอัปโหลด ไฟล์เพิ่มเติม
+		&entity.ComplaintAttachment{}, // เก็บไฟล์เพิ่มเติม
 		&entity.Role{},
 		&entity.DiscountType{},
 		&entity.DetergentUsageHistory{},
@@ -69,9 +90,16 @@ func SetupDatabase() {
 		fmt.Println("AutoMigrate completed successfully.")
 	}
 
+	// ---------- Index/Constraints ----------
+	DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_cloth_types_type_name ON cloth_types(type_name);`)
+	DB.Exec(`CREATE INDEX IF NOT EXISTS idx_sorted_clothes_deleted_at ON sorted_clothes(deleted_at);`)
+
 	MockData()
 }
 
+// ------------------------------
+// Utilities
+// ------------------------------
 func phash(p string) string {
 	b, err := bcrypt.GenerateFromPassword([]byte(p), bcrypt.DefaultCost)
 	if err != nil {
@@ -80,6 +108,32 @@ func phash(p string) string {
 	return string(b)
 }
 
+// withBusyRetry: helper สำหรับ seed/mock ที่อาจชน lock
+func withBusyRetry(ctx context.Context, tries int, fn func() error) error {
+	delay := 120 * time.Millisecond
+	for i := 0; i < tries; i++ {
+		if err := fn(); err != nil {
+			if containsBusy(fmt.Sprint(err)) {
+				time.Sleep(delay)
+				delay *= 2
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("sqlite busy/locked after %d retries", tries)
+}
+
+// ✅ ทำให้เรียบง่าย: ใช้ strings.Contains + ToLower
+func containsBusy(s string) bool {
+	low := strings.ToLower(s)
+	return strings.Contains(low, "database is locked") || strings.Contains(low, "busy")
+}
+
+// ------------------------------
+// MockData (คงของเดิม)
+// ------------------------------
 func MockData() {
 	// --- Roles ---
 	roles := []entity.Role{{Name: "admin"}, {Name: "customer"}, {Name: "employee"}}
@@ -92,18 +146,15 @@ func MockData() {
 		{Email: "admin@example.com", Password: phash("1234"), RoleID: 1},
 		{Email: "customer1@example.com", Password: phash("1234"), RoleID: 2},
 		{Email: "customer2@example.com", Password: phash("1234"), RoleID: 2},
-		// {Email: "employee1@example.com", Password: phash("123456"), RoleID: 3},
-		// {Email: "employee2@example.com", Password: phash("123456"), RoleID: 3},
 	}
 	for _, u := range users {
 		var exist entity.User
 		if err := DB.Where("email = ?", u.Email).First(&exist).Error; err == nil {
-			// อัปเกรด record เดิมถ้ายังเป็น plain
+			// อัปเกรดรหัสผ่านเดิมถ้ายังเป็น plain
 			if len(exist.Password) > 0 && exist.Password[0] != '$' {
 				exist.Password = phash(exist.Password)
 				DB.Save(&exist)
 			}
-			continue
 		} else if err != nil && err != gorm.ErrRecordNotFound {
 			log.Println(err)
 		} else {
@@ -119,12 +170,14 @@ func MockData() {
 	for _, c := range customers {
 		DB.FirstOrCreate(&c, entity.Customer{PhoneNumber: c.PhoneNumber})
 	}
+
 	// Genders
 	genders := []entity.Gender{{Name: "ชาย"}, {Name: "หญิง"}, {Name: "อืนๆ"}}
 	for _, g := range genders {
 		DB.FirstOrCreate(&g, entity.Gender{Name: g.Name})
 	}
-	// --- Mock Address ---
+
+	// --- Addresses ---
 	addresses := []entity.Address{
 		{CustomerID: 1, AddressDetails: "123 Main St, Bangkok", Latitude: 13.7563, Longitude: 100.5018, IsDefault: true},
 		{CustomerID: 2, AddressDetails: "456 Second St, Chiang Mai", Latitude: 18.7883, Longitude: 98.9853, IsDefault: true},
@@ -133,7 +186,7 @@ func MockData() {
 		DB.FirstOrCreate(&a, entity.Address{CustomerID: a.CustomerID, AddressDetails: a.AddressDetails})
 	}
 
-	// Service Types
+	// --- Service Types ---
 	services := []entity.ServiceType{
 		{Type: "ซัก 10kg", Price: 50, Capacity: 10},
 		{Type: "ซัก 14kg", Price: 70, Capacity: 14},
@@ -147,7 +200,7 @@ func MockData() {
 		DB.FirstOrCreate(&s, entity.ServiceType{Type: s.Type})
 	}
 
-	// --- Mock DetergentCategory ---
+	// --- DetergentCategory ---
 	categories := []entity.DetergentCategory{
 		{Name: "น้ำยาซัก", Description: "สำหรับทำความสะอาดเสื้อผ้า"},
 		{Name: "ปรับผ้านุ่ม", Description: "สำหรับทำให้ผ้านุ่มและมีกลิ่นหอม"},
@@ -201,7 +254,7 @@ func MockData() {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
 
-	// --- LaundryProcess (ตัวอย่างเล็กน้อย) ---
+	// --- LaundryProcess ---
 	processes := []entity.LaundryProcess{
 		{Status: "รอดำเนินการ"},
 		{Status: "กำลังซัก"},
@@ -223,7 +276,8 @@ func MockData() {
 	for _, m := range machines {
 		DB.FirstOrCreate(&m, entity.Machine{Machine_type: m.Machine_type, Capacity_kg: m.Capacity_kg, Status: m.Status})
 	}
-	// --- Positions (ตัวอย่าง) ---
+
+	// --- Positions ---
 	positions := []entity.Position{
 		{PositionName: "พนักงานซักผ้า"},
 		{PositionName: "พนักงานขนส่งผ้า"},
@@ -231,16 +285,6 @@ func MockData() {
 	for _, p := range positions {
 		DB.FirstOrCreate(&p, entity.Position{PositionName: p.PositionName})
 	}
-
-	// // --- EmployeeStatus (ค่าเริ่มต้น) ---
-	// statuses := []entity.EmployeeStatus{
-	// 	{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},
-	// 	{StatusName: "inactive", StatusDescription: "ยังไม่ปฏิบัติงาน"},
-	// 	{StatusName: "onleave", StatusDescription: "ลาพัก"},
-	// }
-	// for _, s := range statuses {
-	// 	DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
-	// }
 
 	fmt.Println("✅ Mock data added successfully!")
 }

@@ -1,6 +1,9 @@
 package controller
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,6 +12,8 @@ import (
 	"github.com/OnpreeyaMi/project-sa/config"
 	"github.com/OnpreeyaMi/project-sa/entity"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ===================== DTO =====================
@@ -86,6 +91,31 @@ type HistoryEntry struct {
 	AfterQuantity   int       `json:"AfterQuantity"` // = Quantity (คงเหลือหลังเหตุการณ์)
 }
 
+// ===================== Busy/Retry Helpers =====================
+func isSQLiteBusy(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "database is locked") || strings.Contains(msg, "busy")
+}
+
+func withSQLiteRetry(ctx context.Context, tries int, fn func() error) error {
+	delay := 120 * time.Millisecond
+	for i := 0; i < tries; i++ {
+		if err := fn(); err != nil {
+			if isSQLiteBusy(err) {
+				time.Sleep(delay)
+				delay *= 2
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("sqlite busy/locked after %d retries", tries)
+}
+
 // ===================== Helpers =====================
 func findDefaultAddressText(cust *entity.Customer) (addrID uint, addrText string) {
 	var addr entity.Address
@@ -98,14 +128,31 @@ func findDefaultAddressText(cust *entity.Customer) (addrID uint, addrText string
 	return 0, ""
 }
 
-func getOrCreateClothTypeByName(name string) (*entity.ClothType, error) {
+// ปรับให้ safe ต่อ concurrent insert: หาแบบ case-insensitive และใช้ OnConflict DoNothing
+func getOrCreateClothTypeByNameTX(tx *gorm.DB, name string) (*entity.ClothType, error) {
 	n := strings.TrimSpace(name)
 	if n == "" {
 		return nil, nil
 	}
 	var ct entity.ClothType
-	err := config.DB.FirstOrCreate(&ct, entity.ClothType{TypeName: n}).Error
-	if err != nil {
+
+	// หาแบบไม่สนตัวพิมพ์
+	if err := tx.Where("LOWER(type_name) = LOWER(?)", n).First(&ct).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			tmp := entity.ClothType{TypeName: n}
+			// กันชน unique ด้วย DoNothing
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "type_name"}},
+				DoNothing: true,
+			}).Create(&tmp).Error; err != nil && !isSQLiteBusy(err) {
+				return nil, err
+			}
+			// ดึงกลับ (เผื่อชน)
+			if err := tx.Where("LOWER(type_name) = LOWER(?)", n).First(&ct).Error; err != nil {
+				return nil, err
+			}
+			return &ct, nil
+		}
 		return nil, err
 	}
 	return &ct, nil
@@ -138,76 +185,85 @@ func UpsertLaundryCheck(c *gin.Context) {
 		return
 	}
 
-	var srec entity.SortingRecord
-	if err := config.DB.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
-		srec = entity.SortingRecord{
-			SortingDate: time.Now(),
-			SortingNote: strings.TrimSpace(input.StaffNote),
-			OrderID:     order.ID,
-		}
-		if err := config.DB.Create(&srec).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortingRecord ไม่สำเร็จ"})
-			return
-		}
-	} else {
-		if strings.TrimSpace(input.StaffNote) != "" {
-			srec.SortingNote = strings.TrimSpace(input.StaffNote)
-			_ = config.DB.Save(&srec).Error
-		}
+	// ทำงาน write ทั้งหมดในทรานแซกชันสั้น ๆ พร้อม retry
+	err := withSQLiteRetry(c, 5, func() error {
+		return config.DB.Transaction(func(tx *gorm.DB) error {
+			var srec entity.SortingRecord
+			if err := tx.Where("order_id = ?", order.ID).First(&srec).Error; err != nil {
+				srec = entity.SortingRecord{
+					SortingDate: time.Now(),
+					SortingNote: strings.TrimSpace(input.StaffNote),
+					OrderID:     order.ID,
+				}
+				if err := tx.Create(&srec).Error; err != nil {
+					return err
+				}
+			} else if strings.TrimSpace(input.StaffNote) != "" {
+				srec.SortingNote = strings.TrimSpace(input.StaffNote)
+				if err := tx.Save(&srec).Error; err != nil {
+					return err
+				}
+			}
+
+			for _, it := range input.Items {
+				ct, err := getOrCreateClothTypeByNameTX(tx, it.ClothTypeName)
+				if err != nil || ct == nil {
+					return fmt.Errorf("ประเภทผ้าไม่ถูกต้อง")
+				}
+				var st entity.ServiceType
+				if err := tx.First(&st, it.ServiceTypeID).Error; err != nil {
+					return fmt.Errorf("ไม่พบ ServiceType")
+				}
+
+				row := entity.SortedClothes{
+					SortedQuantity:  it.Quantity,
+					ClothTypeID:     ct.ID,
+					ServiceTypeID:   it.ServiceTypeID,
+					SortingRecordID: srec.ID,
+				}
+				if err := tx.Create(&row).Error; err != nil {
+					return err
+				}
+
+				// history absolute
+				ctID := row.ClothTypeID
+				stID := row.ServiceTypeID
+				h := entity.SortingHistory{
+					HisQuantity:     row.SortedQuantity,
+					RecordedAt:      time.Now(),
+					SortedClothesID: row.ID,
+					Action:          "ADD",
+					ClothTypeID:     &ctID,
+					ServiceTypeID:   &stID,
+				}
+				if err := tx.Create(&h).Error; err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	})
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		return
 	}
 
-	serviceIDs := map[uint]struct{}{}
-
-	for _, it := range input.Items {
-		ct, err := getOrCreateClothTypeByName(it.ClothTypeName)
-		if err != nil || ct == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "ประเภทผ้าไม่ถูกต้อง"})
-			return
-		}
-		var st entity.ServiceType
-		if err := config.DB.First(&st, it.ServiceTypeID).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "ไม่พบ ServiceType"})
-			return
-		}
-
-		row := entity.SortedClothes{
-			SortedQuantity:  it.Quantity,
-			ClothTypeID:     ct.ID,
-			ServiceTypeID:   it.ServiceTypeID,
-			SortingRecordID: srec.ID,
-		}
-		if err := config.DB.Create(&row).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortedClothes ไม่สำเร็จ"})
-			return
-		}
-
-		// snapshot + absolute
-		ctID := row.ClothTypeID
-		stID := row.ServiceTypeID
-		h := entity.SortingHistory{
-			HisQuantity:     row.SortedQuantity, // ✅ absolute
-			RecordedAt:      time.Now(),
-			SortedClothesID: row.ID,
-			Action:          "ADD",
-			ClothTypeID:     &ctID,
-			ServiceTypeID:   &stID,
-		}
-		_ = config.DB.Create(&h).Error
-
-		serviceIDs[it.ServiceTypeID] = struct{}{}
-	}
-
-	// ผูกบริการให้ order
-	if len(serviceIDs) > 0 {
-		ids := make([]uint, 0, len(serviceIDs))
-		for id := range serviceIDs {
-			ids = append(ids, id)
+	// ผูกบริการกับ order นอกทรานแซกชัน (ลดโอกาส lock) + retry
+	if len(input.Items) > 0 {
+		seen := map[uint]struct{}{}
+		ids := make([]uint, 0)
+		for _, it := range input.Items {
+			if _, ok := seen[it.ServiceTypeID]; !ok {
+				seen[it.ServiceTypeID] = struct{}{}
+				ids = append(ids, it.ServiceTypeID)
+			}
 		}
 		var svs []entity.ServiceType
 		if err := config.DB.Where("id IN ?", ids).Find(&svs).Error; err == nil && len(svs) > 0 {
-			for i := range svs {
-				_ = config.DB.Model(&order).Association("ServiceTypes").Append(&svs[i])
-			}
+			_ = withSQLiteRetry(c, 3, func() error {
+				return config.DB.Model(&order).Association("ServiceTypes").Append(&svs)
+			})
 		}
 	}
 
@@ -240,6 +296,7 @@ func ListLaundryOrders(c *gin.Context) {
 				Select("COALESCE(SUM(sorted_quantity),0)").Scan(&qtySum)
 		}
 
+		// ถ้ามีรายการแล้ว ข้าม (สมมติ list นี้แสดงเฉพาะออเดอร์ที่ยังไม่กรอก)
 		if itemCount > 0 || qtySum > 0 {
 			continue
 		}
@@ -412,120 +469,136 @@ func UpdateSortedClothes(c *gin.Context) {
 		return
 	}
 
-	var row entity.SortedClothes
-	if err := config.DB.First(&row, itemID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบรายการผ้า"})
-		return
-	}
-
-	var srec entity.SortingRecord
-	if err := config.DB.First(&srec, row.SortingRecordID).Error; err != nil || uint(orderID) != srec.OrderID {
-		c.JSON(http.StatusBadRequest, gin.H{"Error": "รายการไม่อยู่ในออเดอร์นี้"})
-		return
-	}
-
 	var in UpdateItemInput
 	if err := c.ShouldBindJSON(&in); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
 		return
 	}
 
-	tx := config.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
+	var needAppendService *entity.ServiceType // จะ append หลัง commit
+
+	err := withSQLiteRetry(c, 5, func() error {
+		tx := config.DB.Begin()
+		defer func() {
+			if r := recover(); r != nil {
+				tx.Rollback()
+			}
+		}()
+
+		var row entity.SortedClothes
+		if err := tx.First(&row, itemID).Error; err != nil {
 			tx.Rollback()
+			return err
 		}
-	}()
-
-	if err := tx.First(&row, itemID).Error; err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusNotFound, gin.H{"Error": "ไม่พบรายการผ้า"})
-		return
-	}
-
-	changed := false
-
-	// อัปเดต cloth/service
-	if in.ClothTypeName != nil {
-		ct, err := getOrCreateClothTypeByName(*in.ClothTypeName)
-		if err != nil || ct == nil {
+		var srec entity.SortingRecord
+		if err := tx.First(&srec, row.SortingRecordID).Error; err != nil || uint(orderID) != srec.OrderID {
 			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "ประเภทผ้าไม่ถูกต้อง"})
+			return fmt.Errorf("รายการไม่อยู่ในออเดอร์นี้")
+		}
+
+		changed := false
+
+		// อัปเดต cloth/service
+		if in.ClothTypeName != nil {
+			ct, err := getOrCreateClothTypeByNameTX(tx, *in.ClothTypeName)
+			if err != nil || ct == nil {
+				tx.Rollback()
+				return fmt.Errorf("ประเภทผ้าไม่ถูกต้อง")
+			}
+			if row.ClothTypeID != ct.ID {
+				row.ClothTypeID = ct.ID
+				changed = true
+			}
+		}
+		if in.ServiceTypeID != nil {
+			var st entity.ServiceType
+			if err := tx.First(&st, *in.ServiceTypeID).Error; err != nil {
+				tx.Rollback()
+				return fmt.Errorf("ไม่พบ ServiceType")
+			}
+			if row.ServiceTypeID != *in.ServiceTypeID {
+				row.ServiceTypeID = *in.ServiceTypeID
+				changed = true
+			}
+			// ทำ association นอกทรานแซกชัน
+			needAppendService = &st
+		}
+
+		// อัปเดตจำนวน: เก็บ history เป็น "absolute" เสมอ
+		if in.Quantity != nil {
+			if *in.Quantity < 0 {
+				tx.Rollback()
+				return fmt.Errorf("จำนวนต้องไม่เป็นค่าติดลบ")
+			}
+			if row.SortedQuantity != *in.Quantity {
+				row.SortedQuantity = *in.Quantity
+				changed = true
+			}
+		}
+
+		// ถ้ามีการเปลี่ยนชนิด/บริการ หรือจำนวน ให้สร้างประวัติใหม่ (absolute)
+		if changed {
+			ctID := row.ClothTypeID
+			stID := row.ServiceTypeID
+			h := entity.SortingHistory{
+				HisQuantity:     row.SortedQuantity, // absolute after update
+				RecordedAt:      time.Now(),
+				SortedClothesID: row.ID,
+				Action:          "EDIT",
+				ClothTypeID:     &ctID,
+				ServiceTypeID:   &stID,
+			}
+			if err := tx.Create(&h).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
+		} else {
+			tx.Rollback()
+			return nil // ไม่มีอะไรเปลี่ยน แต่อยากถือว่าสำเร็จ
+		}
+
+		if err := tx.Save(&row).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+		return tx.Commit().Error
+	})
+
+	if err != nil {
+		if strings.Contains(err.Error(), "ไม่อยู่ในออเดอร์นี้") {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
 			return
 		}
-		if row.ClothTypeID != ct.ID {
-			row.ClothTypeID = ct.ID
-			changed = true
-		}
-	}
-	if in.ServiceTypeID != nil {
-		var st entity.ServiceType
-		if err := tx.First(&st, *in.ServiceTypeID).Error; err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "ไม่พบ ServiceType"})
+		if strings.Contains(err.Error(), "ไม่พบ") || strings.Contains(err.Error(), "พารามิเตอร์") || strings.Contains(err.Error(), "ประเภทผ้า") {
+			c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
 			return
 		}
-		if row.ServiceTypeID != *in.ServiceTypeID {
-			row.ServiceTypeID = *in.ServiceTypeID
-			changed = true
-		}
-		// ผูกกับ order ถ้ายังไม่ถูกผูก
-		var order entity.Order
-		if err := tx.First(&order, srec.OrderID).Error; err == nil {
-			_ = tx.Model(&order).Association("ServiceTypes").Append(&st)
-		}
-	}
-
-	// อัปเดตจำนวน: เก็บ history เป็น "absolute" เสมอ
-	if in.Quantity != nil {
-		if *in.Quantity < 0 {
-			tx.Rollback()
-			c.JSON(http.StatusBadRequest, gin.H{"Error": "จำนวนต้องไม่เป็นค่าติดลบ"})
-			return
-		}
-		if row.SortedQuantity != *in.Quantity {
-			changed = true
-			row.SortedQuantity = *in.Quantity
-		}
-	}
-
-	// ถ้ามีการเปลี่ยนชนิด/บริการ หรือจำนวน ให้สร้างประวัติใหม่ (absolute)
-	if changed {
-		ctID := row.ClothTypeID
-		stID := row.ServiceTypeID
-		h := entity.SortingHistory{
-			HisQuantity:     row.SortedQuantity, // ✅ absolute after update
-			RecordedAt:      time.Now(),
-			SortedClothesID: row.ID,
-			Action:          "EDIT",
-			ClothTypeID:     &ctID,
-			ServiceTypeID:   &stID,
-		}
-		if err := tx.Create(&h).Error; err != nil {
-			tx.Rollback()
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึกประวัติไม่สำเร็จ"})
-			return
-		}
-	} else {
-		// ไม่มีอะไรเปลี่ยน
-		tx.Rollback()
-		c.JSON(http.StatusOK, gin.H{"Success": true, "Message": "ไม่มีการเปลี่ยนแปลง"})
-		return
-	}
-
-	if err := tx.Save(&row).Error; err != nil {
-		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"Error": "อัปเดตรายการไม่สำเร็จ"})
 		return
 	}
-	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": "อัปเดตรายการไม่สำเร็จ"})
-		return
+
+	// ทำ Association นอก transaction + มี retry
+	if needAppendService != nil {
+		_ = withSQLiteRetry(c, 3, func() error {
+			var row entity.SortedClothes
+			if err := config.DB.First(&row, itemID).Error; err != nil {
+				return err
+			}
+			var srec entity.SortingRecord
+			if err := config.DB.First(&srec, row.SortingRecordID).Error; err != nil {
+				return err
+			}
+			var order entity.Order
+			if err := config.DB.First(&order, srec.OrderID).Error; err != nil {
+				return err
+			}
+			return config.DB.Model(&order).Association("ServiceTypes").Append(needAppendService)
+		})
 	}
 
 	// ส่ง item ปัจจุบันกลับ (ถ้าจะใช้)
 	var updated entity.SortedClothes
-	_ = config.DB.Preload("ClothType").Preload("ServiceType").First(&updated, row.ID).Error
+	_ = config.DB.Preload("ClothType").Preload("ServiceType").First(&updated, uint(itemID)).Error
 
 	c.Header("Cache-Control", "no-store")
 	c.JSON(http.StatusOK, gin.H{
@@ -564,15 +637,16 @@ func DeleteSortedClothes(c *gin.Context) {
 	// บันทึกประวัติเป็น absolute = 0
 	ctID := row.ClothTypeID
 	stID := row.ServiceTypeID
-	h := entity.SortingHistory{
-		HisQuantity:     0, // ✅ หลังลบคงเหลือ 0
-		RecordedAt:      time.Now(),
-		SortedClothesID: row.ID,
-		Action:          "DELETE",
-		ClothTypeID:     &ctID,
-		ServiceTypeID:   &stID,
-	}
-	_ = config.DB.Create(&h).Error
+	_ = withSQLiteRetry(c, 3, func() error {
+		return config.DB.Create(&entity.SortingHistory{
+			HisQuantity:     0, // หลังลบคงเหลือ 0
+			RecordedAt:      time.Now(),
+			SortedClothesID: row.ID,
+			Action:          "DELETE",
+			ClothTypeID:     &ctID,
+			ServiceTypeID:   &stID,
+		}).Error
+	})
 
 	row.SortedQuantity = 0
 	if err := config.DB.Save(&row).Error; err != nil {
@@ -588,8 +662,8 @@ func DeleteSortedClothes(c *gin.Context) {
 func ListClothTypes(c *gin.Context) {
 	var list []entity.ClothType
 	if err := config.DB.Find(&list).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"Error": "ดึง ClothType ไม่สำเร็จ"})
-		return
+	 c.JSON(http.StatusInternalServerError, gin.H{"Error": "ดึง ClothType ไม่สำเร็จ"})
+	 return
 	}
 	type V struct {
 		ID   uint   `json:"ID"`
