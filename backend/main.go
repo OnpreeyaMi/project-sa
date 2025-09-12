@@ -119,7 +119,7 @@ func main() {
 	// Orders (อื่นๆ)
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/process/:id/order", controller.GetProcessesByOrder)                               // ดึง process พร้อม order
-	router.GET("/ordersdetails", controller.GetOrdersdetails)                                      // ดึง order ทั้งหมด (สำหรับหน้า admin)
+	router.GET("/ordersdetails", controller.GetOrdersdetails)                                   
 	router.DELETE("/laundry-process/:id/machines/:machineId", controller.DeleteMachineFromProcess) // ลบเครื่องจาก process
 
 	// ---------- Machines ----------

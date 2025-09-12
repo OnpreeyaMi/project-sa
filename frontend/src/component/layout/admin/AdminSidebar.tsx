@@ -3,7 +3,6 @@ import { LiaUserCogSolid } from "react-icons/lia";
 import { RiUserSmileFill } from "react-icons/ri";
 import { HiSpeakerphone } from "react-icons/hi";
 import { RiArchive2Fill } from "react-icons/ri";
-import { FaHome } from "react-icons/fa";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -30,12 +29,6 @@ const AdminSidebar: React.FC<SidebarProps> = ({ children }) => {
 
 
   const menuItems = [
-    {
-      key: "/admin/dashboard",
-      icon: <FaHome style={{ fontSize: 18, color: '#6da3d3' }} />,
-      label: <span style={{ color: '#6da3d3' }}>หน้าหลัก</span>,
-      onClick: () => navigate("/admin/dashboard"),
-    },
     {
       key: "/admin/employees",
       icon: <LiaUserCogSolid style={{ fontSize: 18, color: '#6da3d3' }} />,

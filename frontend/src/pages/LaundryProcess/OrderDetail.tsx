@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useUser } from "../../context/UserContext";
 import { useParams } from "react-router-dom";
 import {
   Card,
@@ -38,6 +39,7 @@ const OrderDetail: React.FC = () => {
   const [selectedWashMachine, setSelectedWashMachine] = useState<number | null>(null);
   const [selectedDryMachine, setSelectedDryMachine] = useState<number | null>(null);
   const [statusNote, setStatusNote] = useState("");
+  const { user } = useUser();
 
   const latestProcessId = order?.LaundryProcesses?.length
     ? order.LaundryProcesses[order.LaundryProcesses.length - 1].ID
@@ -118,6 +120,7 @@ const OrderDetail: React.FC = () => {
         ...(selectedDryMachine ? [selectedDryMachine] : []),
       ]);
       message.success("บันทึกเครื่องซัก/อบ สำเร็จ");
+      console.log(selectedWashMachine, selectedDryMachine);
       loadOrder();
     } catch (err) {
       console.error(err);
@@ -131,7 +134,12 @@ const OrderDetail: React.FC = () => {
   const saveStatusNote = async () => {
     if (!latestProcessId) return;
     try {
-      await orderdeailService.updateStatus(latestProcessId, order.LaundryProcesses.slice(-1)[0]?.Status, statusNote);
+      await orderdeailService.updateStatus(
+        latestProcessId,
+        order.LaundryProcesses.slice(-1)[0]?.Status,
+        statusNote,
+        user?.employee?.ID || user?.employeeId
+      );
       message.success("บันทึกหมายเหตุเรียบร้อย");
       loadOrder();
     } catch (err) {
@@ -149,7 +157,12 @@ const OrderDetail: React.FC = () => {
   const confirmStatusUpdate = async () => {
     if (!latestProcessId || !confirmModal.newStatus) return;
     try {
-      const updated = await orderdeailService.updateStatus(latestProcessId, confirmModal.newStatus, statusNote);
+      const updated = await orderdeailService.updateStatus(
+        latestProcessId,
+        confirmModal.newStatus,
+        statusNote,
+        user?.employee?.ID || user?.employeeId
+      );
       setOrder((prev: any) => ({
         ...prev,
         LaundryProcesses: prev.LaundryProcesses.map((p: any) =>
@@ -192,6 +205,13 @@ const OrderDetail: React.FC = () => {
                   <span className="font-bold">🏠 ที่อยู่</span>
                   <span className="text-right max-w-[60%]">
                     {order.Address?.AddressDetails || order.Address?.address_details || "-"}
+                  </span>
+                </div>
+                {/* หมายเหตุจาก SortingRecord */}
+                <div className="flex justify-between border-b pb-2">
+                  <span className="font-bold">📝 หมายเหตุคัดแยก</span>
+                  <span className="text-right max-w-[60%]" style={{ color: '#20639B' }}>
+                    {order.SortingRecord?.SortingNote || "-"}
                   </span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
