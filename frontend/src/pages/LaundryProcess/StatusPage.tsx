@@ -399,17 +399,6 @@ const OrderStatusPage: React.FC = () => {
     ]
     : [];
 
-  if (loading)
-    return (
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        Loading...
-      </div>
-    );
-  if (error)
-    return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>{error}</div>
-    );
-
   if (orders.length === 0) {
     return (
       <CustomerSidebar>

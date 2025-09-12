@@ -67,12 +67,13 @@ func CreateLaundryProcess(c *gin.Context) {
 func GetOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	var order entity.Order
-	if err := config.DB.Preload("Customer").
-		Preload("Customer.Addresses").
-		Preload("Address").
-		Preload("LaundryProcesses.Machines").
-		Preload("LaundryProcesses.SortingRecord").
-		First(&order, id).Error; err != nil {
+       if err := config.DB.Preload("Customer").
+	       Preload("Customer.Addresses").
+	       Preload("Address").
+	       Preload("LaundryProcesses.Machines").
+	       Preload("LaundryProcesses.SortingRecord").
+	       Preload("SortingRecord").
+	       First(&order, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบ Order"})
 		return
 	}

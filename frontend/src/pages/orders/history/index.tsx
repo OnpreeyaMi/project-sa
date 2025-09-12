@@ -6,6 +6,7 @@ import type { OrderHistory } from "../../../interfaces/types";
 import dayjs from "dayjs";
 import iconWashing from '../../../assets/iconWashing.png';
 
+
 const HistoryPage: React.FC = () => {
   const [data, setData] = useState<OrderHistory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -14,13 +15,18 @@ const HistoryPage: React.FC = () => {
     const fetchHistories = async () => {
       try {
         const histories = await fetchOrderHistories();
+        const userId = localStorage.getItem("userId");
+        const filtered = histories.filter((item) => {
+        // สมมติ order มี field customer_id หรือ order.customer_id
+        return item.Order?.CustomerID === Number(userId);
+      });
         // เรียงตามเวลาล่าสุดก่อน
-        histories.sort((a, b) => {
+        filtered.sort((a, b) => {
           const dateA = new Date(a.order?.CreatedAt || a.CreatedAt).getTime();
           const dateB = new Date(b.order?.CreatedAt || b.CreatedAt).getTime();
           return dateB - dateA;
         });
-        const tableData = histories.map((item, index) => ({
+        const tableData = filtered.map((item, index) => ({
           ...item,
           key: item.id || index,
         }));
