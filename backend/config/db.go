@@ -58,6 +58,7 @@ func SetupDatabase() {
 		&entity.Promotion{},
 		&entity.PromotionCondition{},
 		&entity.PromotionUsage{},
+		&entity.ComplaintAttachment{},  //เพิ่มตาราง เก็บการอัปโหลด ไฟล์เพิ่มเติม
 		&entity.Role{},
 		&entity.DiscountType{},
 		&entity.DetergentUsageHistory{},

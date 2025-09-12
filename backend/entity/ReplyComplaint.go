@@ -13,7 +13,7 @@ type ReplyComplaint struct {
     Title           string    `gorm:"column:title"`
     Description     string    `gorm:"column:description"`
 
-    EmpID    uint     `gorm:"column:emp_id"`
+    EmpID       uint     `gorm:"column:emp_id"`
     Employee *Employee `gorm:"foreignKey:EmpID;references:ID"` // <-- เปลี่ยน references:ID
 
     ComplaintID uint
