@@ -27,7 +27,7 @@ import PurchaseHistoryPage from "./pages/stock/Admin/history";
 import UsageHistoryPage from "./pages/stock/Admin/usage";
 import DeleteHistoryPage from "./pages/stock/Admin/delete";
 import OrderStatusPage from "./pages/LaundryProcess/StatusPage";
-import StatusPage from "./pages/LaundryProcess/StatusPage";
+
 
 const App: React.FC = () => {
   return (
@@ -63,7 +63,6 @@ const App: React.FC = () => {
 
         {/* Customer */}
         <Route path="/customer">
-          <Route path="status" element={<RequireRole role="customer"><StatusPage /></RequireRole>} />
           <Route path="complaint" element={<RequireRole role="customer"><CustomerComplaintPage /></RequireRole>} />
           <Route path="payment" element={<RequireRole role="customer"><Payment /></RequireRole>} />
           <Route path="orders" element={<RequireRole role="customer"><OrderPage /></RequireRole>} />

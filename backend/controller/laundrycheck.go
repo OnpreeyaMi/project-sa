@@ -143,10 +143,19 @@ func UpsertLaundryCheck(c *gin.Context) {
 			SortingNote: strings.TrimSpace(input.StaffNote),
 			OrderID:     order.ID,
 		}
-		if err := config.DB.Create(&srec).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortingRecord ไม่สำเร็จ"})
-			return
-		}
+		   if err := config.DB.Create(&srec).Error; err != nil {
+			   c.JSON(http.StatusInternalServerError, gin.H{"Error": "บันทึก SortingRecord ไม่สำเร็จ"})
+			   return
+		   }
+		   // เชื่อม LaundryProcess ล่าสุดของ Order นี้กับ SortingRecord ที่เพิ่งสร้าง
+		   var process entity.LaundryProcess
+		   if err := config.DB.Joins("JOIN process_order ON process_order.laundry_process_id = laundry_processes.id").
+			   Where("process_order.order_id = ?", order.ID).
+			   Order("laundry_processes.created_at DESC").
+			   First(&process).Error; err == nil {
+			   process.SortingID = srec.ID
+			   config.DB.Save(&process)
+		   }
 	} else {
 		if strings.TrimSpace(input.StaffNote) != "" {
 			srec.SortingNote = strings.TrimSpace(input.StaffNote)

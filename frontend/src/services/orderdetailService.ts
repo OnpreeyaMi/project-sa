@@ -71,11 +71,11 @@ export const orderdeailService = {
   },
 
   // อัปเดตสถานะ LaundryProcess พร้อมหมายเหตุ
-  updateStatus: async (processId: number, status: string, description: string) => {
+  updateStatus: async (processId: number, status: string, description: string, employeeId?: number) => {
     const res = await fetch(`${API_BASE}/laundry-process/${processId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, status_note: description }),
+      body: JSON.stringify({ status, status_note: description, employee_id: employeeId }),
     });
     if (!res.ok) throw new Error("Failed to update status");
     return res.json();

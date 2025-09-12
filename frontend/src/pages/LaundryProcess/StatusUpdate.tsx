@@ -93,7 +93,7 @@ useEffect(() => {
       },
     },
     {
-      title: "จำนวนชิ้น",
+      title: "จำนวนผ้า",
       key: "totalItems",
       align: "center" as const,
       render: (_: any, record: any) =>

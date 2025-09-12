@@ -45,19 +45,10 @@ const OrderStatusPage: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [pickupQueues, setPickupQueues] = useState<Queue[]>([]);
   const [deliveryQueues, setDeliveryQueues] = useState<Queue[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useUser();
-
-  /**
-   * Robust helper: try multiple keys (case-insensitive) and dotted paths.
-   * Returns the first non-null / non-undefined value for any of the provided keys.
-   *
-   * Usage examples:
-   *   getField(obj, 'ID', 'id')
-   *   getField(obj, 'created_at', 'CreatedAt')
-   *   getField(user, 'customer', 'Customer')
-   */
   const getField = (obj: any, ...keys: string[]): any => {
     if (obj == null) return undefined;
     for (const key of keys) {
@@ -91,15 +82,8 @@ const OrderStatusPage: React.FC = () => {
   const customerObj = getField(user, 'customer', 'Customer') ?? user?.customer ?? user?.customer ?? null;
   const customerId = getField(customerObj, 'ID', 'id');
 
-  if (!customerId) {
-    return (
-      <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>
-        กรุณาเข้าสู่ระบบในฐานะลูกค้าเพื่อดูสถานะออเดอร์
-      </div>
-    );
-  }
 
-  // fetch customer + queues
+  // fetch customer + queues (ดึง orders list)
   useEffect(() => {
     let ignore = false;
     setLoading(true);
@@ -153,6 +137,31 @@ const OrderStatusPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId]);
 
+  // เมื่อ selectedOrderId เปลี่ยน ให้ fetch order ล่าสุดจาก /orders/:id
+  useEffect(() => {
+    if (!selectedOrderId) {
+      setSelectedOrder(null);
+      return;
+    }
+    setLoading(true);
+    fetch(`http://localhost:8000/orders/${selectedOrderId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(`ไม่สามารถดึงข้อมูลออเดอร์: ${res.status} ${text}`);
+        }
+        return res.json();
+      })
+      .then((orderData) => {
+        setSelectedOrder(orderData);
+      })
+      .catch((err) => {
+        setError(err.message || 'เกิดข้อผิดพลาดขณะดึงข้อมูลออเดอร์');
+        setSelectedOrder(null);
+      })
+      .finally(() => setLoading(false));
+  }, [selectedOrderId]);
+
   const statusSteps = [
     {
       title: 'รอดำเนินการ',
@@ -204,11 +213,7 @@ const OrderStatusPage: React.FC = () => {
     },
   ];
 
-  // find selected order by ID (support ID or id)
-  const selectedOrder: any = orders.find((o: any) => {
-    const id = getField(o, 'ID', 'id');
-    return id === selectedOrderId || id === Number(selectedOrderId);
-  });
+  // selectedOrder จะถูกอัปเดตจาก useEffect ข้างบน
 
   // determine merged status with queue overrides
   const statusToStepIndex: Record<string, number> = {
@@ -302,7 +307,6 @@ const OrderStatusPage: React.FC = () => {
     return 'wait';
   };
 
-  // Prepare description items for selected order
   const items: DescriptionsProps['items'] = selectedOrder
     ? [
       {
@@ -431,6 +435,14 @@ const OrderStatusPage: React.FC = () => {
     setSelectedOrderId(orderId);
   };
 
+
+  if (!customerId) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>
+        กรุณาเข้าสู่ระบบในฐานะลูกค้าเพื่อดูสถานะออเดอร์
+      </div>
+    );
+  }
   return (
     <CustomerSidebar>
       <div

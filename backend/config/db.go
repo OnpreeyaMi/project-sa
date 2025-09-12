@@ -199,16 +199,6 @@ func MockData() {
 	for _, c := range conds {
 		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
 	}
-
-	// --- LaundryProcess (ตัวอย่างเล็กน้อย) ---
-	processes := []entity.LaundryProcess{
-		{Status: "รอดำเนินการ"},
-		{Status: "กำลังซัก"},
-	}
-	for _, lp := range processes {
-		DB.FirstOrCreate(&lp, entity.LaundryProcess{Status: lp.Status})
-	}
-
 	// --- Machines ---
 	machines := []entity.Machine{
 		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
