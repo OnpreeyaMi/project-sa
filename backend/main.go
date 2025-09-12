@@ -4,14 +4,18 @@ import (
 	"fmt"
 
 	"github.com/OnpreeyaMi/project-sa/config"
-	"github.com/OnpreeyaMi/project-sa/controller"
+    "github.com/gin-gonic/gin"
+    "github.com/OnpreeyaMi/project-sa/controller"
 	"github.com/OnpreeyaMi/project-sa/middlewares"
-	"github.com/gin-gonic/gin"
+	 "github.com/joho/godotenv"
+	
 )
 
 const port = 8000
 
 func main() {
+	
+	_ = godotenv.Load() // โหลด .env จากโฟลเดอร์เดียวกับ binary/โค้ด
 	config.ConnectDatabase()
 	config.SetupDatabase()
 
@@ -28,6 +32,7 @@ func main() {
 
 	customerRoutes := router.Group("/customer")
 	customerRoutes.Use(middlewares.AuthMiddleware())
+	
 	{
 		customerRoutes.GET("/profile", controller.GetCustomerProfile)
 		customerRoutes.PUT("/profile", controller.EditCustomerProfile)
@@ -36,7 +41,9 @@ func main() {
 		customerRoutes.PUT("/addresses/:id/main", controller.SetMainAddress)
 		customerRoutes.DELETE("/addresses/:id", controller.DeleteAddress)
 	}
-
+	
+	
+	
 	// Convenience endpoint for employee (need token)
 	router.GET("/employee/me", middlewares.AuthMiddleware(), controller.GetEmployeeMe)
 
@@ -50,6 +57,14 @@ func main() {
 		adminCustomerRoutes.DELETE("/:id", controller.DeleteCustomer)
 	}
 
+	// Promotion CRUD
+	router.POST("/promotions", controller.CreatePromotion)
+	router.GET("/promotions", controller.GetPromotions)
+	router.PUT("/promotions/:id", controller.UpdatePromotion)
+	router.DELETE("/promotions/:id", controller.DeletePromotion)
+
+
+	// Order CRUD
 	// Orders / Addresses (public or adjust as needed)
 	router.POST("/order", controller.CreateOrder)
 	router.GET("/order-histories", controller.GetOrderHistories)
@@ -113,13 +128,37 @@ func main() {
 	// Queue Routes
 	router.GET("/queues", controller.GetQueues) // ?type=pickup / delivery
 	router.POST("/queues/pickup", controller.CreatePickupQueue)
-	router.POST("/queues/:id/assign_timeslot", controller.AssignTimeSlotToQueue) // assign timeslot ให้คิว
-	router.POST("/queues/:id/accept", controller.AcceptQueue)
+	
 	router.POST("/queues/:id/pickup_done", controller.ConfirmPickupDone)
 	router.POST("/queues/:id/delivery_done", controller.ConfirmDeliveryDone)
 	router.DELETE("/queues/:id", controller.DeleteQueue)         // ลบคิว
 	router.PUT("/queues/:id", controller.UpdateQueue)            // อัปเดตคิว (status, employee)
 	router.GET("/queue_histories", controller.GetQueueHistories) // ดูประวัติคิว
+	//Payment
+	router.GET("/payment/checkout/:orderId", controller.GetCheckoutData)   // ข้อมูลหน้าเช็คเอาต์ 
+	// router.GET("/orders/latest", middlewares.AuthRequired().controller.GetLatestOrderForCustomer)
+	router.GET("/orders/latest/:customer_id", controller.GetLatestOrderForCustomer)
+	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
+	
+
+	//complaintCreate
+	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
+	router.Static("/uploads", "./uploads")
+	router.POST("/complaints", controller.CreateComplaint)
+	//complaintReply
+	emp := router.Group("/employee")
+	{
+		emp.GET("/complaints", controller.ListComplaintsForEmployee)
+		emp.GET("/complaints/:publicId", controller.GetComplaintDetail)
+		emp.GET("/complaints/:publicId/replies", controller.ListReplies)
+		emp.POST("/complaints/:publicId/replies", controller.AddReplyToComplaint)
+		emp.PATCH("/complaints/:publicId/status", controller.SetComplaintStatus)
+	}
+
+	router.POST("/queues/:id/assign_timeslot", controller.AssignTimeSlotToQueue) // assign timeslot ให้คิว
+	router.POST("/queues/:id/accept", controller.AcceptQueue)
+
+
 
 	// รัน server
 	router.Run(fmt.Sprintf(":%d", port))

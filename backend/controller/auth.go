@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"fmt"
 	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
@@ -30,7 +31,8 @@ func Login(c *gin.Context) {
 	if err := config.DB.Preload("Role").Preload("Employee").
 		Where("email = ?", in.Email).
 		First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		fmt.Println("customer.Addresses:", user.Customers[0].Addresses)
 		return
 	}
 

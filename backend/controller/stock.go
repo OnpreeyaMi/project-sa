@@ -132,7 +132,7 @@ func UseDetergent(c *gin.Context) {
 // GET /detergents/usage-history
 func GetDetergentUsageHistory(c *gin.Context) {
 	var histories []entity.DetergentUsageHistory
-	if err := config.DB.Preload("User").Preload("Detergent").Find(&histories).Error; err != nil {
+	if err := config.DB.Preload("User").Preload("User.Employee").Preload("Detergent").Find(&histories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

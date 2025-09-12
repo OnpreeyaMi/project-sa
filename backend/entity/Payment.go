@@ -1,29 +1,3 @@
-// package entity
-
-// import (
-// 	"encoding/base64"
-// 	"time"
-
-// 	"gorm.io/gorm"
-// )
-
-// type Payment struct {
-//     // PaymentID    uint      `gorm:"primaryKey;autoIncrement"`
-//     gorm.Model
-//     PaymentType  string
-//     CreatedDate  time.Time
-//     CheckPayment []byte
-//     TotalAmount  int
-//     PaymentStatus string
-//     OrderID      uint
-    
-
-//     Histories    []*History     `gorm:"foreignKey:PaymentID"`
-    
-
-// }
-
-
 
 package entity
 
@@ -38,10 +12,10 @@ type Payment struct {
 
 	// วิธีชำระ เช่น "PromptPay"
 	PaymentType   string    `json:"payment_type"`
-	CreatedDate   time.Time `json:"created_date"`
+	// CreatedDate   time.Time `json:"created_date"`     //ไม่จำเป็นให้gorm เเทน
 
-	// เก็บภาพสลิป (BLOB) — จะใส่หรือไม่ก็ได้
-	CheckPayment  []byte    `json:"check_payment" gorm:"type:blob"`
+	// เก็บภาพสลิปเพื่อเช็ค 
+	CheckPaymentB64 string `gorm:"type:text" json:"check_payment_b64,omitempty"` // <- เก็บ Base64 (ไม่ใส่ใน JSON เวลาปกติได้ด้วย omitempty)     เเก้ไขจาก main 8/9/68
 
 	// ยอดที่คาดหวัง (ฝั่งระบบของคุณ)
 	TotalAmount   int       `json:"total_amount"`
@@ -51,14 +25,12 @@ type Payment struct {
 
 	// อ้างไปยังออเดอร์
 	OrderID       uint      `json:"order_id"`
+	
 
 	// ---------------- จาก EasySlip ----------------
 	// อ้างอิงธุรกรรม (ใช้กันซ้ำ)
 	TransRef       string     `json:"trans_ref" gorm:"uniqueIndex;size:64"`
-	// รหัสธนาคารปลายทาง (BOT code เช่น SCB=014, KBANK=001)
-	ReceiverBankID string     `json:"receiver_bank_id" gorm:"size:8"`
-	// ประเทศ (TH)
-	CountryCode    string     `json:"country_code" gorm:"size:8"`
+	
 	// ยอดเงินที่อ่านได้จากสลิป (ใช้ยืนยันกับ TotalAmount)
 	VerifiedAmount int        `json:"verified_amount"`
 	// เวลาที่สลิปทำรายการ (ตามที่ EasySlip คืนมา)

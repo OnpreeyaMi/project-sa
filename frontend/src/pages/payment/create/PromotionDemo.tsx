@@ -81,7 +81,7 @@ export default function PromotionSelector({
     <div className="w-full">
       <div className="mb-3 flex items-end justify-between">
         <div>
-          <h3 className="text-lg font-semibold">เลือกโปรโมชั่น</h3>
+          <h3 className="text-xl font-semibold mb-2">เลือกโปรโมชั่น</h3>
           <p className="text-sm text-gray-500">เลือกได้ {singleSelect ? "1 โปร" : "หลายโปร"}</p>
         </div>
         

@@ -42,13 +42,13 @@ export default function PaymentSuccessModal({
   onClose,
   onViewOrder,
   onGoHome,
-  onContinueShopping,
+  
 
   title = "ชำระเงินสำเร็จ!",
   subtitle = "ขอบคุณสำหรับการสั่งซื้อ เราได้รับการชำระเงินเรียบร้อยแล้ว",
   shopName,
-  orderId = 1234,
-  amount = 0,
+  orderId = undefined,//
+  amount = undefined,  //
   currency = "THB",
   paidAt = new Date(),
   statusText = "ชำระเงินแล้ว",
@@ -143,12 +143,7 @@ export default function PaymentSuccessModal({
             >
               🏠 กลับหน้าหลัก
             </button>
-            <button
-              onClick={onContinueShopping}
-              className="w-full text-gray-500 text-sm hover:text-gray-700"
-            >
-              🛍️ ช้อปปิ้งต่อ
-            </button>
+            
           </div>
         </div>
       </div>
