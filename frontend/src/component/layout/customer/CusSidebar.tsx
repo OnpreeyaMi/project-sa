@@ -49,7 +49,6 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // ✅ เมนูลูกค้า — รูปแบบเดียวกับ EmployeeSidebar (key = path จริง + onClick)
   const menuItems = [
     {
       key: "/customer/home",
@@ -106,6 +105,9 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       },
     },
   ];
+  const selectedKey = menuItems.find(item =>
+  location.pathname.startsWith(item.key)
+)?.key || location.pathname;
 
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
@@ -141,7 +143,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
         <Menu
           style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          selectedKeys={[location.pathname]}  // ✅ ไฮไลท์ตาม path ปัจจุบัน (รูปแบบเดียวกัน)
+          selectedKeys={[selectedKey]} 
           items={menuItems}
           onClick={({ key }) => {
             const selected = menuItems.find(item => item.key === key);
