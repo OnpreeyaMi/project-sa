@@ -207,15 +207,15 @@ func MockData() {
 			DB.Create(&ts)
 		}
 	}
-	// // --- EmployeeStatus (ค่าเริ่มต้น) ---
-	// statuses := []entity.EmployeeStatus{
-	// 	{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},
-	// 	{StatusName: "inactive", StatusDescription: "ยังไม่ปฏิบัติงาน"},
-	// 	{StatusName: "onleave", StatusDescription: "ลาพัก"},
-	// }
-	// for _, s := range statuses {
-	// 	DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
-	// }
+	// --- EmployeeStatus (ค่าเริ่มต้น) ---
+	statuses := []entity.EmployeeStatus{
+		{StatusName: "active", StatusDescription: "กำลังปฏิบัติงาน"},
+		{StatusName: "inactive", StatusDescription: "ยังไม่ปฏิบัติงาน"},
+		{StatusName: "onleave", StatusDescription: "ลาพัก"},
+	}
+	for _, s := range statuses {
+		DB.FirstOrCreate(&s, entity.EmployeeStatus{StatusName: s.StatusName})
+	}
 
 	fmt.Println("✅ Mock data added successfully!")
 }
