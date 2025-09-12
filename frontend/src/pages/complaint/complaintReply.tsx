@@ -1,37 +1,39 @@
 // src/pages/complaint/complaintReply.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Mail, Eye, Send, Loader2 } from "lucide-react";
+import { Search, Eye, Send, Loader2, X, Maximize2 } from "lucide-react";
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 import { useUser } from "../../hooks/UserContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-
 type Status = "new" | "in_progress" | "resolved";
-type Priority = "low" | "medium" | "high";
 
 type ComplaintRow = {
   id: string;
   orderId?: string;
   customerName: string;
-  email?: string;
   subject: string;
   message: string;
   createdAt: string;
   status: Status;
-  priority: Priority;
 };
 
 type ReplyItem = { at: string; by: string; text: string };
-type ComplaintDetail = ComplaintRow & { history: ReplyItem[] };
+
+type AttachmentItem = {
+  url: string;   // ABSOLUTE URL จาก backend
+  name: string;
+  mime?: string;
+  size?: number;
+};
+
+type ComplaintDetail = ComplaintRow & { history: ReplyItem[]; attachments?: AttachmentItem[] };
 
 const thStatus: Record<Status, string> = {
   new: "ใหม่",
   in_progress: "กำลังดำเนินการ",
   resolved: "ปิดงานแล้ว",
 };
-
-
 
 function timeAgo(iso: string) {
   const t = new Date(iso).getTime();
@@ -45,6 +47,7 @@ function timeAgo(iso: string) {
   return `${d} วันที่แล้ว`;
 }
 
+// ---------- API ----------
 async function apiListComplaints(params: {
   q?: string; status?: "all" | Status; page?: number; pageSize?: number;
 }): Promise<{ items: ComplaintRow[]; total: number; page: number; pageSize: number }> {
@@ -76,7 +79,7 @@ async function apiAddReply(publicId: string, text: string, newStatus: Status | u
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(userToken ? { Authorization: `Bearer ${userToken}` } : {}), // เผื่ออนาคตมี auth
+      ...(userToken ? { Authorization: `Bearer ${userToken}` } : {}),
     },
     body: JSON.stringify({ empId, text, newStatus: newStatus ?? null }),
   });
@@ -94,23 +97,157 @@ async function apiSetStatus(publicId: string, status: Status) {
   return res.json() as Promise<{ ok: true }>;
 }
 
+// ---------- Lightbox ----------
+function Lightbox({ src, alt, onClose }: { src: string; alt?: string; onClose: () => void }) {
+  if (!src) return null;
+  return (
+    <div className="fixed inset-0 z-[100]">
+      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-[101] inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/90 hover:bg-white"
+      >
+        <X className="w-5 h-5" /> ปิด
+      </button>
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <img src={src} alt={alt} className="max-h-full max-w-full rounded-lg shadow-2xl" />
+      </div>
+    </div>
+  );
+}
+
+// ---------- Drawer: ดูรายละเอียด + แกลเลอรี ----------
+function ViewDrawer({
+  open, onClose, item,
+}: {
+  open: boolean; onClose: () => void; item: ComplaintRow | null;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [detail, setDetail] = useState<ComplaintDetail | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string>("");
+
+  useEffect(() => {
+    let on = true;
+    if (open && item) {
+      setLoading(true);
+      apiGetComplaintDetail(item.id)
+        .then((d) => { if (on) setDetail(d); })
+        .finally(() => setLoading(false));
+    } else {
+      setDetail(null);
+      setLightboxSrc("");
+    }
+    return () => { on = false; };
+  }, [open, item]);
+
+  if (!open || !item) return null;
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div className="absolute right-0 top-0 h-full w-full max-w-3xl bg-white shadow-xl">
+        <div className="px-6 py-4 border-b flex items-center justify-between">
+          <div className="text-2xl font-semibold">ดูคำร้องเรียน</div>
+          <button onClick={onClose} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">ปิด</button>
+        </div>
+
+        <div className="p-6 overflow-y-auto h-[calc(100%-64px)]">
+          {loading && !detail ? (
+            <div className="text-gray-500 flex items-center gap-2">
+              <Loader2 className="size-4 animate-spin" /> กำลังโหลด…
+            </div>
+          ) : detail ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="rounded-xl border p-3">
+                  <div className="text-sm text-gray-500">หมายเลข</div>
+                  <div className="font-medium">{detail.id}</div>
+                </div>
+                <div className="rounded-xl border p-3">
+                  <div className="text-sm text-gray-500">ลูกค้า</div>
+                  <div className="font-medium">{detail.customerName}</div>
+                </div>
+                <div className="rounded-xl border p-3 md:col-span-2">
+                  <div className="text-sm text-gray-500">หัวข้อ</div>
+                  <div className="font-medium">{detail.subject}</div>
+                  <div className="text-gray-600 mt-1 whitespace-pre-line">{detail.message}</div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <div className="mb-2 font-medium">ไฟล์แนบ</div>
+                {detail.attachments?.length ? (
+                  <ul className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {detail.attachments.map((a, i) => {
+                      const isImage = (a.mime?.startsWith("image/")) || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(a.name);
+                      return (
+                        <li key={i} className="rounded-xl border overflow-hidden group">
+                          <div className="relative">
+                            {isImage ? (
+                              <img
+                                src={a.url}
+                                alt={a.name}
+                                className="w-full h-40 object-cover cursor-zoom-in"
+                                onClick={() => setLightboxSrc(a.url)}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-40 grid place-items-center text-sm text-gray-500">
+                                <span className="px-2 py-1 rounded bg-gray-100">{a.mime || "file"}</span>
+                              </div>
+                            )}
+                            <a
+                              href={a.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/90 hover:bg-white text-sm"
+                              title="เปิดในแท็บใหม่"
+                            >
+                              <Maximize2 className="w-4 h-4" />
+                              เปิด
+                            </a>
+                          </div>
+                          <div className="px-3 py-2 border-t">
+                            <div className="text-sm font-medium truncate" title={a.name}>{a.name}</div>
+                            <div className="text-xs text-gray-500">{a.mime || ""}{a.size ? ` • ${a.size.toLocaleString()} bytes` : ""}</div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="text-gray-500">ไม่มีไฟล์แนบ</div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {lightboxSrc && (
+        <Lightbox src={lightboxSrc} alt="attachment" onClose={() => setLightboxSrc("")} />
+      )}
+    </div>
+  );
+}
+
+// ---------- Drawer: ตอบกลับ ----------
 function ReplyDrawer({
   open, onClose, item, onStatusChanged,
 }: {
   open: boolean; onClose: () => void; item: ComplaintRow | null;
   onStatusChanged?: (s: Status) => void;
 }) {
-  const { user, refreshEmployee } = useUser(); // ⬅️ ใช้ Context
+  const { user, refreshEmployee } = useUser();
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<ComplaintDetail | null>(null);
   const [text, setText] = useState("");
   const [chooseStatus, setChooseStatus] = useState<Status | "">("");
 
-  // ถ้าไม่มี employeeId ให้ลอง refresh เพื่อเติมให้ครบ
   useEffect(() => {
     if (user?.role === "employee") {
       const empId = getEmpIdFromAnywhere(user);
-      if (!empId) { void refreshEmployee(); } // จะอัปเดตทั้ง context และ localStorage
+      if (!empId) { void refreshEmployee(); }
     }
   }, [user, refreshEmployee]);
 
@@ -149,12 +286,13 @@ function ReplyDrawer({
       const d = await apiGetComplaintDetail(item.id);
       setDetail(d);
       setChooseStatus("");
-    } catch (e) {
+    } catch {
       alert("บันทึกการตอบกลับไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/20" onClick={onClose} />
@@ -252,6 +390,9 @@ export default function ComplaintReplyPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selected, setSelected] = useState<ComplaintRow | null>(null);
 
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewItem, setViewItem] = useState<ComplaintRow | null>(null);
+
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
 
   useEffect(() => {
@@ -265,6 +406,7 @@ export default function ComplaintReplyPage() {
   }, [query, status, page]);
 
   const openReply = (row: ComplaintRow) => { setSelected(row); setDrawerOpen(true); };
+  const openView  = (row: ComplaintRow) => { setViewItem(row); setViewOpen(true); };
   const updateRowStatus = (s: Status) => {
     if (!selected) return;
     setItems(prev => prev.map(x => x.id === selected.id ? { ...x, status: s } : x));
@@ -299,13 +441,11 @@ export default function ComplaintReplyPage() {
         </div>
 
         <div className=" mt-4 rounded-xl border overflow-hidden">
-          {/* ✅ FIX: ใช้ underscore แทน comma ใน arbitrary grid */}
-          <div className="grid grid-cols-[140px_1fr_170px_150px_110px_140px_220px] gap-3 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600">
+          <div className="grid grid-cols-[140px_1fr_170px_150px_140px_180px] gap-3 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-600">
             <div>หมายเลข</div>
             <div>หัวข้อ</div>
             <div>ลูกค้า</div>
             <div>สถานะ</div>
-            <div className="text-center">ความสำคัญ</div>
             <div>สร้างเมื่อ</div>
             <div className="text-right">การดำเนินการ</div>
           </div>
@@ -319,8 +459,7 @@ export default function ComplaintReplyPage() {
           ) : (
             <ul>
               {items.map((row) => (
-                // ✅ FIX: แถวก็ต้องใช้ underscore เช่นกัน
-                <li key={row.id} className="grid grid-cols-[140px_1fr_170px_150px_110px_140px_220px] gap-3 px-4 py-4 border-t items-start">
+                <li key={row.id} className="grid grid-cols-[140px_1fr_170px_150px_140px_180px] gap-3 px-4 py-4 border-t items-start">
                   <div className="font-medium">{row.id}</div>
 
                   <div className="min-w-0">
@@ -351,30 +490,13 @@ export default function ComplaintReplyPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-center">
-                    <span
-                      className={`inline-block h-2.5 w-2.5 rounded-full ${
-                        row.priority === "high" ? "bg-red-500" : row.priority === "medium" ? "bg-amber-500" : "bg-gray-400"
-                      }`}
-                    />
-                  </div>
-
                   <div className="text-gray-700">{timeAgo(row.createdAt)}</div>
 
-                  {/* ปุ่มไอคอนบน/ข้อความล่าง */}
                   <div className="flex items-center justify-end">
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="w-[72px] h-[56px] rounded-xl border text-center text-sm leading-4 hover:bg-gray-50 grid place-items-center"
-                        title="อีเมล"
-                      >
-                        <Mail className="w-4 h-4" />
-                        <span className="block mt-1">อีเมล</span>
-                      </button>
-
-                      <button
-                        type="button"
+                        onClick={() => openView(row)}
                         className="w-[72px] h-[56px] rounded-xl border text-center text-sm leading-4 hover:bg-gray-50 grid place-items-center"
                         title="ดู"
                       >
@@ -425,6 +547,12 @@ export default function ComplaintReplyPage() {
         item={selected}
         onClose={() => setDrawerOpen(false)}
         onStatusChanged={(s) => updateRowStatus(s)}
+      />
+
+      <ViewDrawer
+        open={viewOpen}
+        item={viewItem}
+        onClose={() => setViewOpen(false)}
       />
     </EmployeeSidebar>
   );

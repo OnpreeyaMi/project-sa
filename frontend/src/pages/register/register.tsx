@@ -15,9 +15,9 @@ function LocationMarker({ setPosition, setAddress }: any) {
       const lng = e.latlng.lng;
       setPosition({ lat, lng });
 
-      // เรียก reverse geocoding
+      // เรียก reverse geocoding ภาษาไทย
       const res = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=th`
       );
       setAddress(res.data.display_name || "");
     },

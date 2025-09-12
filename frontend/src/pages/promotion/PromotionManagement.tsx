@@ -18,6 +18,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import axios from "axios";
 import AdminSidebar from "../../component/layout/admin/AdminSidebar";
+import { useNavigate } from "react-router-dom";
 
 interface PromotionCondition {
   id?: number;
@@ -47,6 +48,7 @@ const PromotionManagement: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState("");
+  const navigate = useNavigate();
 
   // ดึงข้อมูลโปรโมชั่น
   const fetchPromotions = async () => {
@@ -87,7 +89,7 @@ const PromotionManagement: React.FC = () => {
         discountTypeId: values.DiscountTypeID,
         conditions: (values.conditions || []).map((c: any) => ({
           conditionType: c.ConditionType,
-          value: c.Value,
+          value: String(c.Value ?? ""), // แปลงเป็น string
         })),
       };
       console.log("Promotion POST payload:", payload);
@@ -139,7 +141,7 @@ const PromotionManagement: React.FC = () => {
         discountTypeId: values.DiscountTypeID,
         conditions: (values.conditions || []).map((c: any) => ({
           conditionType: c.ConditionType,
-          value: c.Value,
+          value: String(c.Value ?? ""), // แปลงเป็น string
         })),
       };
       console.log("Promotion PUT payload:", payload); // debug log
@@ -235,11 +237,19 @@ const PromotionManagement: React.FC = () => {
             <h1 className="text-2xl font-bold tracking-tight">จัดการโปรโมชั่น</h1>
             <p className="text-gray-500">ข้อมูลโปรโมชั่นทั้งหมดในระบบ</p>
           </div>
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow"
-            onClick={() => { form.resetFields(); setImageUrl(null); setAddModalVisible(true); }}>
-            + เพิ่มโปรโมชั่น
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl shadow"
+              onClick={() => navigate("/admin/promotions/usage-history")}
+            >
+              ประวัติการใช้โปรโมชั่น
+            </button>
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow"
+              onClick={() => { form.resetFields(); setImageUrl(null); setAddModalVisible(true); }}>
+              + เพิ่มโปรโมชั่น
+            </button>
+          </div>
         </div>
 
         {/* กล่อง filter/search */}
@@ -294,17 +304,45 @@ const PromotionManagement: React.FC = () => {
                     <>
                       {fields.map(({ key, name, ...restField }) => (
                         <Space key={key} align="baseline" style={{ display: "flex", marginBottom: 8 }}>
-                          <Form.Item {...restField} name={[name, "ConditionType"]} rules={[{ required: true }]}>
-                            <Select placeholder="ประเภทเงื่อนไข">
+                          {/* เลือกประเภทเงื่อนไข */}
+                          <Form.Item
+                            {...restField}
+                            name={[name, "ConditionType"]}
+                            rules={[{ required: true, message: "กรุณาเลือกประเภทเงื่อนไข" }]}
+                          >
+                            <Select placeholder="ประเภทเงื่อนไข" style={{ width: 200 }}>
                               <Select.Option value="MinOrderAmount">ยอดสั่งซื้อขั้นต่ำ</Select.Option>
-                              <Select.Option value="MinQuantity">จำนวนชิ้นขั้นต่ำ</Select.Option>
                               <Select.Option value="FirstOrderOnly">เฉพาะออเดอร์แรก</Select.Option>
                               <Select.Option value="UsageLimit">จำนวนครั้งที่ใช้ได้</Select.Option>
                             </Select>
                           </Form.Item>
-                          <Form.Item {...restField} name={[name, "Value"]} rules={[{ required: true }]}>
-                            <Input placeholder="ค่า" />
+                          
+
+                          {/* Input ของค่า Value จะเปลี่ยนตาม ConditionType */}
+                          <Form.Item shouldUpdate noStyle>
+                            {({ getFieldValue }) => {
+                              const type = getFieldValue(["conditions", name, "ConditionType"]);
+
+                              if (type === "MinOrderAmount" || type === "UsageLimit") {
+                                return (
+                                  <Form.Item
+                                    {...restField}
+                                    name={[name, "Value"]}
+                                    rules={[{ required: true, message: "กรุณากรอกค่า" }]}
+                                  >
+                                    <InputNumber placeholder="ตัวเลข" style={{ width: 150 }} />
+                                  </Form.Item>
+                                );
+                              }
+
+                              if (type === "FirstOrderOnly") {
+                                return null; // ไม่ต้องกรอกค่า
+                              }
+
+                              return null;
+                            }}
                           </Form.Item>
+
                           <Button danger onClick={() => remove(name)}>ลบ</Button>
                         </Space>
                       ))}
@@ -419,7 +457,6 @@ const PromotionManagement: React.FC = () => {
                           >
                             <Select placeholder="ประเภทเงื่อนไข" style={{ width: 200 }}>
                               <Select.Option value="MinOrderAmount">ยอดสั่งซื้อขั้นต่ำ</Select.Option>
-                              <Select.Option value="MinQuantity">จำนวนขั้นต่ำ</Select.Option>
                               <Select.Option value="FirstOrderOnly">เฉพาะออเดอร์แรก</Select.Option>
                               <Select.Option value="UsageLimit">จำนวนครั้งที่ใช้ได้</Select.Option>
                             </Select>
@@ -430,7 +467,7 @@ const PromotionManagement: React.FC = () => {
                             {({ getFieldValue }) => {
                               const type = getFieldValue(["conditions", name, "ConditionType"]);
 
-                              if (type === "MinOrderAmount" || type === "MinQuantity" || type === "UsageLimit") {
+                              if (type === "MinOrderAmount" || type === "UsageLimit") {
                                 return (
                                   <Form.Item
                                     {...restField}

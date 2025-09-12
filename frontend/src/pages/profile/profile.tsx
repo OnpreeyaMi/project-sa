@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useUser } from "../../hooks/UserContext";
 import axios from "axios";
 import {
@@ -18,6 +18,7 @@ import {
   Divider,
   Skeleton,
   Empty,
+  Popconfirm,
 } from "antd";
 import {
   PlusOutlined,
@@ -54,11 +55,16 @@ function LocationMarkerModal({ setPosition, setAddress }: any) {
       const lat = e.latlng.lat;
       const lng = e.latlng.lng;
       setPosition({ lat, lng });
-      // reverse geocoding
-      const res = await axios.get(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-      );
-      setAddress(res.data.display_name || "");
+      // reverse geocoding ภาษาไทย
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=th`
+        );
+        const data = await res.json();
+        setAddress(data.display_name || "");
+      } catch {
+        setAddress("");
+      }
     },
   });
   return null;
@@ -75,6 +81,7 @@ const Profile: React.FC = () => {
   const [loadedOnce, setLoadedOnce] = useState(false);
   const [modalPosition, setModalPosition] = useState<{ lat: number; lng: number }>({ lat: 14.8757, lng: 102.0153 });
   const [modalAddressDetail, setModalAddressDetail] = useState<string>("");
+  const mapRef = useRef<any>(null);
 
   useEffect(() => {
     if (user?.customer) {
@@ -85,15 +92,15 @@ const Profile: React.FC = () => {
         gender: user.customer.gender.id,
         email: user.email,
       });
-      setAddresses(
-        (user.customer.addresses || []).map((addr: any) => ({
-          id: addr.ID || addr.id,
-          detail: addr.AddressDetails || addr.detail,
-          latitude: addr.Latitude || addr.latitude,
-          longitude: addr.Longitude || addr.longitude,
-          isDefault: addr.IsDefault || addr.isDefault,
-        }))
-      );
+      const mappedAddresses = (user.customer.addresses || []).map((addr: any) => ({
+        id: addr.ID || addr.id,
+        detail: addr.AddressDetails || addr.detail,
+        latitude: addr.Latitude || addr.latitude,
+        longitude: addr.Longitude || addr.longitude,
+        isDefault: addr.IsDefault || addr.isDefault,
+      }));
+      setAddresses(mappedAddresses);
+      console.log('addresses (profile):', mappedAddresses); // debug
     }
     setLoadedOnce(true);
   }, [user, form]);
@@ -109,6 +116,14 @@ const Profile: React.FC = () => {
       }
     }
   }, [addressModal, addressEdit]);
+
+  useEffect(() => {
+    if (addressModal && mapRef.current) {
+      setTimeout(() => {
+        mapRef.current.invalidateSize();
+      }, 300); // รอ modal เปิด animation
+    }
+  }, [addressModal]);
 
   // ----- แก้ไขข้อมูลส่วนตัว -----
   const handleSave = async (values: any) => {
@@ -176,22 +191,26 @@ const Profile: React.FC = () => {
 
   // ----- ลบที่อยู่ -----
   const handleDeleteAddress = async (id: number) => {
-    Modal.confirm({
-      title: "ต้องการลบที่อยู่นี้ใช่หรือไม่?",
-      onOk: async () => {
-        try {
-          setLoading(true);
-          await axios.delete(`http://localhost:8000/address/${id}`, {
-            headers: { Authorization: `Bearer ${user?.token}` },
-          });
-          await refreshCustomer();
-        } catch {
-          Modal.error({ title: "ลบที่อยู่ไม่สำเร็จ" });
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
+    console.log('ลบที่อยู่ id:', id); // debug
+    try {
+      setLoading(true);
+      console.log('ส่ง request ลบที่อยู่:', id);
+      // เปลี่ยน endpoint ให้ตรงกับ main.go
+      const res = await axios.delete(`http://localhost:8000/customer/addresses/${id}`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
+      console.log('ลบที่อยู่ response:', res.status, res.data); // debug response
+      await refreshCustomer();
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        Modal.error({ title: "ไม่พบที่อยู่ที่ต้องการลบ" });
+      } else {
+        Modal.error({ title: "ลบที่อยู่ไม่สำเร็จ" });
+      }
+      console.error('ลบที่อยู่ error:', err?.response?.status, err?.response?.data || err); // debug error
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ----- ตั้งเป็นที่อยู่หลัก -----
@@ -342,7 +361,14 @@ const Profile: React.FC = () => {
                 <List.Item
                   actions={[
                     <Button icon={<EditOutlined />} type="link" onClick={() => { setAddressEdit(addr); setAddressModal(true); }}>Edit</Button>,
-                    <Button icon={<DeleteOutlined />} type="link" danger onClick={() => handleDeleteAddress(addr.id)}>Delete</Button>
+                    <Popconfirm
+                      title="ต้องการลบที่อยู่นี้ใช่หรือไม่?"
+                      onConfirm={() => handleDeleteAddress(addr.id || addr.ID)}
+                      okText="ลบ"
+                      cancelText="ยกเลิก"
+                    >
+                      <Button icon={<DeleteOutlined />} type="link" danger>Delete</Button>
+                    </Popconfirm>
                   ]}
                 >
                   <List.Item.Meta
@@ -353,7 +379,7 @@ const Profile: React.FC = () => {
                         <span>Lat: {addr.latitude}, Lng: {addr.longitude}</span>
                         <div style={{ marginTop: 8, textAlign: 'left' }}>
                           {!addr.isDefault && (
-                            <Button type="link" style={{ paddingLeft: 0 }} onClick={() => handleSetMainAddress(addr.id)}>ตั้งเป็นที่อยู่หลัก</Button>
+                            <Button type="link" style={{ paddingLeft: 0 }} onClick={() => handleSetMainAddress(addr.id || addr.ID)}>ตั้งเป็นที่อยู่หลัก</Button>
                           )}
                         </div>
                       </>
@@ -373,7 +399,12 @@ const Profile: React.FC = () => {
             footer={null}
           >
             <div style={{ marginBottom: 16 }}>
-              <MapContainer center={[modalPosition.lat, modalPosition.lng]} zoom={15} style={{ width: "100%", height: "300px" }}>
+              <MapContainer
+                center={[modalPosition.lat, modalPosition.lng]}
+                zoom={15}
+                style={{ width: "100%", height: "300px" }}
+                ref={mapRef}
+              >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <LocationMarkerModal setPosition={setModalPosition} setAddress={setModalAddressDetail} />
                 <Marker position={[modalPosition.lat, modalPosition.lng]} icon={L.icon({ iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png', iconSize: [25, 41], iconAnchor: [12, 41] })} />
