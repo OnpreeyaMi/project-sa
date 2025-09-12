@@ -7,15 +7,15 @@ import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
 
-const getTypeInfo = (type: string) => {
+const getTypeInfo = (Reason: string) => {
   // สำหรับการใช้งาน ให้ใช้ USE และไอคอน PlayCircle
-  if (type === 'USE' || type === 'CREATE') return { color: '#43A047', icon: <PlayCircleOutlined /> };
-  if (type === 'UPDATE') return { color: '#20639B', icon: <EditOutlined /> };
-  if (type === 'DELETE') return { color: '#ED553B', icon: <DeleteOutlined /> };
-  if (type === 'WASH') return { color: '#00BCD4', icon: <ToolOutlined /> }; // ล้างเครื่อง
-  if (type === 'DAMAGED') return { color: '#FF9800', icon: <CloseCircleOutlined /> }; // เสียหาย
-  if (type === 'EXPERIMENT') return { color: '#9C27B0', icon: <ExperimentOutlined /> }; // ทดลอง
-  if (type === 'OTHER') return { color: '#607D8B', icon: <QuestionCircleOutlined /> }; // อื่นๆ
+  if (Reason === '' || Reason === 'CREATE') return { color: '#43A047', icon: <PlayCircleOutlined /> };
+  if (Reason === 'UPDATE') return { color: '#20639B', icon: <EditOutlined /> };
+  if (Reason === 'DELETE') return { color: '#ED553B', icon: <DeleteOutlined /> };
+  if (Reason === 'ล้างเครื่อง') return { color: '#00BCD4', icon: <ToolOutlined /> }; // ล้างเครื่อง
+  if (Reason === 'เสียหาย') return { color: '#FF9800', icon: <CloseCircleOutlined /> }; // เสียหาย
+  if (Reason === 'ทดลอง') return { color: '#9C27B0', icon: <ExperimentOutlined /> }; // ทดลอง
+  if (Reason === 'อื่นๆ') return { color: '#607D8B', icon: <QuestionCircleOutlined /> }; // อื่นๆ
   return { color: '#888', icon: <EditOutlined /> };
 };
 
@@ -43,7 +43,7 @@ const TimelineUsage = ({ data }: { data: any[] }) => {
       ) : (
         <div style={{ borderLeft: '3px solid #eaeaea', paddingLeft: 32 }}>
           {data.map((item, idx) => {
-            const typeInfo = getTypeInfo(item.Type || 'USE');
+            const typeInfo = getTypeInfo(item.Reason || 'USE');
             const isOpen = openIdx === idx;
             return (
               <div key={item.ID || idx} style={{ position: 'relative', marginBottom: 36 }}>
@@ -55,7 +55,7 @@ const TimelineUsage = ({ data }: { data: any[] }) => {
                 <div style={{ marginLeft: 8 }}>
                   <span style={{ fontWeight: 700, fontSize: 18, color: typeInfo.color, marginRight: 10 }}>
                     <span style={{ background: typeInfo.color, color: '#fff', borderRadius: 6, padding: '2px 12px', fontSize: 15, marginRight: 8 }}>
-                      {item.Type || 'USE'}
+                      {item.Reason || 'USE'}
                     </span>
                   </span>
                   <span style={{ fontWeight: 600, fontSize: 18 }}>{item.Detergent?.Name || '-'}</span>
@@ -67,8 +67,8 @@ const TimelineUsage = ({ data }: { data: any[] }) => {
                   {isOpen && (
                     <div style={{ marginTop: 8, background: '#f6f6f6', borderRadius: 10, padding: '12px 18px', fontSize: 16 }}>
                       <div><b>จำนวนที่ใช้:</b> {item.QuantityUsed || '-'}</div>
-                      <div><b>หมายเหตุ:</b> {item.Note || '-'}</div>
-                      <div><b>ผู้บันทึก:</b> {item.User?.Name || item.User?.FirstName || item.name || '-'}</div>
+                      <div><b>หมายเหตุ:</b> {item.Reason || '-'}</div>
+                      <div><b>ผู้บันทึก:</b> {item.User?.Employee?.FirstName || '-'}</div>
                     </div>
                   )}
                 </div>
@@ -86,13 +86,9 @@ const UsageHistoryPage = () => {
   const navigate = useNavigate();
   useEffect(() => {
     getDetergentUsageHistory().then(res => {
-      if (Array.isArray(res)) {
-        setData(res);
-      } else if (Array.isArray(res.data)) {
-        setData(res.data);
-      } else {
-        setData([]);
-      }
+      let usageArr = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
+      usageArr.sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime());
+      setData(usageArr);
     });
   }, []);
   return (

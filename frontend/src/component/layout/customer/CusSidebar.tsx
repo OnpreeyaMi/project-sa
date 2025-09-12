@@ -12,6 +12,10 @@ import { Button, Col, Layout, Menu, theme } from 'antd';
 import iconWashing from '../../../assets/iconwashing.png';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { useUser } from "../../../hooks/UserContext";
+import { fetchLatestOrderId } from '../../../pages/payment/create/apiOrderLast';
+
+
 const { Header, Sider, Content } = Layout;
 
 
@@ -21,8 +25,25 @@ interface SidebarProps {
 
 const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate();  
   const location = useLocation();
+  const { user } = useUser(); // << ได้ token มาจาก context
+  console.log("customer_id",user?.customer?.id)
+  //loardOrderId
+   const onClickPayment = async () => {
+    try {
+      const latestId = await fetchLatestOrderId(user?.customer?.id);
+      console.log(latestId)
+      // เก็บทั้ง context/localStorage เผื่อหน้า payment ใช้อ่านซ้ำได้
+      localStorage.setItem("latest_order_id", String(latestId));
+      navigate(`/customer/payment/${latestId}`);
+    } catch (e: any) {
+      // แสดง error ให้ผู้ใช้ทราบ
+      alert(e?.response?.data?.error || "ไม่พบคำสั่งซื้อของคุณ หรือคุณยังไม่ได้เข้าสู่ระบบ");
+      // ถ้าอยากนำไปหน้า login
+      // nav("/login");
+    }
+  };
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -46,7 +67,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       key: "/customer/payment",
       icon: <MdOutlinePayment style={{ fontSize: 18, color: '#6da3d3' }} />,
       label: <span style={{ color: '#6da3d3' }}>ชำระเงิน</span>,
-      onClick: () => navigate("/customer/payment"),
+      onClick: onClickPayment
     },
     {
       key: "/customer/status",

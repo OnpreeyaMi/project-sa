@@ -64,7 +64,7 @@ const App: React.FC = () => {
         {/* Customer */}
         <Route path="/customer">
           <Route path="complaint" element={<RequireRole role="customer"><CustomerComplaintPage /></RequireRole>} />
-          <Route path="payment" element={<RequireRole role="customer"><Payment /></RequireRole>} />
+          <Route path="payment/:orderId" element={<RequireRole role="customer"><Payment /></RequireRole>} />
           <Route path="orders" element={<RequireRole role="customer"><OrderPage /></RequireRole>} />
           <Route path="history" element={<RequireRole role="customer"><HistoryPage /></RequireRole>} />
           <Route path="home" element={<RequireRole role="customer"><CustomerHomePage /></RequireRole>} />

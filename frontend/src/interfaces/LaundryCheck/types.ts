@@ -63,8 +63,12 @@ export interface OrderDetail {
 export interface HistoryEntry {
   ID: number;
   RecordedAt: string;
-  Quantity: number;
+  Quantity: number; // delta
+  Action: "ADD" | "EDIT" | "DELETE";
+  ClothTypeID?: number;
+  ServiceTypeID?: number;
   ClothTypeName: string;
   ServiceType: string;
-  Action: "ADD" | "EDIT" | "DELETE";
+  SortedClothesID: number;
+  AfterQuantity: number; // ✅ ยอดคงเหลือหลังเหตุการณ์
 }
