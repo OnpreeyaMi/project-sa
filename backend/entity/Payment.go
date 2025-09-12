@@ -30,8 +30,7 @@ type Payment struct {
 	// ---------------- จาก EasySlip ----------------
 	// อ้างอิงธุรกรรม (ใช้กันซ้ำ)
 	TransRef       string     `json:"trans_ref" gorm:"uniqueIndex;size:64"`
-	// ReceiverBankID string     `json:"receiver_bank_id" gorm:"size:8"`
-	// CountryCode    string     `json:"country_code" gorm:"size:8"`
+	
 	// ยอดเงินที่อ่านได้จากสลิป (ใช้ยืนยันกับ TotalAmount)
 	VerifiedAmount int        `json:"verified_amount"`
 	// เวลาที่สลิปทำรายการ (ตามที่ EasySlip คืนมา)

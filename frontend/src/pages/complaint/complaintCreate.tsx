@@ -1,4 +1,3 @@
-// src/pages/complaint/CustomerComplaintPage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Send, Upload, X, CheckCircle2, AlertCircle } from "lucide-react";
 import CustomerSidebar from "../../component/layout/customer/CusSidebar";
@@ -6,7 +5,7 @@ import { useUser } from "../../hooks/UserContext";
 
 type OrderOption = {
   id: number;
-  code?: string;       // เช่น ORD-2025-0001 หรือ publicId
+  code?: string; // เช่น ORD-2025-0001 หรือ publicId
   status?: string;
   total?: number;
   createdAt?: string;
@@ -15,9 +14,9 @@ type OrderOption = {
 export type NewComplaintPayload = {
   customerName: string; // แสดงเฉย ๆ
   email?: string;
-  orderId?: string;     // -> string เพื่อส่ง FormData ง่าย
-  subject: string;      // -> title
-  message: string;      // -> description
+  orderId?: string; // -> string เพื่อส่ง FormData ง่าย
+  subject: string; // -> title
+  message: string; // -> description
   attachments?: File[];
 };
 
@@ -51,7 +50,7 @@ export default function CustomerComplaintPage() {
     }
   })();
 
-  // helper แปลงรายการออเดอร์จาก API เป็น OrderOption[]
+  // helper: แปลงรายการออเดอร์จาก API เป็น OrderOption[]
   const mapOrders = (raw: any[]): OrderOption[] =>
     (raw || []).map((o: any) => ({
       id: o.id ?? o.ID,
@@ -67,7 +66,7 @@ export default function CustomerComplaintPage() {
       if (!customerId) return;
 
       try {
-        // 1) ดึงโปรไฟล์ลูกค้า (และ orders ถ้าคุณ preload มาแล้ว)
+        // 1) ดึงโปรไฟล์ลูกค้า
         const res = await fetch(`${API_BASE}/customers/${customerId}`, {
           headers: { Authorization: user?.token ? `Bearer ${user.token}` : "" },
         });
@@ -115,8 +114,6 @@ export default function CustomerComplaintPage() {
             new Date(a.createdAt || 0).getTime()
         );
         setOrders(list);
-
-        // ❌ ไม่ auto-select ออเดอร์ใด ๆ ให้ผู้ใช้เลือกเอง
       } catch (err) {
         console.error("fetch customer/orders failed", err);
         setErrorMsg("โหลดข้อมูลลูกค้า/ออเดอร์ไม่สำเร็จ");
@@ -124,12 +121,10 @@ export default function CustomerComplaintPage() {
     }
 
     fetchCustomerAndOrders();
-    // ไม่ใส่ form/orderId ใน deps เพื่อเลี่ยง loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerId, user?.token]);
 
   // ---- validation ----
-  // ถ้าต้อง "บังคับเลือกออเดอร์" ให้เติม && !!form.orderId
   const isValid = useMemo(
     () => form.subject.trim().length > 3 && form.message.trim().length > 5,
     [form]
@@ -151,7 +146,26 @@ export default function CustomerComplaintPage() {
     }));
   };
 
-  // ---- submit ----
+  // ---- helper: อัปโหลดแนบไฟล์ทั้งหมด (คำขอเดียว) ----
+  async function uploadAttachments(apiBase: string, publicId: string, files: File[]) {
+    const fd = new FormData();
+    for (const f of files) fd.append("attachments", f, f.name);
+
+    const res = await fetch(`${apiBase}/complaints/${encodeURIComponent(publicId)}/attachments`, {
+      method: "POST",
+      body: fd,
+      // อย่าตั้ง Content-Type เอง ให้ browser ใส่ boundary ให้อัตโนมัติ
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(t || `อัปโหลดไฟล์แนบไม่สำเร็จ (ขั้นตอนที่ 2)`);
+    }
+
+    return res.json(); // { publicId, attachments: [...] }
+  }
+
+  // ---- submit: ยิง 2 คำขอต่อเนื่อง ----
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid) return;
@@ -164,27 +178,34 @@ export default function CustomerComplaintPage() {
     setErrorMsg(null);
 
     try {
-      const fd = new FormData();
-      fd.append("title", form.subject);
-      fd.append("description", form.message);
-      fd.append("customerId", String(customerId));
-      if (form.email) fd.append("email", form.email);
-      if (form.orderId) fd.append("orderId", form.orderId);
-      (form.attachments || []).forEach((f) => fd.append("attachments", f, f.name));
+      // ------- คำขอที่ 1: สร้าง Complaint (ไม่ส่งไฟล์) -------
+      const fd1 = new FormData();
+      fd1.append("title", form.subject.trim());
+      fd1.append("description", form.message.trim());
+      fd1.append("customerId", String(customerId));
+      if (form.email) fd1.append("email", form.email);
+      if (form.orderId) fd1.append("orderId", form.orderId);
 
-      const res = await fetch(`${API_BASE}/complaints`, {
+      const res1 = await fetch(`${API_BASE}/complaints`, {
         method: "POST",
-        body: fd,
+        body: fd1,
         headers: { Authorization: user?.token ? `Bearer ${user.token}` : "" },
       });
-
-      if (!res.ok) {
-        const t = await res.text();
-        throw new Error(t || `HTTP ${res.status}`);
+      if (!res1.ok) {
+        const t = await res1.text();
+        throw new Error(t || `สร้างคำร้องเรียนไม่สำเร็จ (ขั้นตอนที่ 1)`);
       }
-      const data = await res.json();
+      const data1 = await res1.json();
+      const publicId: string = data1.id || data1.publicId;
+      if (!publicId) throw new Error("ไม่พบหมายเลขอ้างอิงคำร้องเรียน (publicId)");
 
-      setSuccessId(data.id || data.publicId || "");
+      // ------- คำขอที่ 2: อัปโหลดไฟล์แนบ (ถ้ามี) -------
+      if (form.attachments && form.attachments.length > 0) {
+        await uploadAttachments(API_BASE, publicId, form.attachments);
+      }
+
+      // สำเร็จทั้งหมด
+      setSuccessId(publicId);
       setForm({
         customerName: "",
         email: "",
@@ -196,7 +217,11 @@ export default function CustomerComplaintPage() {
       if (fileRef.current) fileRef.current.value = "";
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err?.message || "ไม่สามารถส่งคำร้องเรียนได้ กรุณาลองใหม่อีกครั้ง");
+      // แสดงข้อความ error ที่อ่านง่าย
+      setErrorMsg(
+        err?.message ||
+          "ไม่สามารถส่งคำร้องเรียนได้ กรุณาลองใหม่อีกครั้ง"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -205,7 +230,7 @@ export default function CustomerComplaintPage() {
   const charCount = form.message.length;
   const charMax = 2000;
 
-  // label ของ dropdown ออเดอร์
+  // label dropdown ออเดอร์
   const renderOrderLabel = (o: OrderOption) =>
     `${o.code || "#" + o.id}${o.status ? " • " + o.status : ""}${
       o.createdAt ? " • " + new Date(o.createdAt).toLocaleString() : ""
@@ -318,7 +343,9 @@ export default function CustomerComplaintPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">แนบไฟล์ (ไม่เกิน 5 ไฟล์)</label>
+              <label className="block text-sm font-medium text-gray-700">
+                แนบไฟล์ (ไม่เกิน 5 ไฟล์; แนะนำรวมไม่เกิน ~10MB)
+              </label>
               <div className="mt-1 flex items-center gap-2">
                 <input ref={fileRef} type="file" multiple onChange={onPickFiles} className="hidden" />
                 <button
@@ -328,7 +355,7 @@ export default function CustomerComplaintPage() {
                 >
                   <Upload className="size-4" /> เลือกไฟล์
                 </button>
-                <span className="text-xs text-gray-500">รองรับภาพ/เอกสาร (รวมไม่ควรเกิน ~10MB)</span>
+                <span className="text-xs text-gray-500">รองรับ .png .jpg .jpeg .webp .pdf</span>
               </div>
               {form.attachments?.length ? (
                 <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
