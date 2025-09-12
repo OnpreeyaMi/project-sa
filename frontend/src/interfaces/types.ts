@@ -42,10 +42,11 @@ export interface OrderHistory {
     service_types: { id: number; name: string; price?: number }[];
     detergents: { id: number; name: string; type: "Liquid"|"Powder"; inStock: number }[];
     LaundryProcesses?: {
-      Machines?: { Machine_type: string }[];
+      machine?: {  machine_type: string }[];
     }[];
     Payment?: {
-      PaymentStatus: string;
+      payment_status: string;
+      total_amount: number;
     };
   }
 };

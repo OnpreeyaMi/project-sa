@@ -34,6 +34,7 @@ import "slick-carousel/slick/slick-theme.css";
 
 import mieleWashingMachineImg from '../../../assets/washing-machine-miele.png';
 import boschDryerImg from '../../../assets/dryer-bosch.png';
+import { useNavigate } from 'react-router-dom';
 
 const descriptionsWashing: Record<number, string> =  {
   10: "เสื้อยืด ผ้าบาง 13 ชิ้น\n ผ้าหนา ยีนส์ 8 ชิ้น",
@@ -60,6 +61,7 @@ const pricesDryer: Record<number, string> = {
 const { Title, Text } = Typography;
 
 const OrderPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedWasher, setSelectedWasher] = useState<number | null>(null);
   const [selectedDryer, setSelectedDryer] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -136,9 +138,15 @@ const OrderPage: React.FC = () => {
     };
 
     try {
-      await createOrder(orderData);
+      const response = await createOrder(orderData);
       console.log(orderData, "Order created successfully");
       AntdModal.success({ title: "สร้างออเดอร์สำเร็จ!" });
+      const orderId = response?.orderId || response?.id || response?.ID; // ปรับตามโครงสร้าง response ที่ backend ส่งกลับ
+      if (orderId) {
+        navigate(`/customer/payment/${orderId}`); // ลิ้งไปหน้าจ่ายเงิน
+      } else {
+        message.error("ไม่พบหมายเลขออเดอร์");
+      }
     } catch (err) {
       console.error(err);
       AntdModal.error({ title: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์" });
@@ -473,13 +481,17 @@ const OrderPage: React.FC = () => {
                   return false;
                 }}
                 onRemove={() => setOrderImage(null)}
+                style={{ width: 250, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 {!orderImage && (
-                  <div>
-                    <UploadOutlined />
+                  <div style={{ width: 200, height: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <UploadOutlined style={{ fontSize: 32 }} />
                     <div style={{ marginTop: 8 }}>คลิกเพื่ออัปโหลดรูปภาพ</div>
                     <div style={{ fontSize: 12, color: '#888' }}>(ไฟล์ JPG, PNG ขนาดไม่เกิน 5MB)</div>
                   </div>
+                )}
+                {orderImage && (
+                  <img src={orderImage} alt="order" style={{ width: 150, height: 150, objectFit: 'contain', borderRadius: 12 }} />
                 )}
               </Upload>
             </div>

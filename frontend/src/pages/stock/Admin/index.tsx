@@ -259,8 +259,8 @@ const StockAdminPage: React.FC = () => {
     // Filter by status
     let matchStatus = true;
     if (filterStatus === "หมด") matchStatus = item.quantity === 0;
-    else if (filterStatus === "ใกล้หมด") matchStatus = item.quantity > 0 && item.quantity <= 5;
-    else if (filterStatus === "เพียงพอ") matchStatus = item.quantity > 5;
+    else if (filterStatus === "ใกล้หมด") matchStatus = item.quantity > 0 && item.quantity <= 10;
+    else if (filterStatus === "เพียงพอ") matchStatus = item.quantity > 10;
     return matchName && matchCategory && matchStatus;
   });
 
@@ -509,7 +509,7 @@ const StockAdminPage: React.FC = () => {
         okText="บันทึก"
         cancelText="ยกเลิก"
         onOk={() => form.submit()}
-        style={{ top: "15%", textAlign: "center" }}
+        style={{ top: "2%", textAlign: "center" }}
       >
         <Form form={form} layout="vertical" onFinish={handleAddStock}>
           <Form.Item
@@ -547,24 +547,27 @@ const StockAdminPage: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item label="อัพโหลดรูปสินค้า" name="image">
-            <Upload
-              listType="picture-card"
-              showUploadList={false}
-              beforeUpload={file => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                  setUploadedImage(e.target?.result as string);
-                };
-                reader.readAsDataURL(file);
-                return false;
-              }}
-            >
-              {uploadedImage ? (
-                <img src={uploadedImage} alt="สินค้า" style={{ width: '100%' }} />
-              ) : (
-                <Button icon={<UploadOutlined />}>อัพโหลดรูป</Button>
-              )}
-            </Upload>
+            <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+              <Upload
+                listType="picture-card"
+                showUploadList={false}
+                beforeUpload={file => {
+                  const reader = new FileReader();
+                  reader.onload = e => {
+                    setUploadedImage(e.target?.result as string);
+                  };
+                  reader.readAsDataURL(file);
+                  return false;
+                }}
+                style={{ width: 150, height: 150 }}
+              >
+                {uploadedImage ? (
+                  <img src={uploadedImage} alt="สินค้า" style={{ width: 150, height: 150, objectFit: 'contain', borderRadius: 12 }} />
+                ) : (
+                  <Button icon={<UploadOutlined />}>อัพโหลดรูป</Button>
+                )}
+              </Upload>
+            </div>
           </Form.Item>
         </Form>
       </Modal>
@@ -609,6 +612,26 @@ const StockAdminPage: React.FC = () => {
         </Form>
       </Modal>
 
+      <Modal
+        title="ประวัติการใช้สินค้า"
+        open={historyModal}
+        onCancel={() => setHistoryModal(false)}
+        footer={null}
+        style={{ top: '2%' }}
+      >
+        {historyData.length === 0 ? (
+          <div style={{ color: '#888', textAlign: 'center' }}>ไม่มีประวัติการใช้สินค้า</div>
+        ) : (
+          historyData.map((h, idx) => (
+            <div key={idx} style={{ marginBottom: 12, padding: 8, borderBottom: '1px solid #eee' }}>
+              <div>วันที่: {new Date(h.CreatedAt).toLocaleString('th-TH')}</div>
+              <div>จำนวนที่ใช้: {h.QuantityUsed || '-'}</div>
+              <div>หมายเหตุ: {h.Reason || '-'}</div>
+              <div>ผู้ใช้: {h.User?.Employee?.FirstName || h.User?.FirstName || 'ผู้ดูแล'}</div>
+            </div>
+          ))
+        )}
+      </Modal>
       {/* Add styles for row backgrounds */}
       <style>
         {`

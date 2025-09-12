@@ -7,7 +7,7 @@ type DetergentUsageHistory struct {
 	UserID    uint
 	User      User
 	DetergentID uint
-	Detergent Detergent
+	Detergent *Detergent
 	QuantityUsed int
 	Reason     string
 }

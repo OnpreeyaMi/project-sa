@@ -14,8 +14,12 @@ const HistoryPage: React.FC = () => {
     const fetchHistories = async () => {
       try {
         const histories = await fetchOrderHistories();
-
-        // เพิ่ม key ให้แต่ละ row ของตาราง
+        // เรียงตามเวลาล่าสุดก่อน
+        histories.sort((a, b) => {
+          const dateA = new Date(a.order?.CreatedAt || a.CreatedAt).getTime();
+          const dateB = new Date(b.order?.CreatedAt || b.CreatedAt).getTime();
+          return dateB - dateA;
+        });
         const tableData = histories.map((item, index) => ({
           ...item,
           key: item.id || index,
@@ -33,6 +37,26 @@ const HistoryPage: React.FC = () => {
     fetchHistories();
   }, []);
 
+  // ฟังก์ชันแปลงสถานะเป็นเปอร์เซ็นต์และข้อความ
+  const getLaundryProgress = (processes: any[] = []) => {
+    const status = processes.length ? processes[processes.length - 1].status : '';
+    let percent = 10;
+    let label = 'รอดำเนินการ';
+    switch (status) {
+      case 'รอดำเนินการ':
+        percent = 10; label = 'รอดำเนินการ'; break;
+      case 'กำลังซัก':
+        percent = 40; label = 'กำลังซัก'; break;
+      case 'กำลังอบ':
+        percent = 70; label = 'กำลังอบ'; break;
+      case 'เสร็จสิ้น':
+        percent = 100; label = 'เสร็จสิ้น'; break;
+      default:
+        percent = 10; label = 'รอดำเนินการ';
+    }
+    return { percent, label };
+  };
+
   return (
     <CustomerSidebar>
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 0' }}>
@@ -42,7 +66,9 @@ const HistoryPage: React.FC = () => {
           <Spin tip="กำลังโหลด..." />
         ) : (
           data.map((item, idx) => {
-            const order = item || {};
+            const order = item.order || {};
+            const laundryProcesses = order.LaundryProcesses || [];
+            const progress = getLaundryProgress(laundryProcesses);
             return (
               <AntCard
                 key={order.id || idx}
@@ -52,34 +78,34 @@ const HistoryPage: React.FC = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                    <Tag color="#eee" style={{ fontWeight: 600, fontSize: 18, color: '#888', marginRight: 12 }}>#{order.Order?.ID || '-'}</Tag>
+                    <Tag color="#eee" style={{ fontWeight: 600, fontSize: 18, color: '#888', marginRight: 12 }}>#{item.Order?.ID || '-'}</Tag>
                     <div style={{ fontSize: 16, color: '#888', marginRight: 18 }}>
-                      วันที่สั่ง: {item.Order?.CreatedAt ? dayjs(item.Order.CreatedAt).format('DD/MM/YYYY') : '-'}
+                      วันที่สั่ง: {item.Order?.CreatedAt ? dayjs(item.Order?.CreatedAt).format('DD/MM/YYYY') : '-'}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                    <Tag color={item.order?.Payment?.PaymentStatus === 'paid' ? 'green' : item.order?.Payment?.PaymentStatus === 'pending' ? 'orange' : 'default'} style={{ fontWeight: 600, fontSize: 16 }}>
-                      {item.Order?.Payment?.PaymentStatus || '-'}
+                    <Tag color={item.Order?.Payment?.payment_status === 'paid' ? 'green' :  'orange' } style={{ fontWeight: 600, fontSize: 16 }}>
+                      {item.Order?.Payment?.payment_status === 'paid' ? 'ชำระเงินเสร็จสิ้น' : 'ยังไม่ชำระเงิน'}
                     </Tag>
                     </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                  <img src={iconWashing} alt="product" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', background: '#f6f6f6' }} />
+                  <img src={iconWashing} alt="product" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', background: item.Order?.Payment?.payment_status === 'paid' ? 'green' : 'orange' }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 18 }}>{item.Order?.ServiceTypes && item.Order?.ServiceTypes.length > 0 ? item.Order?.ServiceTypes.map((st: any) => st.Type).join(", ") : '-'}</div>
-                    <div style={{ color: '#888', fontSize: 15 }}>หมายเหตุ: {item.Order?.OrderNote || ''}</div>
                     <div style={{ color: '#888', fontSize: 15 }}>
                       ถังที่เลือก: {
                         item.Order?.ServiceTypes?.length ? item.Order.ServiceTypes.map((st: any) => st.Type || st.name).join(", ") : '-'
                       }
                     </div>
-                    <div style={{ color: '#888', fontSize: 15 }}>น้ำยา: {item.Order?.Detergents?.length ? item.Order.Detergents.map((dt: any) => dt.Name).join(", ") : '-'}</div>
-                    <div style={{ width: '100%', height: 6, background: '#eee', borderRadius: 4, margin: '8px 0' }}>
-                      <div style={{ width: '60%', height: '100%', background: '#ED8A19', borderRadius: 4 }} />
+                    <div style={{ color: '#888', fontSize: 15 }}>น้ำยา: {item.Order?.Detergents?.length ? item.Order?.Detergents.map((dt: any) => dt.Name).join(", ") : '-'}</div>
+                    <div style={{ width: '100%', height: 6, background: '#eee', borderRadius: 4, margin: '8px 0', position: 'relative' }}>
+                      <div style={{ width: `${progress.percent}%`, height: '100%', background: '#ED8A19', borderRadius: 4, transition: 'width 0.3s' }} />
                     </div>
+                    <div style={{ color: '#ED8A19', fontWeight: 500, fontSize: 15, marginTop: 2 }}>{progress.label}</div>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 120 }}>
-                    <div style={{ fontWeight: 700, fontSize: 18 }}>฿{item.Order?.ServiceTypes && item.Order.ServiceTypes.length > 0 ? item.Order.ServiceTypes.reduce((sum: number, st: any) => sum + (st.Price || 0), 0) : '-'}</div>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>฿{item.Order?.Payment?.total_amount || 'ยกเลิกรายการ'}</div>
                     
                   </div>
                 </div>
