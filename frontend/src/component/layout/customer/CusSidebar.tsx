@@ -25,12 +25,12 @@ interface SidebarProps {
 
 const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();  
+  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser(); // << ได้ token มาจาก context
-  console.log("customer_id",user?.customer?.id)
+  console.log("customer_id", user?.customer?.id)
   //loardOrderId
-   const onClickPayment = async () => {
+  const onClickPayment = async () => {
     try {
       const latestId = await fetchLatestOrderId(user?.customer?.id);
       console.log(latestId)
@@ -106,7 +106,9 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
       },
     },
   ];
-
+  const selectedKey = menuItems.find(item =>
+    location.pathname.startsWith(item.key)
+  )?.key || location.pathname;
   return (
     <Layout style={{ minHeight: '100vh', margin: 0 }}>
       <Sider
@@ -141,7 +143,7 @@ const CustomerSidebar: React.FC<SidebarProps> = ({ children }) => {
         <Menu
           style={{ backgroundColor: '#0E4587', color: 'white' }}
           mode="inline"
-          selectedKeys={[location.pathname]}  // ✅ ไฮไลท์ตาม path ปัจจุบัน (รูปแบบเดียวกัน)
+          selectedKeys={[selectedKey]}  // ✅ ไฮไลท์ตาม path ปัจจุบัน (รูปแบบเดียวกัน)
           items={menuItems}
           onClick={({ key }) => {
             const selected = menuItems.find(item => item.key === key);
