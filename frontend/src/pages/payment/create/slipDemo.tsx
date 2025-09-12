@@ -58,6 +58,7 @@ export default function PaymentSuccessModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  
   // ปิดด้วยปุ่ม ESC
   useEffect(() => {
     if (!isOpen) return;
@@ -68,7 +69,7 @@ export default function PaymentSuccessModal({
 
   if (!isOpen) return null;
   const handleGoHome = onGoHomeProp ?? (() => navigate("/customer/home"));
-  // const handleViewHistory = onViewHistory ?? (() => navigate("")); //ไว้ผูกปุ่ม รายละเอียด
+  const handleViewHistory = onViewHistory ?? (() => navigate("/customer/history")); //ไว้ผูกปุ่ม รายละเอียด
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center"
@@ -136,7 +137,7 @@ export default function PaymentSuccessModal({
           {/* Actions */}
           <div className="mt-5 flex flex-col gap-3">
             <button
-              // onClick={handleViewHistory}
+              onClick={handleViewHistory}
               className="w-full rounded-2xl border px-4 py-3 text-center font-medium hover:bg-gray-50 active:scale-[.99] transition"
             >
               ดูรายละเอียดคำสั่งซื้อ
