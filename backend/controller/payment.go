@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	
-	"strconv"
+	// "strconv"
 	"strings"
 	"time"
 
@@ -280,28 +280,28 @@ type PromoView struct {
 // 	return strings.Join(out, " ")
 // }
 
-// ดึงค่าจากเงื่อนไข MIN_SPEND / CODE ฯลฯ
-func parseMinSpend(p *entity.Promotion) *int {
-	for _, c := range p.PromotionCondition {
-		if strings.EqualFold(c.ConditionType, "MIN_SPEND") {
-			if n, err := strconv.Atoi(strings.TrimSpace(c.Value)); err == nil {
-				return &n
-			}
-		}
-	}
-	return nil
-}
-func parseCode(p *entity.Promotion) string {
-	for _, c := range p.PromotionCondition {
-		if strings.EqualFold(c.ConditionType, "CODE") {
-			v := strings.TrimSpace(c.Value)
-			if v != "" {
-				return v
-			}
-		}
-	}
-	return fmt.Sprintf("PROMO%v", p.ID)
-}
+// // ดึงค่าจากเงื่อนไข MIN_SPEND / CODE ฯลฯ
+// func parseMinSpend(p *entity.Promotion) *int {
+// 	for _, c := range p.PromotionCondition {
+// 		if strings.EqualFold(c.ConditionType, "MIN_SPEND") {
+// 			if n, err := strconv.Atoi(strings.TrimSpace(c.Value)); err == nil {
+// 				return &n
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }
+// func parseCode(p *entity.Promotion) string {
+// 	for _, c := range p.PromotionCondition {
+// 		if strings.EqualFold(c.ConditionType, "CODE") {
+// 			v := strings.TrimSpace(c.Value)
+// 			if v != "" {
+// 				return v
+// 			}
+// 		}
+// 	}
+// 	return fmt.Sprintf("PROMO%v", p.ID)
+// }
 
 // mapping ประเภทส่วนลด (ถ้าตาราง DiscountType เป็น 1=percent, 2=amount)
 // *หากโปรเจ็กต์คุณใช้ mapping อื่น ปรับให้ตรงได้เลย*
@@ -312,31 +312,31 @@ func mapDiscountType(p *entity.Promotion) string {
 	return "amount"
 }
 
-// คำนวณส่วนลดตามยอดและโปร
-func computeDiscount(subtotal int, pv PromoView) int {
-	if pv.MinSpend != nil && subtotal < *pv.MinSpend {
-		return 0
-	}
-	if pv.DiscountType == "amount" {
-		if pv.DiscountValue <= 0 {
-			return 0
-		}
-		off := int(math.Round(pv.DiscountValue))
-		if off > subtotal {
-			return subtotal
-		}
-		return off
-	}
-	// percent
-	if pv.DiscountValue <= 0 {
-		return 0
-	}
-	off := int(math.Round(float64(subtotal) * (pv.DiscountValue / 100.0)))
-	if off > subtotal {
-		return subtotal
-	}
-	return off
-}
+// // คำนวณส่วนลดตามยอดและโปร
+// func computeDiscount(subtotal int, pv PromoView) int {
+// 	if pv.MinSpend != nil && subtotal < *pv.MinSpend {
+// 		return 0
+// 	}
+// 	if pv.DiscountType == "amount" {
+// 		if pv.DiscountValue <= 0 {
+// 			return 0
+// 		}
+// 		off := int(math.Round(pv.DiscountValue))
+// 		if off > subtotal {
+// 			return subtotal
+// 		}
+// 		return off
+// 	}
+// 	// percent
+// 	if pv.DiscountValue <= 0 {
+// 		return 0
+// 	}
+// 	off := int(math.Round(float64(subtotal) * (pv.DiscountValue / 100.0)))
+// 	if off > subtotal {
+// 		return subtotal
+// 	}
+// 	return off
+// }
 
 // GET /payment/checkout/:orderId
 // ดึงข้อมูลสรุปหน้าเช็คเอาต์: ลูกค้า/ที่อยู่/ออร์เดอร์/โปรโมชัน
