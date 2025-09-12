@@ -18,6 +18,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import EmployeeSidebar from "../../../component/layout/employee/empSidebar";
 import { TbBackground } from "react-icons/tb";
+import { useUser } from "../../../hooks/UserContext";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -40,6 +41,7 @@ const StockEmployeePage: React.FC = () => {
   const [form] = Form.useForm();
   const [useItemForm] = Form.useForm();
   const navigate = useNavigate();
+  const { user } = useUser();
 
   useEffect(() => {
     fetchStockData();
@@ -94,10 +96,9 @@ const StockEmployeePage: React.FC = () => {
       return;
     }
     try {
-      // สมมุติ user_id = 1 (ควรดึงจาก auth จริง)
       const payload: any = {
-        user_id: 1,
-        detergent_id: item.key, // ใช้ item.key ซึ่งตอนนี้คือ d.ID จริง
+        user_id: user?.id, // ส่ง user_id ของคนที่ login
+        detergent_id: item.key,
         quantity_used: values.quantity,
         reason: values.reason
       };
@@ -124,8 +125,8 @@ const StockEmployeePage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', width: '100%' }}>
             <span style={{ fontSize: 32 }}>📦</span>
             <div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#20639B' }}>จัดการสต็อกสินค้า</div>
-              <div style={{ fontSize: 16, color: '#888', fontWeight: 400 }}>ระบบการจัดการสินค้าและน้ำยาซักผ้า</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#20639B' }}>คลังสินค้า</div>
+              <div style={{ fontSize: 16, color: '#888', fontWeight: 400 }}>น้ำยาซักผ้าและปรับผ้านุ่ม</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 32, marginTop: 32, width: '100%', justifyContent: 'center' }}>
@@ -239,7 +240,7 @@ const StockEmployeePage: React.FC = () => {
                     <div><b>สินค้า:</b> {h.Detergent?.Name || '-'}</div>
                     <div><b>จำนวนที่ใช้:</b> {h.QuantityUsed}</div>
                     <div><b>เหตุผล:</b> {h.Reason || '-'}</div>
-                    <div><b>ผู้ใช้:</b> {h.User?.Name || '-'}</div>
+                    <div><b>ผู้ใช้:</b> {h.User?.Employee?.FirstName || '-'}</div>
                     <div><b>วันที่:</b> {h.CreatedAt ? new Date(h.CreatedAt).toLocaleString('th-TH') : '-'}</div>
                   </div>
                 </div>

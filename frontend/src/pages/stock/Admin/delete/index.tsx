@@ -53,7 +53,7 @@ const TimelineDelete = ({ data }: { data: any[] }) => {
                     <div style={{ marginTop: 8, background: '#f6f6f6', borderRadius: 10, padding: '12px 18px', fontSize: 16 }}>
                       <div><b>จำนวนที่ลบ:</b> {item.QuantityDeleted || '-'}</div>
                       <div><b>หมายเหตุ:</b> {item.Note || '-'}</div>
-                      <div><b>ผู้บันทึก:</b> {item.User?.Name || item.User?.FirstName || '-'}</div>
+                      <div><b>ผู้บันทึก:</b> ผู้ดูแล</div>
                     </div>
                   )}
                 </div>
@@ -71,13 +71,9 @@ const DeleteHistoryPage = () => {
   const navigate = useNavigate();
   useEffect(() => {
     getDeletedDetergents().then(res => {
-      if (Array.isArray(res)) {
-        setData(res);
-      } else if (Array.isArray(res.data)) {
-        setData(res.data);
-      } else {
-        setData([]);
-      }
+      let deleteArr = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
+      deleteArr.sort((a: any, b: any) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime());
+      setData(deleteArr);
     });
   }, []);
   return (

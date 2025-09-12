@@ -54,7 +54,7 @@ const TimelineHistory = ({ data }: { data: any[] }) => (
                   <div><b>จำนวน:</b> {item.Quantity || '-'}</div>
                   <div><b>ราคา:</b> {item.Price || '-'}</div>
                   <div><b>Supplier:</b> {item.Supplier || '-'}</div>
-                  <div><b>ผู้บันทึก:</b> {item.User?.Name || item.User?.FirstName || '-'}</div>
+                  <div><b>ผู้บันทึก:</b> ผู้ดูแล</div>
                 </div>
               </div>
             </div>
@@ -70,13 +70,9 @@ const PurchaseHistoryPage = () => {
   const navigate = useNavigate();
   useEffect(() => {
     getPurchaseDetergentHistory().then(res => {
-      if (Array.isArray(res)) {
-        setData(res);
-      } else if (Array.isArray(res.data)) {
-        setData(res.data);
-      } else {
-        setData([]);
-      }
+      let historyArr = Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : [];
+      historyArr.sort((a: any, b: any) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime());
+      setData(historyArr);
     });
   }, []);
   return (

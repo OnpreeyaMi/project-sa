@@ -59,7 +59,6 @@ func CreateOrder(c *gin.Context) {
 	// history เริ่มต้น
 	history := entity.OrderHistory{
 		OrderID: order.ID,
-		Status:  "รอดำเนินการ",
 	}
 	// ส่ง response กลับ frontend
 	if err := config.DB.Create(&history).Error; err != nil {
@@ -114,6 +113,8 @@ func GetOrderHistories(c *gin.Context) {
 		Preload("Order.ServiceTypes").
 		Preload("Order.Detergents").
 		Preload("Order.Address").
+		Preload("Order.Payment").
+		Preload("Order.LaundryProcesses.Machines").
 		Find(&histories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -135,12 +136,12 @@ func GetAddresses(c *gin.Context) {
 	customerID := c.Query("customer_id")
 	var addresses []entity.Address
 	if customerID != "" {
-		if err := config.DB.Where("customer_id = ? AND deleted_at IS NULL", customerID).Preload("Customer").Find(&addresses).Error; err != nil {
+		if err := config.DB.Where("customer_id = ?", customerID).Preload("Customer").Find(&addresses).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	} else {
-		if err := config.DB.Where("deleted_at IS NULL").Preload("Customer").Find(&addresses).Error; err != nil {
+		if err := config.DB.Preload("Customer").Find(&addresses).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
