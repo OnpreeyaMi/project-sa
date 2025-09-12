@@ -138,6 +138,7 @@ const LaundryCheckPage: React.FC = () => {
         id: Date.now(),
         quantity: 1,
         clothTypeName: preset,
+        // ไม่ auto-select service เพื่อให้ "กดเลือกเอง" ตามที่ต้องการ
       },
     ]);
 
@@ -271,7 +272,7 @@ const LaundryCheckPage: React.FC = () => {
 
   const openEditItem = (it: OrderItemView) => {
     setEditingItem(it);
-    // ⭐ ตั้งค่า ServiceTypeID เสมอ (แม้จะไม่มี select ให้เลือก)
+    // ⭐ ตั้งค่าเริ่มต้นรวม ServiceTypeID ไว้เสมอ
     editForm.setFieldsValue({
       ClothTypeName: it.ClothTypeName,
       ServiceTypeID: it.ServiceTypeID,
@@ -292,7 +293,7 @@ const LaundryCheckPage: React.FC = () => {
 
       await UpdateSortedItem(activeOrderId, editingItem.ID, {
         ClothTypeName: String(vals.ClothTypeName || "").trim(),
-        ServiceTypeID: nextServiceId, // ⭐ ส่งเสมอ
+        ServiceTypeID: nextServiceId,
         Quantity: Number(vals.Quantity),
       });
 
@@ -325,11 +326,12 @@ const LaundryCheckPage: React.FC = () => {
         @media print { body * { visibility: hidden; } .print-area, .print-area * { visibility: visible; } .print-area { position: absolute; left:0; top:0; width:100%; padding:0 16px; } .no-print { display:none !important; } }
       `}</style>
 
-      <div className="max-w-6xl mx-auto p-6 space-y-6 font-sans">
-        <header className="bg-blue-300 rounded-lg p-4 flex items-center gap-4">
-          <ShoppingOutlined style={{ fontSize: 24, color: "#1d4ed8" }} />
+      <div className="max-w-6x2 mx-auto p-6 space-y-3 font-sans">
+        <header className="bg-sky-300 rounded-lg p-7 flex items-center gap-4">
+          <ShoppingOutlined style={{ fontSize: 50, color: "#1d4ed8" }} />
           <div>
-            <Title level={4} className="mb-0 text-blue-900">รับผ้า/แยกผ้า</Title>
+            <Title level={2} className="mb-0 text-blue-900">รับผ้า แยกผ้า</Title>
+            <Text className="text-blue-900">เพิ่มรายการผ้าในออเดอร์ และบันทึกข้อมูลการรับผ้า</Text>
           </div>
 
         <div className="ml-auto">
@@ -450,17 +452,15 @@ const LaundryCheckPage: React.FC = () => {
                       <Input placeholder="ประเภทผ้า (พิมพ์เอง เช่น ผ้าขาว / ผ้าทั่วไป / อื่นๆ)" />
                     </AutoComplete>
 
-                    {serviceOptions.length > 1 ? (
-                      <Select
-                        placeholder="บริการ"
-                        value={it.serviceTypeId}
-                        onChange={(v)=>updateItem(it.id, "serviceTypeId", v)}
-                        options={serviceOptions.map(s => ({ label: s.Name, value: s.ID }))}
-                        style={{ minWidth: 200 }}
-                      />
-                    ) : (
-                      <Tag color="processing">{serviceOptions[0]?.Name || "ไม่มีบริการ"}</Tag>
-                    )}
+                    {/* ✅ เปลี่ยนให้เป็น Select เสมอ แม้มีบริการเดียว */}
+                    <Select
+                      placeholder="บริการ"
+                      value={it.serviceTypeId}
+                      onChange={(v)=>updateItem(it.id, "serviceTypeId", v)}
+                      options={serviceOptions.map(s => ({ label: s.Name, value: s.ID }))}
+                      style={{ minWidth: 200 }}
+                      disabled={serviceOptions.length === 0}
+                    />
 
                     <Space size={0} align="center" style={{ border: "1px solid #ccc", borderRadius: 6 }}>
                       <Button size="small" onClick={()=>{ if ((it.quantity||1) > 1) updateItem(it.id, "quantity", (it.quantity||1)-1); }}>–</Button>
@@ -661,22 +661,10 @@ const LaundryCheckPage: React.FC = () => {
             </AutoComplete>
           </Form.Item>
 
-          {(activeDetail?.ServiceTypes?.length ?? 0) > 1 ? (
-            <Form.Item name="ServiceTypeID" label="บริการ" rules={[{ required: true, message: "เลือกบริการ" }]}>
-              <Select options={serviceOptions.map(s => ({ label: s.Name, value: s.ID }))} />
-            </Form.Item>
-          ) : (
-            <>
-              {/* ⭐ ฟิลด์ซ่อน เพื่อให้ส่ง ServiceTypeID เสมอ แม้ไม่มี Select */}
-              <Form.Item name="ServiceTypeID" hidden>
-                <Input />
-              </Form.Item>
-              <div style={{ marginBottom: 16 }}>
-                <Text type="secondary">บริการ: </Text>
-                <Tag color="processing">{serviceOptions[0]?.Name || "-"}</Tag>
-              </div>
-            </>
-          )}
+          {/* ✅ เปลี่ยนให้เป็น Select เสมอ แม้มีบริการเดียว */}
+          <Form.Item name="ServiceTypeID" label="บริการ" rules={[{ required: true, message: "เลือกบริการ" }]}>
+            <Select options={serviceOptions.map(s => ({ label: s.Name, value: s.ID }))} />
+          </Form.Item>
 
           <Form.Item name="Quantity" label="จำนวน" rules={[{ required: true, message: "กรอกจำนวน" }]}>
             <InputNumber min={1} style={{ width: "100%" }} />

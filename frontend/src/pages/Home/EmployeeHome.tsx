@@ -1,17 +1,15 @@
 // src/pages/Home/EmployeeHome.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
-import { Row, Col, Card, Typography, Button, Tag, message, Space } from "antd";
+import { Card, Typography, Button, Tag, message, ConfigProvider, Space } from "antd";
 import {
-  ClockCircleOutlined,
-  SyncOutlined,
-  CarOutlined,
-  CheckCircleOutlined,
-  CoffeeOutlined,
   PlayCircleOutlined,
   PoweroffOutlined,
-  MailOutlined,
+  CoffeeOutlined,
   UserOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 import { EmployeeService } from "../../services/Employee";
 
@@ -40,10 +38,7 @@ interface Employee {
   PositionID?: number;
   Position?: { ID: number; PositionName: string };
   User?: { ID?: number; Email?: string };
-  EmployeeStatus?: {
-    StatusName?: string;
-    StatusDescription?: string;
-  };
+  EmployeeStatus?: { StatusName?: string; StatusDescription?: string };
 }
 
 const EmployeeHome: React.FC = () => {
@@ -53,7 +48,7 @@ const EmployeeHome: React.FC = () => {
   const token = localStorage.getItem("token") || "";
   const employeeId = Number(localStorage.getItem("employeeId") || 0);
 
-  // ---- helpers ----
+  // แปลง response ให้เป็นรูปที่หน้าใช้
   const normalize = (raw: any): Employee => ({
     id: raw?.ID ?? raw?.id ?? 0,
     FirstName: raw?.FirstName ?? raw?.firstName,
@@ -62,9 +57,14 @@ const EmployeeHome: React.FC = () => {
     Phone: raw?.Phone ?? raw?.phone,
     PositionID: raw?.PositionID ?? raw?.positionID,
     Position: raw?.Position
-      ? { ID: raw.Position.ID ?? raw.Position.id, PositionName: raw.Position.PositionName ?? raw.Position.positionName }
+      ? {
+          ID: raw.Position.ID ?? raw.Position.id ?? 0,
+          PositionName: raw.Position.PositionName ?? raw.Position.positionName ?? "",
+        }
       : undefined,
-    User: raw?.User ? { ID: raw.User.ID ?? raw.User.id, Email: raw.User.Email ?? raw.User.email } : undefined,
+    User: raw?.User
+      ? { ID: raw.User.ID ?? raw.User.id, Email: raw.User.Email ?? raw.User.email }
+      : undefined,
     EmployeeStatus: raw?.EmployeeStatus ?? raw?.employeeStatus,
   });
 
@@ -82,22 +82,17 @@ const EmployeeHome: React.FC = () => {
     () => emp?.EmployeeStatus?.StatusDescription || STATUS_DESC[currentStatus],
     [emp, currentStatus]
   );
-
   const currentTag = STATUS_TAG[currentStatus];
 
-  // ---- load profile ----
+  // โหลดโปรไฟล์พนักงาน
   const fetchMe = async () => {
     try {
       setLoading(true);
-
-      // มี employeeId ก็โหลด /employees/:id
       if (employeeId) {
         const res = await EmployeeService.get(employeeId);
         setEmp(normalize(res));
         return;
       }
-
-      // fallback: ลอง /employee/me (ต้องมี token)
       if (token) {
         const r = await fetch(
           (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000") + "/employee/me",
@@ -106,13 +101,11 @@ const EmployeeHome: React.FC = () => {
         if (r.ok) {
           const me = await r.json();
           setEmp(normalize(me));
-          // เก็บ employeeId ไว้ใช้ครั้งถัดไป
           if (me?.ID) localStorage.setItem("employeeId", String(me.ID));
           return;
         }
       }
-
-      message.warning("ไม่พบรหัสพนักงาน (employeeId)");
+      message.warning("ไม่พบรหัสพนักงาน");
     } catch (e) {
       console.error(e);
       message.error("โหลดข้อมูลพนักงานไม่สำเร็จ");
@@ -121,30 +114,37 @@ const EmployeeHome: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchMe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employeeId, token]);
+  useEffect(() => { fetchMe(); /* eslint-disable-next-line */ }, [employeeId, token]);
 
-  // ---- change status ----
+  // เปลี่ยนสถานะ (ส่งค่าหลักติดไปด้วยกันเพื่อไม่ให้ค่าหาย)
   const changeStatus = async (status: EmpStatus) => {
     if (!emp?.id) return message.error("ยังไม่มีข้อมูลพนักงาน");
-
     try {
       setLoading(true);
+
       const payload = {
-        // คงค่าเดิมเพื่อไม่ให้ฟิลด์อื่นหายเวลา PUT
         FirstName: emp.FirstName,
         LastName: emp.LastName,
         Gender: emp.Gender,
         Phone: emp.Phone,
         PositionID: emp.PositionID,
-        // เปลี่ยนเฉพาะสถานะ
         Status: status,
         StatusDescription: STATUS_DESC[status],
       };
+
       const updated = await EmployeeService.update(emp.id, payload);
-      setEmp(normalize(updated));
+      const next = normalize(updated);
+
+      // ถ้า response ไม่ preload User/Position ให้เก็บของเดิมไว้
+      setEmp((prev) => ({
+        ...next,
+        User: next.User ?? prev?.User,
+        Position: next.Position ?? prev?.Position,
+        Phone: next.Phone ?? prev?.Phone,
+        Gender: next.Gender ?? prev?.Gender,
+        FirstName: next.FirstName ?? prev?.FirstName,
+        LastName: next.LastName ?? prev?.LastName,
+      }));
 
       if (status === "active") message.success("พนักงานเข้างานแล้ว");
       else if (status === "onleave") message.success("บันทึกลาพักเรียบร้อย");
@@ -157,93 +157,98 @@ const EmployeeHome: React.FC = () => {
     }
   };
 
+  const theme = {
+    token: { colorPrimary: "#2563EB", borderRadius: 20, fontSize: 18 },
+  } as const;
+
   return (
-    <EmployeeSidebar>
-      <div style={{ padding: 20 }}>
-        <Title level={2} style={{ textAlign: "center", marginBottom: 24 }}>
-          🏠 Employee Dashboard
-        </Title>
+    <ConfigProvider theme={theme}>
+      <EmployeeSidebar>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "100vh",
+            background: "linear-gradient(135deg,#EEF2FF 0%, #DBEAFE 50%, #E0F2FE 100%)",
+            padding: 32,
+          }}
+        >
+          <Card
+            loading={loading}
+            bordered={false}
+            style={{
+              width: "100%",
+              maxWidth: 860,
+              borderRadius: 28,
+              background: "white",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.12)",
+            }}
+            bodyStyle={{ padding: 40 }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <UserOutlined style={{ fontSize: 64, color: "#2563EB" }} />
+              <Title level={2} style={{ marginTop: 12, marginBottom: 8 }}>
+                {fullName || "-"}
+              </Title>
+              <Tag color={currentTag.color} style={{ fontSize: 16, padding: "6px 16px" }}>
+                {currentTag.text}
+              </Tag>
+              <div style={{ marginTop: 8, fontSize: 16, color: "#475569" }}>
+                รายละเอียดสถานะ: <b>{currentDesc}</b>
+              </div>
 
-        {/* Header: ชื่อ/อีเมล/สถานะ */}
-        <Row gutter={[16, 16]} justify="center" style={{ marginBottom: 16 }}>
-          <Col xs={24} md={18} lg={14}>
-            <Card
-              loading={loading}
-              style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
-            >
-              <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                <Space align="center" size="middle" style={{ justifyContent: "space-between", width: "100%" }}>
-                  <Space size="large" align="center">
-                    <UserOutlined />
-                    <Text strong>{fullName || "-"}</Text>
-                  </Space>
-                  <Tag color={currentTag.color}>{currentTag.text}</Tag>
-                </Space>
-                <Space size="large" align="center">
-                  <MailOutlined />
-                  <Text type="secondary">{emp?.User?.Email || "-"}</Text>
-                </Space>
-                <Text>รายละเอียดสถานะ: <b>{currentDesc}</b></Text>
-                <Space wrap style={{ marginTop: 8 }}>
-                  <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => changeStatus("active")}>
-                    เข้างาน
-                  </Button>
-                  <Button danger icon={<CoffeeOutlined />} onClick={() => changeStatus("onleave")}>
-                    ลาพัก
-                  </Button>
-                  <Button icon={<PoweroffOutlined />} onClick={() => changeStatus("inactive")}>
-                    ออกงาน
-                  </Button>
-                </Space>
+              {/* Email / Phone / Position */}
+              <Space size="large" wrap style={{ marginTop: 16, justifyContent: "center" }}>
+                <span><MailOutlined /> <Text type="secondary">{emp?.User?.Email || "-"}</Text></span>
+                <span><PhoneOutlined /> <Text type="secondary">{emp?.Phone || "-"}</Text></span>
+                <span><IdcardOutlined /> <Text type="secondary">{emp?.Position?.PositionName || "-"}</Text></span>
               </Space>
-            </Card>
-          </Col>
-        </Row>
+            </div>
 
-        {/* การ์ดสรุป (ตัวอย่าง) */}
-        <Row gutter={[24, 24]} justify="center">
-          <Col xs={24} sm={12} md={8} lg={6}>
-            <Card title="รอดำเนินการ" bordered={false} style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-              <ClockCircleOutlined style={{ fontSize: 40, color: "#faad14" }} />
-              <p style={{ marginTop: 10, fontSize: 16 }}>12 Orders</p>
-              <Button type="primary" block style={{ marginTop: 10 }}>
-                ดูรายละเอียด
+            {/* Buttons */}
+            <div style={{ display: "flex", gap: 16 }}>
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={() => changeStatus("active")}
+                block
+                style={{ height: 60, fontSize: 18, fontWeight: 600 }}
+              >
+                เข้างาน
               </Button>
-            </Card>
-          </Col>
 
-          <Col xs={24} sm={12} md={8} lg={6}>
-            <Card title="กำลังซัก" bordered={false} style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-              <SyncOutlined spin style={{ fontSize: 40, color: "#1890ff" }} />
-              <p style={{ marginTop: 10, fontSize: 16 }}>8 Orders</p>
-              <Button type="primary" block style={{ marginTop: 10 }}>
-                ดูรายละเอียด
+              <Button
+                onClick={() => changeStatus("onleave")}
+                block
+                style={{
+                  height: 60,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  background: "#FEF3C7",
+                  borderColor: "#F59E0B",
+                  color: "#92400E",
+                }}
+                icon={<CoffeeOutlined />}
+              >
+                ลาพัก
               </Button>
-            </Card>
-          </Col>
 
-          <Col xs={24} sm={12} md={8} lg={6}>
-            <Card title="รอจัดส่ง" bordered={false} style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-              <CarOutlined style={{ fontSize: 40, color: "#722ed1" }} />
-              <p style={{ marginTop: 10, fontSize: 16 }}>5 Orders</p>
-              <Button type="primary" block style={{ marginTop: 10 }}>
-                ดูรายละเอียด
+              <Button
+                danger
+                icon={<PoweroffOutlined />}
+                onClick={() => changeStatus("inactive")}
+                block
+                style={{ height: 60, fontSize: 18, fontWeight: 600 }}
+              >
+                ออกงาน
               </Button>
-            </Card>
-          </Col>
-
-          <Col xs={24} sm={12} md={8} lg={6}>
-            <Card title="เสร็จสิ้น" bordered={false} style={{ borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-              <CheckCircleOutlined style={{ fontSize: 40, color: "#52c41a" }} />
-              <p style={{ marginTop: 10, fontSize: 16 }}>20 Orders</p>
-              <Button type="primary" block style={{ marginTop: 10 }}>
-                ดูรายละเอียด
-              </Button>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-    </EmployeeSidebar>
+            </div>
+          </Card>
+        </div>
+      </EmployeeSidebar>
+    </ConfigProvider>
   );
 };
 
