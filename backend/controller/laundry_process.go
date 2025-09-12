@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/OnpreeyaMi/project-sa/config"
@@ -66,10 +67,13 @@ func CreateLaundryProcess(c *gin.Context) {
 func GetOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	var order entity.Order
-	if err := config.DB.Preload("Customer").
-		Preload("Address").
-		Preload("LaundryProcesses.Machines").
-		First(&order, id).Error; err != nil {
+       if err := config.DB.Preload("Customer").
+	       Preload("Customer.Addresses").
+	       Preload("Address").
+	       Preload("LaundryProcesses.Machines").
+	       Preload("LaundryProcesses.SortingRecord").
+	       Preload("SortingRecord").
+	       First(&order, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "ไม่พบ Order"})
 		return
 	}
@@ -80,7 +84,7 @@ func GetOrderByID(c *gin.Context) {
 func GetLaundryProcesses(c *gin.Context) {
 	var processes []entity.LaundryProcess
 
-	if err := config.DB.Preload("Machines").Preload("Order").Find(&processes).Error; err != nil {
+	if err := config.DB.Preload("Machines").Preload("Order").Preload("SortingRecord").Find(&processes).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -97,6 +101,7 @@ func GetLatestLaundryProcess(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, process)
 }
+
 // อัปเดตสถานะ
 func UpdateProcessStatus(c *gin.Context) {
 	id := c.Param("id")
@@ -104,6 +109,7 @@ func UpdateProcessStatus(c *gin.Context) {
 	var req struct {
 		Status     string `json:"status"`
 		StatusNote string `json:"status_note"`
+		EmployeeID uint   `json:"employee_id"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -157,20 +163,23 @@ func UpdateProcessStatus(c *gin.Context) {
 			return
 		}
 	}
-       if req.Status == "เสร็จสิ้น" {
-	       if process.Status != "กำลังอบ" && process.Status != "กำลังซัก" {
-		       c.JSON(http.StatusBadRequest, gin.H{"error": "ต้องอัปเดตสถานะเป็น 'กำลังอบ' หรือ 'กำลังซัก' ก่อนถึงจะอัปเดตเป็น 'เสร็จสิ้น' ได้"})
-		       return
-	       }
-	       process.End_time = time.Now()
-	       // คืนสถานะเครื่องซัก/อบทั้งหมดของ process นี้เป็น available
-	       for _, m := range process.Machines {
-		       config.DB.Model(&entity.Machine{}).Where("id = ?", m.ID).Update("status", "available")
-	       }
-       }
+	if req.Status == "เสร็จสิ้น" {
+		if process.Status != "กำลังอบ" && process.Status != "กำลังซัก" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ต้องอัปเดตสถานะเป็น 'กำลังอบ' หรือ 'กำลังซัก' ก่อนถึงจะอัปเดตเป็น 'เสร็จสิ้น' ได้"})
+			return
+		}
+		process.End_time = time.Now()
+		// คืนสถานะเครื่องซัก/อบทั้งหมดของ process นี้เป็น available
+		for _, m := range process.Machines {
+			config.DB.Model(&entity.Machine{}).Where("id = ?", m.ID).Update("status", "available")
+		}
+	}
 
 	process.Status = req.Status
 	process.Description = req.StatusNote
+	if req.EmployeeID != 0 {
+		process.EmployeeID = req.EmployeeID
+	}
 
 	if err := config.DB.Save(&process).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -366,6 +375,7 @@ func GetProcessesByOrder(c *gin.Context) {
 		Joins("JOIN process_order ON process_order.laundry_process_id = laundry_processes.id").
 		Where("process_order.order_id = ?", orderID).
 		Preload("Machines").
+		Preload("SortingRecord").
 		Find(&processes).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -386,48 +396,48 @@ func GetAvailableMachines(c *gin.Context) {
 
 // ดึง order พร้อมสถานะล่าสุด
 func GetOrdersdetails(c *gin.Context) {
-       var orders []entity.Order
-       config.DB.Preload("Customer").Preload("Address").Preload("LaundryProcesses").Preload("SortingRecord.SortedClothes").Find(&orders)
+	var orders []entity.Order
+	config.DB.Preload("Customer").Preload("Address").Preload("LaundryProcesses").Preload("SortingRecord.SortedClothes").Preload("ServiceTypes").Find(&orders)
 
-       var result []map[string]interface{}
-       for _, o := range orders {
-	       status := "รอดำเนินการ"
-	       if len(o.LaundryProcesses) > 0 {
-		       status = o.LaundryProcesses[len(o.LaundryProcesses)-1].Status
-	       }
-	       // รวมจำนวนชิ้นจาก SortedClothes ทั้งหมดใน SortingRecord
-	       totalItems := 0
-	       if o.SortingRecord != nil && o.SortingRecord.SortedClothes != nil {
-		       for _, sc := range o.SortingRecord.SortedClothes {
-			       totalItems += sc.SortedQuantity
-		       }
-	       }
-	       // ดึงขนาดถังซัก/อบจาก ServiceTypes
-	       washerCap := 0
-	       dryerCap := 0
-	       if o.ServiceTypes != nil {
-		       for _, st := range o.ServiceTypes {
-			       if st != nil && st.Type != "" {
-				       if st.Type != "อบ" && st.Type != "ไม่อบ" && washerCap == 0 {
-					       washerCap = st.Capacity
-				       }
-				       if st.Type == "อบ" && dryerCap == 0 {
-					       dryerCap = st.Capacity
-				       }
-			       }
-		       }
-	       }
-	       item := map[string]interface{}{
-		       "ID":              o.ID,
-		       "Customer":        o.Customer,
-		       "Address":         o.Address,
-		       "washer_capacity": washerCap,
-		       "dryer_capacity":  dryerCap,
-		       "totalItems":      totalItems,
-		       "status":          status,
-	       }
-	       result = append(result, item)
-       }
+	var result []map[string]interface{}
+	for _, o := range orders {
+		status := "รอดำเนินการ"
+		if len(o.LaundryProcesses) > 0 {
+			status = o.LaundryProcesses[len(o.LaundryProcesses)-1].Status
+		}
+		// รวมจำนวนชิ้นจาก SortedClothes ทั้งหมดใน SortingRecord
+		totalItems := 0
+		if o.SortingRecord != nil && o.SortingRecord.SortedClothes != nil {
+			for _, sc := range o.SortingRecord.SortedClothes {
+				totalItems += sc.SortedQuantity
+			}
+		}
+		// ดึงขนาดถังซัก/อบจาก ServiceTypes
+		washerCap := 0
+		dryerCap := 0
+		if o.ServiceTypes != nil {
+			for _, st := range o.ServiceTypes {
+				if st != nil && st.Type != "" {
+					if !strings.HasPrefix(st.Type, "อบ") && st.Type != "ไม่อบ" && washerCap == 0 {
+						washerCap = st.Capacity
+					}
+					if strings.HasPrefix(st.Type, "อบ") && dryerCap == 0 {
+						dryerCap = st.Capacity
+					}
+				}
+			}
+		}
+		item := map[string]interface{}{
+			"ID":              o.ID,
+			"Customer":        o.Customer,
+			"Address":         o.Address,
+			"washer_capacity": washerCap,
+			"dryer_capacity":  dryerCap,
+			"totalItems":      totalItems,
+			"status":          status,
+		}
+		result = append(result, item)
+	}
 
-       c.JSON(200, result)
+	c.JSON(200, result)
 }

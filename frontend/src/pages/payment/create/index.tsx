@@ -97,6 +97,8 @@ export default function Payment() {
   const [openQR, setOpenQR] = useState(false);
   const promptPayTarget = "0645067561"; // your shop PromptPay target
 
+  const [savingCash, setSavingCash] = useState(false);
+
   // Fetch checkout + promotions
   useEffect(() => {
     let mounted = true;
@@ -218,6 +220,43 @@ export default function Payment() {
     return Math.min(cut, totalAmount);
   }, [totalAmount, selectedPromo]);
 
+  async function handlePayCash() {
+    if (!orderId) {
+      alert("ไม่พบหมายเลขคำสั่งซื้อ");
+      return;
+    }
+    try {
+      setSavingCash(true);
+      const res = await fetch(`${BASE}/payments/cash`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          order_id: orderId ,
+          amount: finalTotal,}), // ส่งแค่ order_id ตามที่ออกแบบไว้
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert("ชำระเงินสดล้มเหลว: " + (data?.error ?? res.status));
+        return;
+      }
+
+      // บันทึกสำเร็จ → เปิด Success Modal เดิมที่คุณใช้กับ PromptPay
+      setPaid(true);
+      setPaidAt(new Date());
+
+      // ถ้าต้องรีโหลด checkout เพื่อให้สถานะหน้าอัปเดตจาก DB จริง ๆ
+      // คุณอาจเรียก fetch อีกครั้ง หรือ setPaid/setPaymentId/state อื่น ๆ ที่จำเป็น
+      // (ข้ามได้ถ้ายังไม่ต้องการ)
+    } catch (err) {
+      console.error(err);
+      alert("เชื่อมต่อไม่สำเร็จ");
+    } finally {
+      setSavingCash(false);
+    }
+  }
+
+
   const finalTotal = useMemo(() => Math.max(0, Math.round((totalAmount - discount) * 100) / 100), [totalAmount, discount]);
 
   if (loading) return <div className="p-6">กำลังโหลด...</div>;
@@ -301,10 +340,13 @@ export default function Payment() {
               </div>
             </button>
 
-            <button className="w-[320px] bg-gray-100 text-gray-700 py-2 rounded-xl border hover:bg-gray-200">
+            <button className="w-[320px] bg-gray-100 text-gray-700 py-2 rounded-xl border hover:bg-gray-200"
+              onClick={handlePayCash}              
+              disabled={savingCash || !orderId}
+            >
               <div className="flex items-center justify-center gap-2">
                 <BsCashCoin size={24} />
-                <span>ชำระเงินสด</span>
+                <span>{savingCash ? "กำลังบันทึก..." : "ชำระเงินสด"}</span>
               </div>
             </button>
           </div>

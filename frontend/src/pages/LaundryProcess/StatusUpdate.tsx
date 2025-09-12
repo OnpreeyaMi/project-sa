@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Button, Input, Table, Tag, Row, Col, Card, Statistic, Select } from "antd";
+import { Button, Input, Table, Row, Col, Card, Select } from "antd";
 import EmployeeSidebar from "../../component/layout/employee/empSidebar";
 import { Link } from "react-router-dom";
 import { SearchOutlined, FilterOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -76,20 +76,24 @@ useEffect(() => {
     },
     {
       title: "ขนาดถังซัก (กก.)",
-      dataIndex: "washer_capacity",
       key: "washer_capacity",
       align: "center" as const,
-      render: (val: any) => (val && val > 0 ? val : "-"),
+      render: (_: any, record: any) => {
+        const val = record.washer_capacity;
+        return val && val > 0 ? val : "-";
+      },
     },
     {
       title: "ขนาดถังอบ (กก.)",
-      dataIndex: "dryer_capacity",
       key: "dryer_capacity",
       align: "center" as const,
-      render: (val: any) => (val && val > 0 ? val : "-"),
+      render: (_: any, record: any) => {
+        const val = record.dryer_capacity;
+        return val && val > 0 ? val : "-";
+      },
     },
     {
-      title: "จำนวนชิ้น",
+      title: "จำนวนผ้า",
       key: "totalItems",
       align: "center" as const,
       render: (_: any, record: any) =>

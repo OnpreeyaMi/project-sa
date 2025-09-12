@@ -164,89 +164,63 @@ const EmployeeHome: React.FC = () => {
   return (
     <ConfigProvider theme={theme}>
       <EmployeeSidebar>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "100vh",
-            background: "linear-gradient(135deg,#EEF2FF 0%, #DBEAFE 50%, #E0F2FE 100%)",
-            padding: 32,
-          }}
-        >
-          <Card
-            loading={loading}
-            bordered={false}
-            style={{
-              width: "100%",
-              maxWidth: 860,
-              borderRadius: 28,
-              background: "white",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.12)",
-            }}
-            bodyStyle={{ padding: 40 }}
-          >
-            {/* Header */}
-            <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <UserOutlined style={{ fontSize: 64, color: "#2563EB" }} />
-              <Title level={2} style={{ marginTop: 12, marginBottom: 8 }}>
-                {fullName || "-"}
-              </Title>
-              <Tag color={currentTag.color} style={{ fontSize: 16, padding: "6px 16px" }}>
-                {currentTag.text}
-              </Tag>
-              <div style={{ marginTop: 8, fontSize: 16, color: "#475569" }}>
-                รายละเอียดสถานะ: <b>{currentDesc}</b>
-              </div>
-
-              {/* Email / Phone / Position */}
-              <Space size="large" wrap style={{ marginTop: 16, justifyContent: "center" }}>
-                <span><MailOutlined /> <Text type="secondary">{emp?.User?.Email || "-"}</Text></span>
-                <span><PhoneOutlined /> <Text type="secondary">{emp?.Phone || "-"}</Text></span>
-                <span><IdcardOutlined /> <Text type="secondary">{emp?.Position?.PositionName || "-"}</Text></span>
-              </Space>
+        <Card loading={loading} style={{ width: "100%" }}>
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <UserOutlined style={{ fontSize: 64, color: "#2563EB" }} />
+            <Title level={2} style={{ marginTop: 12, marginBottom: 8 }}>
+              {fullName || "-"}
+            </Title>
+            <Tag color={currentTag.color} style={{ fontSize: 16, padding: "6px 16px" }}>
+              {currentTag.text}
+            </Tag>
+            <div style={{ marginTop: 8, fontSize: 16, color: "#475569" }}>
+              รายละเอียดสถานะ: <b>{currentDesc}</b>
             </div>
-
-            {/* Buttons */}
-            <div style={{ display: "flex", gap: 16 }}>
-              <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                onClick={() => changeStatus("active")}
-                block
-                style={{ height: 60, fontSize: 18, fontWeight: 600 }}
-              >
-                เข้างาน
-              </Button>
-
-              <Button
-                onClick={() => changeStatus("onleave")}
-                block
-                style={{
-                  height: 60,
-                  fontSize: 18,
-                  fontWeight: 600,
-                  background: "#FEF3C7",
-                  borderColor: "#F59E0B",
-                  color: "#92400E",
-                }}
-                icon={<CoffeeOutlined />}
-              >
-                ลาพัก
-              </Button>
-
-              <Button
-                danger
-                icon={<PoweroffOutlined />}
-                onClick={() => changeStatus("inactive")}
-                block
-                style={{ height: 60, fontSize: 18, fontWeight: 600 }}
-              >
-                ออกงาน
-              </Button>
-            </div>
-          </Card>
-        </div>
+            {/* Email / Phone / Position */}
+            <Space size="large" wrap style={{ marginTop: 16, justifyContent: "center" }}>
+              <span><MailOutlined /> <Text type="secondary">{emp?.User?.Email || "-"}</Text></span>
+              <span><PhoneOutlined /> <Text type="secondary">{emp?.Phone || "-"}</Text></span>
+              <span><IdcardOutlined /> <Text type="secondary">{emp?.Position?.PositionName || "-"}</Text></span>
+            </Space>
+          </div>
+          {/* Buttons */}
+          <div style={{ display: "flex", gap: 16 }}>
+            <Button
+              type="primary"
+              icon={<PlayCircleOutlined />}
+              onClick={() => changeStatus("active")}
+              block
+              style={{ height: 60, fontSize: 18, fontWeight: 600 }}
+            >
+              เข้างาน
+            </Button>
+            <Button
+              onClick={() => changeStatus("onleave")}
+              block
+              style={{
+                height: 60,
+                fontSize: 18,
+                fontWeight: 600,
+                background: "#FEF3C7",
+                borderColor: "#F59E0B",
+                color: "#92400E",
+              }}
+              icon={<CoffeeOutlined />}
+            >
+              ลาพัก
+            </Button>
+            <Button
+              danger
+              icon={<PoweroffOutlined />}
+              onClick={() => changeStatus("inactive")}
+              block
+              style={{ height: 60, fontSize: 18, fontWeight: 600 }}
+            >
+              ออกงาน
+            </Button>
+          </div>
+        </Card>
       </EmployeeSidebar>
     </ConfigProvider>
   );

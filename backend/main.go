@@ -120,7 +120,7 @@ func main() {
 	// Orders (อื่นๆ)
 	router.GET("/orders/:id", controller.GetOrderByID)
 	router.GET("/process/:id/order", controller.GetProcessesByOrder)                               // ดึง process พร้อม order
-	router.GET("/ordersdetails", controller.GetOrdersdetails)                                      // ดึง order ทั้งหมด (สำหรับหน้า admin)
+	router.GET("/ordersdetails", controller.GetOrdersdetails)                                   
 	router.DELETE("/laundry-process/:id/machines/:machineId", controller.DeleteMachineFromProcess) // ลบเครื่องจาก process
 
 	// ---------- Machines ----------
@@ -140,12 +140,15 @@ func main() {
 	// router.GET("/orders/latest", middlewares.AuthRequired().controller.GetLatestOrderForCustomer)
 	router.GET("/orders/latest/:customer_id", controller.GetLatestOrderForCustomer)
 	router.POST("/verify-slip-base64", controller.VerifySlipBase64)
-	
+	router.POST("/payments/cash", controller.PayByCashSimple)
 
 	//complaintCreate
 	// ให้ไฟล์แนบถูกเสิร์ฟแบบสาธารณะ
-	router.Static("/uploads", "./uploads")
+	
 	router.POST("/complaints", controller.CreateComplaint)
+	router.POST("/complaints/:publicId/attachments", controller.AddComplaintAttachments)
+	router.Static("/uploads", "./uploads")
+	
 	//complaintReply
 	emp := router.Group("/employee")
 	{
@@ -154,6 +157,7 @@ func main() {
 		emp.GET("/complaints/:publicId/replies", controller.ListReplies)
 		emp.POST("/complaints/:publicId/replies", controller.AddReplyToComplaint)
 		emp.PATCH("/complaints/:publicId/status", controller.SetComplaintStatus)
+		emp.GET("/complaints/:publicId/attachments", controller.ListComplaintAttachments) // (option)
 	}
 
 	router.POST("/queues/:id/assign_timeslot", controller.AssignTimeSlotToQueue) // assign timeslot ให้คิว
