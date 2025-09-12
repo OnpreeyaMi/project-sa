@@ -304,7 +304,7 @@ const LaundryHistoryPage: React.FC = () => {
               <Descriptions.Item label="รวมจำนวนรายการ">
                 {detail?.TotalItems ?? (detail?.Items?.length || 0)}
               </Descriptions.Item>
-              <Descriptions.Item label="รวมจำนวนชิ้น (ไม่นับซ้ำประเภทผ้า)">
+              <Descriptions.Item label="รวมจำนวนชิ้น">
                 {detail?.Items ? sumUniqueQtyFromOrderItems(detail.Items) : 0}
               </Descriptions.Item>
             </Descriptions>

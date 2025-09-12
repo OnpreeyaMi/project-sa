@@ -482,7 +482,7 @@ const LaundryCheckPage: React.FC = () => {
                 <Title level={5} className="mb-3">สรุปยอดรวม</Title>
                 <Space direction="vertical" size="middle" className="w-full">
                   <Text>จำนวนรายการ: {totalItems} รายการ</Text>
-                  <Text>จำนวนชิ้นทั้งหมด (ไม่นับซ้ำประเภทผ้า): {totalQuantityUnique} ชิ้น</Text>
+                  <Text>จำนวนชิ้นทั้งหมด : {totalQuantityUnique} ชิ้น</Text>
                 </Space>
               </div>
               <div className="md:col-span-1">
@@ -570,7 +570,7 @@ const LaundryCheckPage: React.FC = () => {
             <div className="mt-4">
               <Descriptions column={2} size="small" bordered>
                 <Descriptions.Item label="รวมจำนวนรายการ">{detailRecord.TotalItems}</Descriptions.Item>
-                <Descriptions.Item label="รวมจำนวนชิ้น (ไม่นับซ้ำประเภทผ้า)">{uniqueQtyForDetail(detailRecord)}</Descriptions.Item>
+                <Descriptions.Item label="รวมจำนวนชิ้น ">{uniqueQtyForDetail(detailRecord)}</Descriptions.Item>
               </Descriptions>
             </div>
 
@@ -631,7 +631,7 @@ const LaundryCheckPage: React.FC = () => {
           <div className="mt-4 flex justify-end">
             <Descriptions column={1} size="small" bordered>
               <Descriptions.Item label="รวมจำนวนรายการ">{billRecord?.TotalItems}</Descriptions.Item>
-              <Descriptions.Item label="รวมจำนวนชิ้น (ไม่นับซ้ำประเภทผ้า)">
+              <Descriptions.Item label="รวมจำนวนชิ้น ">
                 {billRecord ? sumUniqueQtyOrder(billRecord.Items) : 0}
               </Descriptions.Item>
             </Descriptions>
