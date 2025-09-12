@@ -44,7 +44,7 @@ func CreateCustomer(c *gin.Context) {
 	user := entity.User{
 		Email:    payload.Email,
 		Password: string(hashedPassword),
-		RoleID:   1, // ลูกค้าอัตโนมัติ
+		RoleID:   2, // ลูกค้าอัตโนมัติ
 	}
 	if err := config.DB.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -142,6 +142,7 @@ type CustomerUpdatePayload struct {
 	LastName  string `json:"lastName"`
 	Phone     string `json:"phone"`
 	GenderID  uint   `json:"genderId"`
+	Email     string `json:"email"`
 }
 
 func UpdateCustomer(c *gin.Context) {
@@ -167,6 +168,18 @@ func UpdateCustomer(c *gin.Context) {
 	if err := config.DB.Save(&customer).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Update email in User table if provided
+	if payload.Email != "" {
+		var user entity.User
+		if err := config.DB.First(&user, customer.UserID).Error; err == nil {
+			user.Email = payload.Email
+			if err := config.DB.Save(&user).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update email: " + err.Error()})
+				return
+			}
+		}
 	}
 
 	var updatedCustomer entity.Customer

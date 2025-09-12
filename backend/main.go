@@ -62,7 +62,8 @@ func main() {
 	router.GET("/promotions", controller.GetPromotions)
 	router.PUT("/promotions/:id", controller.UpdatePromotion)
 	router.DELETE("/promotions/:id", controller.DeletePromotion)
-
+	router.GET("/promotion-usages", controller.GetPromotionUsages)
+	router.POST("/promotion-usages", controller.CreatePromotionUsage)
 
 	// Order CRUD
 	// Orders / Addresses (public or adjust as needed)

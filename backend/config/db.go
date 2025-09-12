@@ -165,41 +165,7 @@ func MockData() {
 		DB.FirstOrCreate(&dt, entity.DiscountType{TypeName: dt.TypeName})
 	}
 
-	// --- Promotions ---
-	promotions := []entity.Promotion{
-		{
-			PromotionName:  "โปรลดหน้าฝน",
-			Description:    "ลด 10% ทุกออเดอร์ช่วงหน้าฝน",
-			DiscountValue:  10,
-			StartDate:      time.Now().AddDate(0, 0, -5),
-			EndDate:        time.Now().AddDate(0, 1, 0),
-			Status:         "ใช้งาน",
-			PromoImage:     "",
-			DiscountTypeID: 1,
-		},
-		{
-			PromotionName:  "ลด 50 บาท สำหรับลูกค้าใหม่",
-			Description:    "ลูกค้าใหม่รับส่วนลด 50 บาท",
-			DiscountValue:  50,
-			StartDate:      time.Now().AddDate(0, 0, -10),
-			EndDate:        time.Now().AddDate(0, 2, 0),
-			Status:         "ใช้งาน",
-			PromoImage:     "",
-			DiscountTypeID: 2,
-		},
-	}
-	for _, p := range promotions {
-		DB.FirstOrCreate(&p, entity.Promotion{PromotionName: p.PromotionName})
-	}
-
-	// --- PromotionConditions ---
-	conds := []entity.PromotionCondition{
-		{ConditionType: "MinOrderAmount", Value: "300", PromotionID: 1},
-		{ConditionType: "CustomerGroup", Value: "new", PromotionID: 2},
-	}
-	for _, c := range conds {
-		DB.FirstOrCreate(&c, entity.PromotionCondition{PromotionID: c.PromotionID, ConditionType: c.ConditionType})
-	}
+	
 	// --- Machines ---
 	machines := []entity.Machine{
 		{Machine_type: "washing", Machine_number: 1, Capacity_kg: 7, Status: "available"},
