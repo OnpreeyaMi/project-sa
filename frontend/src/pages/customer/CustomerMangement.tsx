@@ -9,7 +9,7 @@ interface Customer {
     LastName: string;
     PhoneNumber: string;
     Gender: { ID: number; name: string };
-    User: { email: string };
+    User: { Email: string };
     CreatedAt: string;
 }
 
@@ -58,7 +58,7 @@ const CustomerManagement: React.FC = () => {
         c.FirstName.toLowerCase().includes(searchText.toLowerCase()) ||
         c.LastName.toLowerCase().includes(searchText.toLowerCase()) ||
         c.PhoneNumber.includes(searchText) ||
-        c.User.email.toLowerCase().includes(searchText.toLowerCase())
+        c.User.Email.toLowerCase().includes(searchText.toLowerCase())
     );
 
     // ----------------- CRUD -----------------
@@ -88,7 +88,7 @@ const CustomerManagement: React.FC = () => {
             firstName: customer.FirstName,
             lastName: customer.LastName,
             phone: customer.PhoneNumber,
-            email: customer.User.email,
+            email: customer.User.Email,
             genderId: customer.Gender.ID,
         });
         setEditModalVisible(true);
@@ -188,7 +188,7 @@ const CustomerManagement: React.FC = () => {
           }
         },
         { title: 'สกุล', dataIndex: 'LastName', key: 'LastName' },
-        { title: 'อีเมล', key: 'Email', render: (_: any, record: Customer) => record.User?.email || '-' },
+        { title: 'อีเมล', key: 'Email', render: (_: any, record: Customer) => record.User?.Email },
         { title: 'เบอร์โทร', dataIndex: 'PhoneNumber', key: 'PhoneNumber' },
         { title: 'เพศ', dataIndex: ['Gender', 'name'], key: 'Gender' },
         {
@@ -306,6 +306,7 @@ const CustomerManagement: React.FC = () => {
                             <Select>
                                 <Select.Option value={1}>ชาย</Select.Option>
                                 <Select.Option value={2}>หญิง</Select.Option>
+                                <Select.Option value={3}>อื่นๆ</Select.Option>
                             </Select>
                         </Form.Item>
                     </Form>

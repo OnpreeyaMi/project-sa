@@ -53,32 +53,6 @@ func CreateAddress(c *gin.Context) {
 	c.JSON(http.StatusCreated, address)
 }
 
-// -------------------- READ --------------------
-func GetAddresses(c *gin.Context) {
-	customerIDStr := c.Query("customerId")
-	var addresses []entity.Address
-
-	if customerIDStr != "" {
-		customerID, err := strconv.Atoi(customerIDStr)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid customerId"})
-			return
-		}
-		if err := config.DB.Where("customer_id = ?", customerID).Find(&addresses).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	} else {
-		// ถ้าไม่ส่ง customerId ให้ส่ง address ทุกคน
-		if err := config.DB.Find(&addresses).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	}
-
-	c.JSON(http.StatusOK, addresses)
-}
-
 // -------------------- UPDATE --------------------
 func UpdateAddress(c *gin.Context) {
 	id := c.Param("id")

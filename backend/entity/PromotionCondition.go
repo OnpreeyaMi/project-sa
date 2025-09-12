@@ -7,7 +7,7 @@ import (
 type PromotionCondition struct {
 	gorm.Model
 	ConditionType string
-	Value         string
+	Value         uint
 	PromotionID   uint
 	Promotion     *Promotion `gorm:"foreignKey:PromotionID"`
 }

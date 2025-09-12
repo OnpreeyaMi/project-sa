@@ -14,6 +14,7 @@ import StockEmpPage from "./pages/stock/employee"; // src/pages/stock/employee/i
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import CustomerManagement from "./pages/customer/CustomerMangement";
 import PromotionManagement from "./pages/promotion/PromotionManagement";
+import PromotionUsageHistory from "./pages/promotion/PromotionUsageHistory";
 import Profile from "./pages/profile/profile";
 import CustomerComplaintPage from "./pages/complaint/complaintCreate";
 import Payment from "./pages/payment/create";
@@ -27,7 +28,6 @@ import PurchaseHistoryPage from "./pages/stock/Admin/history";
 import UsageHistoryPage from "./pages/stock/Admin/usage";
 import DeleteHistoryPage from "./pages/stock/Admin/delete";
 import OrderStatusPage from "./pages/LaundryProcess/StatusPage";
-import StatusPage from "./pages/LaundryProcess/StatusPage";
 
 const App: React.FC = () => {
   return (
@@ -55,6 +55,7 @@ const App: React.FC = () => {
           <Route path="employees" element={<RequireRole role="admin"><EmployeePage /></RequireRole>} />
           <Route path="customers" element={<RequireRole role="admin"><CustomerManagement /></RequireRole>} />
           <Route path="promotions" element={<RequireRole role="admin"><PromotionManagement /></RequireRole>} />
+          <Route path="promotions/usage-history" element={<RequireRole role="admin"><PromotionUsageHistory /></RequireRole>} />
           <Route path="stock" element={<RequireRole role="admin"><StockAdminPage /></RequireRole>} />
           <Route path="stock/history" element={<RequireRole role="admin"><PurchaseHistoryPage /></RequireRole>} />
           <Route path="stock/usage" element={<RequireRole role="admin"><UsageHistoryPage /></RequireRole>} />
@@ -63,7 +64,6 @@ const App: React.FC = () => {
 
         {/* Customer */}
         <Route path="/customer">
-          <Route path="status" element={<RequireRole role="customer"><StatusPage /></RequireRole>} />
           <Route path="complaint" element={<RequireRole role="customer"><CustomerComplaintPage /></RequireRole>} />
           <Route path="payment" element={<RequireRole role="customer"><Payment /></RequireRole>} />
           <Route path="orders" element={<RequireRole role="customer"><OrderPage /></RequireRole>} />
