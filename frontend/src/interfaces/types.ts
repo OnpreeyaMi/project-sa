@@ -42,7 +42,8 @@ export interface OrderHistory {
     service_types: { id: number; name: string; price?: number }[];
     detergents: { id: number; name: string; type: "Liquid"|"Powder"; inStock: number }[];
     LaundryProcesses?: {
-      machine?: {  machine_type: string }[];
+      status: string;
+      // ...other fields if needed
     }[];
     Payment?: {
       payment_status: string;
