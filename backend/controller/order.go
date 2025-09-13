@@ -114,7 +114,7 @@ func GetOrderHistories(c *gin.Context) {
 		Preload("Order.Detergents").
 		Preload("Order.Address").
 		Preload("Order.Payment").
-		Preload("Order.LaundryProcesses.Machines").
+		Preload("Order.LaundryProcesses"). // <-- แก้จาก .status เป็น preload ธรรมดา
 		Find(&histories).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
